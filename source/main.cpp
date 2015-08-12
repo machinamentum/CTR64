@@ -40,8 +40,27 @@
 #define C0BRK_VECTOR (0x80000040)
 #define GNRAL_VECTOR (0x80000080)
 
+#define C0_PRID  (0x00000002)
 
-#define C0PRID  (0x00000002)
+#define C0_BVA    8
+#define C0_STATUS 12
+#define C0_CAUSE  13
+#define C0_EPC    14
+
+#define C0_CAUSE_INT     0
+#define C0_CAUSE_ADDRL   4
+#define C0_CAUSE_ADDRS   5
+#define C0_CAUSE_IBUS    6
+#define C0_CAUSE_DBUS    7
+#define C0_CAUSE_SYSCALL 8
+#define C0_CAUSE_BKPT    9
+#define C0_CAUSE_RI     10
+#define C0_CAUSE_OVF    11
+
+#define C0_CAUSE_MASK  (0b111111 << 10)
+
+#define MIPS_MODE_KERNEL 1
+#define MIPS_MODE_USER   0
 
 struct opcode
 {
@@ -54,6 +73,23 @@ struct opcode
     u16 imm16;
     u32 imm26; // 25 bit params too
     u32 comment;
+};
+
+struct C0Processor
+{
+    union
+    {
+        u32 registers[15];
+        struct
+        {
+            u32 pad[7];
+            u32 bva;
+            u32 status;
+            u32 cause;
+            u32 epc;
+            const u32 prid = C0_PRID;
+        };
+    };
 };
 
 struct MIPS_R3000
@@ -105,9 +141,42 @@ struct MIPS_R3000
     };
 
     void *Memory = linearAlloc(0x1000000);
-
+    int KMode;
+    C0Processor CP0;
 
 };
+
+static void
+DumpState(MIPS_R3000 *Cpu, opcode *Op)
+{
+    printf("\x1b[0;0H");
+    for (int i = 0; i < 32; ++i)
+    {
+        printf("R%02d: 0x%08lX  ", i, Cpu->registers[i]);
+        if (i % 2 == 1) printf("\n");
+    }
+    printf("RA : 0x%08lX\n", Cpu->ra);
+    printf("PC : 0x%08lX\n", Cpu->pc);
+    printf("Select 0: 0x%02X\n", Op->select0);
+    printf("Select 1: 0x%02X\n", Op->select1);
+}
+
+//Exceptions
+static void
+C0GenerateException(MIPS_R3000 *Cpu, u8 Cause, u32 EPC)
+{
+    Cpu->CP0.cause = (Cause << 10) & C0_CAUSE_MASK;
+    Cpu->CP0.epc = EPC;
+    Cpu->KMode = MIPS_MODE_KERNEL;
+    Cpu->pc = GNRAL_VECTOR;
+}
+
+static void
+ReservedInstructionException(MIPS_R3000 *Cpu, opcode *Op)
+{
+    // TODO exceptions & coprocessor0
+    DumpState(Cpu, Op);
+}
 
 
 typedef void (*jt_func)(MIPS_R3000 *, opcode *);
@@ -247,6 +316,46 @@ BranchZero(MIPS_R3000 *Cpu, opcode *OpCode)
     printf("\x1b[0;0H%s", __func__);
 }
 
+static void
+BEQ(MIPS_R3000 *Cpu, opcode *OpCode)
+{
+    if (Cpu->registers[OpCode->rs] == Cpu->registers[OpCode->rt])
+    {
+        Cpu->pc = Cpu->pc + 4 + (s16)OpCode->imm16 * 4;
+    }
+    printf("\x1b[0;0H%s", __func__);
+}
+
+static void
+BNE(MIPS_R3000 *Cpu, opcode *OpCode)
+{
+    if (Cpu->registers[OpCode->rs] != Cpu->registers[OpCode->rt])
+    {
+        Cpu->pc = Cpu->pc + 4 + (s16)OpCode->imm16 * 4;
+    }
+    printf("\x1b[0;0H%s", __func__);
+}
+
+static void
+BLEZ(MIPS_R3000 *Cpu, opcode *OpCode)
+{
+    if (Cpu->registers[OpCode->rs] <= 0)
+    {
+        Cpu->pc = Cpu->pc + 4 + (s16)OpCode->imm16 * 4;
+    }
+    printf("\x1b[0;0H%s", __func__);
+}
+
+static void
+BGTZ(MIPS_R3000 *Cpu, opcode *OpCode)
+{
+    if (Cpu->registers[OpCode->rs] > 0)
+    {
+        Cpu->pc = Cpu->pc + 4 + (s16)OpCode->imm16 * 4;
+    }
+    printf("\x1b[0;0H%s", __func__);
+}
+
 //Logical
 static void
 AndI(MIPS_R3000 *Cpu, opcode *OpCode)
@@ -260,28 +369,6 @@ OrI(MIPS_R3000 *Cpu, opcode *OpCode)
 {
     Cpu->registers[OpCode->rt] = Cpu->registers[OpCode->rs] | OpCode->imm16;
     printf("\x1b[0;0H%s", __func__);
-}
-
-static void
-DumpState(MIPS_R3000 *Cpu, opcode *Op)
-{
-    printf("\x1b[0;0H");
-    for (int i = 0; i < 32; ++i)
-    {
-        printf("R%02d: 0x%08lX  ", i, Cpu->registers[i]);
-        if (i % 2 == 1) printf("\n");
-    }
-    printf("RA : 0x%08lX\n", Cpu->ra);
-    printf("PC : 0x%08lX\n", Cpu->pc);
-    printf("Select 0: 0x%02X\n", Op->select0);
-    printf("Select 1: 0x%02X\n", Op->select1);
-}
-
-static void
-ReservedInstructionException(MIPS_R3000 *Cpu, opcode *Op)
-{
-    // TODO exceptions & coprocessor0
-    DumpState(Cpu, Op);
 }
 
 static void
@@ -302,7 +389,7 @@ DecodeOpcode(opcode *OpCode, u32 Data)
 static void
 InstructionFetch(MIPS_R3000 *Cpu, opcode *OpCode)
 {
-    u32 OC = MemReadWord(Cpu, Cpu->pc += 4);
+    u32 OC = MemReadWord(Cpu, Cpu->pc);
     DecodeOpcode(OpCode, OC);
 }
 
@@ -331,10 +418,10 @@ InitJumpTables()
     PrimaryJumpTable[0x01] = BranchZero;
     PrimaryJumpTable[0x02] = J;
     PrimaryJumpTable[0x03] = JAL;
-//    PrimaryJumpTable[0x04] = BEQ;
-//    PrimaryJumpTable[0x05] = BNE;
-//    PrimaryJumpTable[0x06] = BLEZ;
-//    PrimaryJumpTable[0x07] = BGTZ;
+    PrimaryJumpTable[0x04] = BEQ;
+    PrimaryJumpTable[0x05] = BNE;
+    PrimaryJumpTable[0x06] = BLEZ;
+    PrimaryJumpTable[0x07] = BGTZ;
 //    PrimaryJumpTable[0x08] = AddI;
     PrimaryJumpTable[0x09] = AddIU;
     PrimaryJumpTable[0x0C] = AndI;
@@ -389,6 +476,7 @@ int main(int argc, char **argv)
         opcode OpCode;
         InstructionFetch(&Cpu, &OpCode);
         ExecuteOpCode(&Cpu, &OpCode);
+        Cpu.pc += 4;
 
         gfxFlushBuffers();
         gfxSwapBuffersGpu();
