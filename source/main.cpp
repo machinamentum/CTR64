@@ -212,7 +212,7 @@ WriteMemHalfWord(MIPS_R3000 *Cpu, u32 Address, u16 value)
     *((u16 *)((u8 *)Cpu->Memory + Base)) = value;
 }
 
-// Add
+//Arithmetic
 static void
 AddU(MIPS_R3000 *Cpu, opcode *OpCode)
 {
@@ -224,6 +224,13 @@ static void
 AddIU(MIPS_R3000 *Cpu, opcode *OpCode)
 {
     Cpu->registers[OpCode->rt] = Cpu->registers[OpCode->rs] + (s16)OpCode->imm16;
+    printf("\x1b[0;0H%s", __func__);
+}
+
+static void
+SubU(MIPS_R3000 *Cpu, opcode *OpCode)
+{
+    Cpu->registers[OpCode->rd] = Cpu->registers[OpCode->rs] - Cpu->registers[OpCode->rt];
     printf("\x1b[0;0H%s", __func__);
 }
 
@@ -424,15 +431,64 @@ InitJumpTables()
     PrimaryJumpTable[0x07] = BGTZ;
 //    PrimaryJumpTable[0x08] = AddI;
     PrimaryJumpTable[0x09] = AddIU;
+//    PrimaryJumpTable[0x0A] = SLTI;
+//    PrimaryJumpTable[0x0B] = SLTIU;
     PrimaryJumpTable[0x0C] = AndI;
     PrimaryJumpTable[0x0D] = OrI;
     PrimaryJumpTable[0x0F] = LUI;
+//    PrimaryJumpTable[0x10] = COP0;
+//    PrimaryJumpTable[0x11] = COP1;
+//    PrimaryJumpTable[0x12] = COP2;
+//    PrimaryJumpTable[0x13] = COP3;
+//    PrimaryJumpTable[0x20] = LB;
+//    PrimaryJumpTable[0x21] = LH;
+//    PrimaryJumpTable[0x22] = LWL;
+//    PrimaryJumpTable[0x23] = LW;
+//    PrimaryJumpTable[0x24] = LBU;
+//    PrimaryJumpTable[0x25] = LHU;
+//    PrimaryJumpTable[0x26] = LWR;
+//    PrimaryJumpTable[0x28] = SB;
     PrimaryJumpTable[0x29] = SH;
+//    PrimaryJumpTable[0x2A] = SWL;
     PrimaryJumpTable[0x2B] = SW;
+//    PrimaryJumpTable[0x2E] = SWR;
+//    PrimaryJumpTable[0x30] = LWC0;
+//    PrimaryJumpTable[0x31] = LWC1;
+//    PrimaryJumpTable[0x32] = LWC2;
+//    PrimaryJumpTable[0x33] = LWC3;
+//    PrimaryJumpTable[0x38] = SWC0;
+//    PrimaryJumpTable[0x39] = SWC1;
+//    PrimaryJumpTable[0x3A] = SWC2;
+//    PrimaryJumpTable[0x3B] = SWC3;
 
+//    SecondaryJumpTable[0x00] = SLL;
+//    SecondaryJumpTable[0x02] = SRL;
+//    SecondaryJumpTable[0x03] = SRA;
+//    SecondaryJumpTable[0x04] = SLLV;
+//    SecondaryJumpTable[0x06] = SRLV;
+//    SecondaryJumpTable[0x07] = SRAV;
     SecondaryJumpTable[0x08] = JR;
     SecondaryJumpTable[0x09] = JALR;
+//    SecondaryJumpTable[0x0C] = SysCall;
+//    SecondaryJumpTable[0x0D] = Break;
+//    SecondaryJumpTable[0x10] = MFHI;
+//    SecondaryJumpTable[0x11] = MTHI;
+//    SecondaryJumpTable[0x12] = MFLO;
+//    SecondaryJumpTable[0x13] = MTLO;
+//    SecondaryJumpTable[0x18] = Mutl;
+//    SecondaryJumpTable[0x19] = MultU;
+//    SecondaryJumpTable[0x1A] = Div;
+//    SecondaryJumpTable[0x1B] = DivU;
+//    SecondaryJumpTable[0x20] = Add;
     SecondaryJumpTable[0x21] = AddU;
+//    SecondaryJumpTable[0x22] = Sub;
+    SecondaryJumpTable[0x23] = SubU;
+//    SecondaryJumpTable[0x24] = And;
+//    SecondaryJumpTable[0x25] = Or;
+//    SecondaryJumpTable[0x26] = XOr;
+//    SecondaryJumpTable[0x27] = NOr;
+//    SecondaryJumpTable[0x2A] = SLT;
+//    SecondaryJumpTable[0x2B] = SLTU;
 }
 
 #include <stdio.h>
