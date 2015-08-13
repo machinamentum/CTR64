@@ -691,6 +691,12 @@ InitJumpTables()
 #include <stdlib.h>
 #include <unistd.h>
 
+#define STAGE_IF 1
+#define STAGE_DC 2
+#define STAGE_EO 4
+#define STAGE_MA 8
+#define STAGE_WB 16
+
 int main(int argc, char **argv)
 {
 
@@ -718,6 +724,16 @@ int main(int argc, char **argv)
         WriteMemByte(&Cpu, RESET_VECTOR + i, BiosBuffer[i]);
     }
 
+    opcode OpCodes[5];
+    int Stages[5];
+
+    for (int i = 4; i >= 0; --i)
+    {
+        Stages[i] = -i;
+    }
+
+    u32 MachineCode = 0;
+
     while (aptMainLoop())
     {
         hidScanInput();
@@ -725,13 +741,44 @@ int main(int argc, char **argv)
         if (keysDown() & KEY_START)
             break;
 
-        u32 MachineCode;
-        opcode OpCode;
-        InstructionFetch(&Cpu, &MachineCode);
-        DecodeOpcode(&Cpu, &OpCode, MachineCode, Cpu.pc - 4);
-        ExecuteOpCode(&Cpu, &OpCode);
-        MemoryAccess(&Cpu, &OpCode);
-        WriteBack(&Cpu, &OpCode);
+        for (int i  = 0; i < 5; ++i)
+        {
+            if (Stages[i] < 1)
+            {
+                ++Stages[i];
+            }
+
+            if (Stages[i] == STAGE_IF)
+            {
+                InstructionFetch(&Cpu, &MachineCode);
+                Stages[i] = STAGE_DC;
+                continue;
+            }
+            if (Stages[i] == STAGE_DC)
+            {
+                DecodeOpcode(&Cpu, &OpCodes[i], MachineCode, Cpu.pc - 4);
+                Stages[i] = STAGE_EO;
+                continue;
+            }
+            if (Stages[i] == STAGE_EO)
+            {
+                ExecuteOpCode(&Cpu, &OpCodes[i]);
+                Stages[i] = STAGE_MA;
+                continue;
+            }
+            if (Stages[i] == STAGE_MA)
+            {
+                MemoryAccess(&Cpu, &OpCodes[i]);
+                Stages[i] = STAGE_WB;
+                continue;
+            }
+            if (Stages[i] == STAGE_WB)
+            {
+                WriteBack(&Cpu, &OpCodes[i]);
+                Stages[i] = STAGE_IF;
+                continue;
+            }
+        }
 
         gfxFlushBuffers();
         gfxSwapBuffersGpu();
