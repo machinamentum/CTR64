@@ -39,8 +39,8 @@ ReservedInstructionException(MIPS_R3000 *Cpu, opcode *Op)
 
 typedef void (*jt_func)(MIPS_R3000 *, opcode *);
 
-jt_func PrimaryJumpTable[0x40];
-jt_func SecondaryJumpTable[0x40];
+static jt_func PrimaryJumpTable[0x40];
+static jt_func SecondaryJumpTable[0x40];
 
 //Arithmetic
 static void
@@ -315,7 +315,7 @@ DecodeOpcode(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data, u32 IAddress)
     //    OpCode->imm5 = (Data & IMM5_MASK) >> 6;
     //    OpCode->imm16 = (Data & IMM16_MASK) >> 0;
     //    OpCode->imm26 = (Data & IMM26_MASK) >> 0;
-
+    OpCode->MemAccessType = MEM_ACCESS_NONE;
     if (OpCode->Select0 == 0)
     {
         //shift-imm
