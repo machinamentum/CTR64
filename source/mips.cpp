@@ -47,21 +47,18 @@ static void
 AddU(MIPS_R3000 *Cpu, opcode *OpCode)
 {
     OpCode->Result = OpCode->LeftValue + OpCode->RightValue;
-    printf("\x1b[0;0H%s", __func__);
 }
 
 static void
 AddIU(MIPS_R3000 *Cpu, opcode *OpCode)
 {
     OpCode->Result = OpCode->LeftValue + OpCode->Immediate;
-    printf("\x1b[0;0H%s", __func__);
 }
 
 static void
 SubU(MIPS_R3000 *Cpu, opcode *OpCode)
 {
     OpCode->Result = OpCode->LeftValue - OpCode->RightValue;
-    printf("\x1b[0;0H%s", __func__);
 }
 
 //Store
@@ -70,7 +67,6 @@ SW(MIPS_R3000 *Cpu, opcode *OpCode)
 {
     OpCode->Result = OpCode->LeftValue + OpCode->Immediate;
     OpCode->MemAccessMode = MEM_ACCESS_WORD;
-    printf("\x1b[0;0H%s", __func__);
 }
 
 static void
@@ -78,7 +74,6 @@ SH(MIPS_R3000 *Cpu, opcode *OpCode)
 {
     OpCode->Result = OpCode->LeftValue + OpCode->Immediate;
     OpCode->MemAccessMode = MEM_ACCESS_HALF;
-    printf("\x1b[0;0H%s", __func__);
 }
 
 static void
@@ -86,7 +81,6 @@ SB(MIPS_R3000 *Cpu, opcode *OpCode)
 {
     OpCode->Result = OpCode->LeftValue + OpCode->Immediate;
     OpCode->MemAccessMode = MEM_ACCESS_BYTE;
-    printf("\x1b[0;0H%s", __func__);
 }
 
 //Load
@@ -94,7 +88,6 @@ static void
 LUI(MIPS_R3000 *Cpu, opcode *OpCode)
 {
     OpCode->Result = OpCode->Immediate << 16;
-    printf("\x1b[0;0H%s", __func__);
 }
 
 
@@ -103,7 +96,6 @@ static void
 J(MIPS_R3000 *Cpu, opcode *OpCode)
 {
     OpCode->Result = (Cpu->pc & 0xF0000000) + (OpCode->Immediate * 4);
-    printf("\x1b[0;0H%s", __func__);
 }
 
 static void
@@ -111,21 +103,18 @@ JAL(MIPS_R3000 *Cpu, opcode *OpCode)
 {
     OpCode->RADestinationRegister = REG_INDEX_RA;
     OpCode->Result = (Cpu->pc & 0xF0000000) + (OpCode->Immediate * 4);
-    printf("\x1b[0;0H%s", __func__);
 }
 
 static void
 JR(MIPS_R3000 *Cpu, opcode *OpCode)
 {
     OpCode->Result = OpCode->LeftValue;
-    printf("\x1b[0;0H%s", __func__);
 }
 
 static void
 JALR(MIPS_R3000 *Cpu, opcode *OpCode)
 {
     OpCode->Result = OpCode->LeftValue;
-    printf("\x1b[0;0H%s", __func__);
 }
 
 static void
@@ -160,7 +149,6 @@ BranchZero(MIPS_R3000 *Cpu, opcode *OpCode)
             OpCode->DestinationRegister = REG_INDEX_PC;
         }
     }
-    printf("\x1b[0;0H%s", __func__);
 }
 
 static void
@@ -171,7 +159,6 @@ BEQ(MIPS_R3000 *Cpu, opcode *OpCode)
         OpCode->Result = OpCode->CurrentAddress + 4 + OpCode->Immediate * 4;
         OpCode->DestinationRegister = REG_INDEX_PC;
     }
-    printf("\x1b[0;0H%s", __func__);
 }
 
 static void
@@ -182,7 +169,6 @@ BNE(MIPS_R3000 *Cpu, opcode *OpCode)
         OpCode->Result = OpCode->CurrentAddress + 4 + OpCode->Immediate * 4;
         OpCode->DestinationRegister = REG_INDEX_PC;
     }
-    printf("\x1b[0;0H%s", __func__);
 }
 
 static void
@@ -193,7 +179,6 @@ BLEZ(MIPS_R3000 *Cpu, opcode *OpCode)
         OpCode->Result = OpCode->CurrentAddress + 4 + OpCode->Immediate * 4;
         OpCode->DestinationRegister = REG_INDEX_PC;
     }
-    printf("\x1b[0;0H%s", __func__);
 }
 
 static void
@@ -204,7 +189,6 @@ BGTZ(MIPS_R3000 *Cpu, opcode *OpCode)
         OpCode->Result = OpCode->CurrentAddress + 4 + OpCode->Immediate * 4;
         OpCode->DestinationRegister = REG_INDEX_PC;
     }
-    printf("\x1b[0;0H%s", __func__);
 }
 
 //Logical
@@ -212,48 +196,41 @@ static void
 AndI(MIPS_R3000 *Cpu, opcode *OpCode)
 {
     OpCode->Result = OpCode->LeftValue & OpCode->Immediate;
-    printf("\x1b[0;0H%s", __func__);
 }
 
 static void
 OrI(MIPS_R3000 *Cpu, opcode *OpCode)
 {
     OpCode->Result = OpCode->LeftValue | OpCode->Immediate;
-    printf("\x1b[0;0H%s", __func__);
 }
 
 static void
 And(MIPS_R3000 *Cpu, opcode *OpCode)
 {
     OpCode->Result = OpCode->LeftValue & OpCode->RightValue;
-    printf("\x1b[0;0H%s", __func__);
 }
 
 static void
 Or(MIPS_R3000 *Cpu, opcode *OpCode)
 {
     OpCode->Result = OpCode->LeftValue | OpCode->RightValue;
-    printf("\x1b[0;0H%s", __func__);
 }
 
 static void
 XOr(MIPS_R3000 *Cpu, opcode *OpCode)
 {
     OpCode->Result = OpCode->LeftValue ^ OpCode->RightValue;
-    printf("\x1b[0;0H%s", __func__);
 }
 static void
 NOr(MIPS_R3000 *Cpu, opcode *OpCode)
 {
     OpCode->Result = 0xFFFFFFFF ^ (OpCode->LeftValue | OpCode->RightValue);
-    printf("\x1b[0;0H%s", __func__);
 }
 
 static void
 XOrI(MIPS_R3000 *Cpu, opcode *OpCode)
 {
     OpCode->Result = OpCode->LeftValue ^ OpCode->Immediate;
-    printf("\x1b[0;0H%s", __func__);
 }
 
 //shifts
@@ -261,42 +238,36 @@ static void
 SLLV(MIPS_R3000 *Cpu, opcode *OpCode)
 {
     OpCode->Result = OpCode->RightValue << (OpCode->LeftValue & 0x1F);
-    printf("\x1b[0;0H%s", __func__);
 }
 
 static void
 SRLV(MIPS_R3000 *Cpu, opcode *OpCode)
 {
     OpCode->Result = OpCode->RightValue >> (OpCode->LeftValue & 0x1F);
-    printf("\x1b[0;0H%s", __func__);
 }
 
 static void
 SRAV(MIPS_R3000 *Cpu, opcode *OpCode)
 {
     OpCode->Result = ((s32)OpCode->RightValue) >> (OpCode->LeftValue & 0x1F);
-    printf("\x1b[0;0H%s", __func__);
 }
 
 static void
 SLL(MIPS_R3000 *Cpu, opcode *OpCode)
 {
     OpCode->Result = OpCode->RightValue << OpCode->Immediate;
-    printf("\x1b[0;0H%s", __func__);
 }
 
 static void
 SRL(MIPS_R3000 *Cpu, opcode *OpCode)
 {
     OpCode->Result = OpCode->RightValue >> OpCode->Immediate;
-    printf("\x1b[0;0H%s", __func__);
 }
 
 static void
 SRA(MIPS_R3000 *Cpu, opcode *OpCode)
 {
     OpCode->Result = ((s32)OpCode->RightValue) >> OpCode->Immediate;
-    printf("\x1b[0;0H%s", __func__);
 }
 
 
