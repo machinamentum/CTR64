@@ -252,7 +252,7 @@ NOr(MIPS_R3000 *Cpu, opcode *OpCode)
 static void
 XOrI(MIPS_R3000 *Cpu, opcode *OpCode)
 {
-    OpCode->Result = 0xFFFFFFFF ^ (OpCode->LeftValue | OpCode->Immediate);
+    OpCode->Result = OpCode->LeftValue ^ OpCode->Immediate;
     printf("\x1b[0;0H%s", __func__);
 }
 
