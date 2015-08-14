@@ -87,19 +87,19 @@ SubU(opcode *OpCode)
 static void
 SW(opcode *OpCode)
 {
-    printf("sw %s, 0x%04lX(%s)", RNT[OpCode->DestinationRegister], OpCode->Immediate, RNT[OpCode->LeftValue]);
+    printf("sw %s, 0x%04lX(%s)", RNT[OpCode->RightValue], OpCode->Immediate, RNT[OpCode->LeftValue]);
 }
 
 static void
 SH(opcode *OpCode)
 {
-    printf("sh %s, 0x%04lX(%s)", RNT[OpCode->DestinationRegister], OpCode->Immediate, RNT[OpCode->LeftValue]);
+    printf("sh %s, 0x%04lX(%s)", RNT[OpCode->RightValue], OpCode->Immediate, RNT[OpCode->LeftValue]);
 }
 
 static void
 SB(opcode *OpCode)
 {
-    printf("sb %s, 0x%04lX(%s)", RNT[OpCode->DestinationRegister], OpCode->Immediate, RNT[OpCode->LeftValue]);
+    printf("sb %s, 0x%04lX(%s)", RNT[OpCode->RightValue], OpCode->Immediate, RNT[OpCode->LeftValue]);
 }
 
 //Load
@@ -114,7 +114,7 @@ LUI(opcode *OpCode)
 static void
 J(opcode *OpCode)
 {
-    printf("j 0x%08lX  ", OpCode->Immediate * 4);
+    printf("j 0x%08lX", OpCode->Immediate * 4);
 }
 
 static void
@@ -422,7 +422,7 @@ DisassemblerPrintOpCode(opcode *OpCode)
 {
     printf("0x%08lX: ", OpCode->CurrentAddress);
     PrimaryJumpTable[OpCode->Select0](OpCode);
-    printf("     \n");
+    printf("\n");
 }
 
 void
