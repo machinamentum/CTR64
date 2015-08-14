@@ -1,6 +1,7 @@
 #include <3ds.h>
 #include <cstdio>
 #include "mips.h"
+#include "debugger.h"
 
 static void
 DumpState(MIPS_R3000 *Cpu, opcode *Op)
@@ -31,7 +32,8 @@ static void
 ReservedInstructionException(MIPS_R3000 *Cpu, opcode *Op)
 {
     // TODO exceptions & coprocessor0
-    DumpState(Cpu, Op);
+//    DumpState(Cpu, Op);
+    DebuggerPrint(__func__);
 }
 
 

@@ -2,12 +2,7 @@
 .SUFFIXES:
 #---------------------------------------------------------------------------------
 
-ifeq ($(strip $(DEVKITARM)),)
-$(error "Please set DEVKITARM in your environment. export DEVKITARM=<path to>devkitARM")
-endif
-
 TOPDIR ?= $(CURDIR)
-include $(DEVKITARM)/3ds_rules
 
 #---------------------------------------------------------------------------------
 # TARGET is the name of the output
@@ -26,39 +21,35 @@ include $(DEVKITARM)/3ds_rules
 #     - icon.png
 #     - <libctru folder>/default_icon.png
 #---------------------------------------------------------------------------------
-TARGET		:=	$(notdir $(CURDIR))
+TARGET		:=	ctrx-dbg
 BUILD		:=	build
 SOURCES		:=	source
-DATA		:=	data
-INCLUDES	:=	include
+DATA		:=
+INCLUDES	:=	include ../include ../source
 
 #---------------------------------------------------------------------------------
 # options for code generation
 #---------------------------------------------------------------------------------
-ARCH	:=	-march=armv6k -mtune=mpcore -mfloat-abi=hard
+ARCH	:=
 
-CFLAGS	:=	 -g -Wall -O2 -mword-relocations \
-			-fomit-frame-pointer -ffast-math \
+CFLAGS	:=	 -g -Wall -O2  \
+			-fomit-frame-pointer -fno-rtti -ffast-math \
 			$(ARCH)
 
-ifneq ($(strip $(ENABLE_DEBUGGER)),)
-CFLAGS +=	-DENABLE_DEBUGGER=1
-endif
+CFLAGS	+=	$(INCLUDE)
 
-CFLAGS	+=	$(INCLUDE) -DARM11 -D_3DS
-
-CXXFLAGS	:= -std=c++11 $(CFLAGS) -fno-rtti -fno-exceptions
+CXXFLAGS	:= -std=c++11 $(CFLAGS) -fno-exceptions
 
 ASFLAGS	:=	-g $(ARCH)
-LDFLAGS	=	-specs=3dsx.specs -g $(ARCH) -Wl,-Map,$(notdir $*.map)
+LDFLAGS	= -g $(ARCH) -Wl
 
-LIBS	:= -lctru -lm
+LIBS	:=  -lm
 
 #---------------------------------------------------------------------------------
 # list of directories containing libraries, this must be the top level containing
 # include and lib
 #---------------------------------------------------------------------------------
-LIBDIRS	:= $(CTRULIB)
+LIBDIRS	:=
 
 
 #---------------------------------------------------------------------------------
@@ -129,11 +120,9 @@ $(BUILD):
 #---------------------------------------------------------------------------------
 clean:
 	@echo clean ...
-	@rm -fr $(BUILD) $(TARGET).3dsx $(OUTPUT).smdh $(TARGET).elf
+	@rm -fr $(BUILD) $(TARGET) $(TARGET).elf
 
 
-run: all
-	3dslink $(TARGET).3dsx -0sdmc:/3ds/CTRX
 
 
 #---------------------------------------------------------------------------------
@@ -146,15 +135,27 @@ DEPENDS	:=	$(OFILES:.o=.d)
 #---------------------------------------------------------------------------------
 ifeq ($(strip $(NO_SMDH)),)
 .PHONY: all
-all	:	$(OUTPUT).3dsx $(OUTPUT).smdh
+all	:	$(OUTPUT)
 endif
-$(OUTPUT).3dsx	:	$(OUTPUT).elf
-$(OUTPUT).elf	:	$(OFILES)
+
+%.o	:	%.c
+	$(CC) $(CFLAGS) -c -o $@ $^
+
+%.o	:	%.cpp
+	$(CXX) $(CXXFLAGS) -c -o $@ $^
+
+$(OUTPUT)	:	$(OFILES)
+	$(LD) $(LDFLAGS) -o $@ $^ $(LIBS)
 
 #---------------------------------------------------------------------------------
 # you need a rule like this for each extension you use as binary data
 #---------------------------------------------------------------------------------
 %.bin.o	:	%.bin
+#---------------------------------------------------------------------------------
+	@echo $(notdir $<)
+	@$(bin2o)
+
+%.png.o	:	%.png
 #---------------------------------------------------------------------------------
 	@echo $(notdir $<)
 	@$(bin2o)
@@ -171,7 +172,7 @@ $(OUTPUT).elf	:	$(OFILES)
 	@echo "extern const u32" `(echo $(notdir $<).shbin | sed -e 's/^\([0-9]\)/_\1/' | tr . _)`_size";" >> `(echo $(notdir $<).shbin | tr . _)`.h
 	@rm ../$(notdir $<).shbin
 
--include $(DEPENDS)
+
 
 #---------------------------------------------------------------------------------------
 endif

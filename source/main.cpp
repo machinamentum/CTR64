@@ -3,6 +3,7 @@
 #include <cstdio>
 #include <stdlib.h>
 #include <unistd.h>
+#include "debugger.h"
 #include "mips.h"
 
 #define STAGE_IF 1
@@ -46,6 +47,17 @@ int main(int argc, char **argv)
     }
 
     u32 MachineCode = 0;
+#ifdef ENABLE_DEBUGGER
+    if (DebuggerOpen())
+    {
+        printf("Could not start debugger client!\n");
+    }
+    else
+    {
+        printf("Started debugger\n");
+    }
+
+#endif
 
     while (aptMainLoop())
     {
@@ -97,7 +109,10 @@ int main(int argc, char **argv)
         gfxSwapBuffersGpu();
         gspWaitForVBlank();
     }
-    
+#ifdef ENABLE_DEBUGGER
+    DebuggerClose();
+#endif
+
     // Exit services
     gfxExit();
     hidExit();
