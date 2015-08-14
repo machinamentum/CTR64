@@ -71,8 +71,11 @@ int main(int argc, char **argv)
 
         Step = false;
         if (keysUp() & KEY_A)
+        {
+            printf("\x1b[0;0H");
+            printf("\e[0;0H\e[2J");
             Step = true;
-
+        }
         if (Step)
         {
             for (int i  = 0; i < 5; ++i)
@@ -114,7 +117,6 @@ int main(int argc, char **argv)
                 }
             }
         }
-
         printf("\x1b[0;0H");
         DisassemblerPrintRange(&Cpu, Cpu.pc - (5 * 4), 29);
 
