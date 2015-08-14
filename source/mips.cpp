@@ -81,6 +81,14 @@ SH(MIPS_R3000 *Cpu, opcode *OpCode)
     printf("\x1b[0;0H%s", __func__);
 }
 
+static void
+SB(MIPS_R3000 *Cpu, opcode *OpCode)
+{
+    OpCode->Result = OpCode->LeftValue + OpCode->Immediate;
+    OpCode->MemAccessMode = MEM_ACCESS_BYTE;
+    printf("\x1b[0;0H%s", __func__);
+}
+
 //Load
 static void
 LUI(MIPS_R3000 *Cpu, opcode *OpCode)
@@ -213,6 +221,84 @@ OrI(MIPS_R3000 *Cpu, opcode *OpCode)
     OpCode->Result = OpCode->LeftValue | OpCode->Immediate;
     printf("\x1b[0;0H%s", __func__);
 }
+
+static void
+And(MIPS_R3000 *Cpu, opcode *OpCode)
+{
+    OpCode->Result = OpCode->LeftValue & OpCode->RightValue;
+    printf("\x1b[0;0H%s", __func__);
+}
+
+static void
+Or(MIPS_R3000 *Cpu, opcode *OpCode)
+{
+    OpCode->Result = OpCode->LeftValue | OpCode->RightValue;
+    printf("\x1b[0;0H%s", __func__);
+}
+
+static void
+XOr(MIPS_R3000 *Cpu, opcode *OpCode)
+{
+    OpCode->Result = OpCode->LeftValue ^ OpCode->RightValue;
+    printf("\x1b[0;0H%s", __func__);
+}
+static void
+NOr(MIPS_R3000 *Cpu, opcode *OpCode)
+{
+    OpCode->Result = 0xFFFFFFFF ^ (OpCode->LeftValue | OpCode->RightValue);
+    printf("\x1b[0;0H%s", __func__);
+}
+
+static void
+XOrI(MIPS_R3000 *Cpu, opcode *OpCode)
+{
+    OpCode->Result = 0xFFFFFFFF ^ (OpCode->LeftValue | OpCode->Immediate);
+    printf("\x1b[0;0H%s", __func__);
+}
+
+//shifts
+static void
+SLLV(MIPS_R3000 *Cpu, opcode *OpCode)
+{
+    OpCode->Result = OpCode->RightValue << (OpCode->LeftValue & 0x1F);
+    printf("\x1b[0;0H%s", __func__);
+}
+
+static void
+SRLV(MIPS_R3000 *Cpu, opcode *OpCode)
+{
+    OpCode->Result = OpCode->RightValue >> (OpCode->LeftValue & 0x1F);
+    printf("\x1b[0;0H%s", __func__);
+}
+
+static void
+SRAV(MIPS_R3000 *Cpu, opcode *OpCode)
+{
+    OpCode->Result = ((s32)OpCode->RightValue) >> (OpCode->LeftValue & 0x1F);
+    printf("\x1b[0;0H%s", __func__);
+}
+
+static void
+SLL(MIPS_R3000 *Cpu, opcode *OpCode)
+{
+    OpCode->Result = OpCode->RightValue << OpCode->Immediate;
+    printf("\x1b[0;0H%s", __func__);
+}
+
+static void
+SRL(MIPS_R3000 *Cpu, opcode *OpCode)
+{
+    OpCode->Result = OpCode->RightValue >> OpCode->Immediate;
+    printf("\x1b[0;0H%s", __func__);
+}
+
+static void
+SRA(MIPS_R3000 *Cpu, opcode *OpCode)
+{
+    OpCode->Result = ((s32)OpCode->RightValue) >> OpCode->Immediate;
+    printf("\x1b[0;0H%s", __func__);
+}
+
 
 void
 DecodeOpcode(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data, u32 IAddress)
@@ -445,6 +531,7 @@ InitJumpTables()
     //    PrimaryJumpTable[0x0B] = SLTIU;
     PrimaryJumpTable[0x0C] = AndI;
     PrimaryJumpTable[0x0D] = OrI;
+    PrimaryJumpTable[0x0E] = XOrI;
     PrimaryJumpTable[0x0F] = LUI;
     //    PrimaryJumpTable[0x10] = COP0;
     //    PrimaryJumpTable[0x11] = COP1;
@@ -457,7 +544,7 @@ InitJumpTables()
     //    PrimaryJumpTable[0x24] = LBU;
     //    PrimaryJumpTable[0x25] = LHU;
     //    PrimaryJumpTable[0x26] = LWR;
-    //    PrimaryJumpTable[0x28] = SB;
+    PrimaryJumpTable[0x28] = SB;
     PrimaryJumpTable[0x29] = SH;
     //    PrimaryJumpTable[0x2A] = SWL;
     PrimaryJumpTable[0x2B] = SW;
@@ -471,12 +558,12 @@ InitJumpTables()
     //    PrimaryJumpTable[0x3A] = SWC2;
     //    PrimaryJumpTable[0x3B] = SWC3;
 
-    //    SecondaryJumpTable[0x00] = SLL;
-    //    SecondaryJumpTable[0x02] = SRL;
-    //    SecondaryJumpTable[0x03] = SRA;
-    //    SecondaryJumpTable[0x04] = SLLV;
-    //    SecondaryJumpTable[0x06] = SRLV;
-    //    SecondaryJumpTable[0x07] = SRAV;
+    SecondaryJumpTable[0x00] = SLL;
+    SecondaryJumpTable[0x02] = SRL;
+    SecondaryJumpTable[0x03] = SRA;
+    SecondaryJumpTable[0x04] = SLLV;
+    SecondaryJumpTable[0x06] = SRLV;
+    SecondaryJumpTable[0x07] = SRAV;
     SecondaryJumpTable[0x08] = JR;
     SecondaryJumpTable[0x09] = JALR;
     //    SecondaryJumpTable[0x0C] = SysCall;
@@ -493,10 +580,10 @@ InitJumpTables()
     SecondaryJumpTable[0x21] = AddU;
     //    SecondaryJumpTable[0x22] = Sub;
     SecondaryJumpTable[0x23] = SubU;
-    //    SecondaryJumpTable[0x24] = And;
-    //    SecondaryJumpTable[0x25] = Or;
-    //    SecondaryJumpTable[0x26] = XOr;
-    //    SecondaryJumpTable[0x27] = NOr;
+    SecondaryJumpTable[0x24] = And;
+    SecondaryJumpTable[0x25] = Or;
+    SecondaryJumpTable[0x26] = XOr;
+    SecondaryJumpTable[0x27] = NOr;
     //    SecondaryJumpTable[0x2A] = SLT;
     //    SecondaryJumpTable[0x2B] = SLTU;
 }
