@@ -277,16 +277,18 @@ DecodeOpcode(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data, u32 IAddress)
     OpCode->CurrentAddress = IAddress;
     OpCode->Select0 = (Data & PRIMARY_OP_MASK) >> 26;
     OpCode->Select1 = (Data & SECONDARY_OP_MASK) >> 0;
+    OpCode->MemAccessType = MEM_ACCESS_NONE;
+    OpCode->MemAccessMode = MEM_ACCESS_WORD;
+    OpCode->LeftValue = 0;
+    OpCode->RightValue = 0;
+    OpCode->Immediate = 0;
+    OpCode->Result = 0;
+    OpCode->DestinationRegister = 0;
+    OpCode->RADestinationRegister = 0;
     u8 rs = (Data & REG_RS_MASK) >> 21;
     u8 rt = (Data & REG_RT_MASK) >> 16;
     u8 rd = (Data & REG_RD_MASK) >> 11;
 
-
-    //    OpCode->comment = (Data & COMMENT20_MASK) >> 6;
-    //    OpCode->imm5 = (Data & IMM5_MASK) >> 6;
-    //    OpCode->imm16 = (Data & IMM16_MASK) >> 0;
-    //    OpCode->imm26 = (Data & IMM26_MASK) >> 0;
-    OpCode->MemAccessType = MEM_ACCESS_NONE;
     if (OpCode->Select0 == 0)
     {
         //shift-imm
