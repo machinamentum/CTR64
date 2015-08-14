@@ -43,10 +43,31 @@
 
 #define C0_PRID  (0x00000002)
 
-#define C0_BVA    8
-#define C0_STATUS 12
-#define C0_CAUSE  13
-#define C0_EPC    14
+#define C0_BVA    9
+#define C0_STATUS 13
+#define C0_CAUSE  14
+#define C0_EPC    15
+
+#define C0_STATUS_IEc    (1 << 0)
+#define C0_STATUS_KUc    (1 << 1)
+#define C0_STATUS_IEp    (1 << 2)
+#define C0_STATUS_KUp    (1 << 3)
+#define C0_STATUS_IEo    (1 << 4)
+#define C0_STATUS_KUo    (1 << 5)
+#define C0_STATUS_Im  (0xFF << 8)
+#define C0_STATUS_Isc   (1 << 16)
+#define C0_STATUS_Swc   (1 << 17)
+#define C0_STATUS_PZ    (1 << 18)
+#define C0_STATUS_CM    (1 << 19)
+#define C0_STATUS_PE    (1 << 20)
+#define C0_STATUS_TS    (1 << 21)
+#define C0_STATUS_BEV   (1 << 22)
+#define C0_STATUS_RE    (1 << 25)
+#define C0_STATUS_CU0   (1 << 28)
+#define C0_STATUS_CU1   (1 << 29)
+#define C0_STATUS_CU2   (1 << 30)
+#define C0_STATUS_CU3   (1 << 31)
+
 
 #define C0_CAUSE_INT     0
 #define C0_CAUSE_ADDRL   4
@@ -99,15 +120,25 @@ struct C0Processor
 {
     union
     {
-        u32 registers[15];
+        u32 registers[64];
         struct
         {
-            u32 pad[7];
+            u32 r0;
+            u32 r1;
+            u32 r2;
+            u32 bpc;
+            u32 r4;
+            u32 bda;
+            u32 jumpdest;
+            u32 dcic;
             u32 bva;
-            u32 status;
+            u32 bdam;
+            u32 r10;
+            u32 bpcm;
+            u32 sr;
             u32 cause;
             u32 epc;
-            const u32 prid = C0_PRID;
+            u32 prid = C0_PRID;
         };
     };
 };
@@ -129,6 +160,7 @@ struct MIPS_R3000
             u32 a1;
             u32 a2;
             u32 a3;
+
             u32 t0;
             u32 t1;
             u32 t2;
@@ -137,6 +169,7 @@ struct MIPS_R3000
             u32 t5;
             u32 t6;
             u32 t7;
+
             u32 s0;
             u32 s1;
             u32 s2;
@@ -147,21 +180,23 @@ struct MIPS_R3000
             u32 s7;
             u32 t8;
             u32 t9;
+
             u32 k0;
             u32 k1;
+
             u32 gp;
             u32 sp;
             u32 fp;
+
             u32 ra;
             u32 pc = RESET_VECTOR;
+
             u16 hi, lo;
         };
     };
 
     void *Memory = linearAlloc(0x1000000);
-    int KMode;
     C0Processor CP0;
-    
 };
 
 void InstructionFetch(MIPS_R3000 *Cpu, u32 *Code);

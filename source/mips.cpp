@@ -24,7 +24,7 @@ C0GenerateException(MIPS_R3000 *Cpu, u8 Cause, u32 EPC)
 {
     Cpu->CP0.cause = (Cause << 10) & C0_CAUSE_MASK;
     Cpu->CP0.epc = EPC;
-    Cpu->KMode = MIPS_MODE_KERNEL;
+    Cpu->CP0.sr |= C0_STATUS_KUc;
     Cpu->pc = GNRAL_VECTOR;
 }
 
