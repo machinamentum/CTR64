@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include "debugger.h"
 #include "mips.h"
+#include "disasm.h"
 
 #define STAGE_IF 1
 #define STAGE_DC 2
@@ -59,6 +60,8 @@ int main(int argc, char **argv)
 
 #endif
 
+    bool Step = false;
+
     while (aptMainLoop())
     {
         hidScanInput();
@@ -66,44 +69,54 @@ int main(int argc, char **argv)
         if (keysDown() & KEY_START)
             break;
 
-        for (int i  = 0; i < 5; ++i)
-        {
-            if (Stages[i] < 1)
-            {
-                ++Stages[i];
-            }
+        Step = false;
+        if (keysUp() & KEY_A)
+            Step = true;
 
-            if (Stages[i] == STAGE_IF)
+        if (Step)
+        {
+            for (int i  = 0; i < 5; ++i)
             {
-                InstructionFetch(&Cpu, &MachineCode);
-                Stages[i] = STAGE_DC;
-                continue;
-            }
-            if (Stages[i] == STAGE_DC)
-            {
-                DecodeOpcode(&Cpu, &OpCodes[i], MachineCode, Cpu.pc - 4);
-                Stages[i] = STAGE_EO;
-                continue;
-            }
-            if (Stages[i] == STAGE_EO)
-            {
-                ExecuteOpCode(&Cpu, &OpCodes[i]);
-                Stages[i] = STAGE_MA;
-                continue;
-            }
-            if (Stages[i] == STAGE_MA)
-            {
-                MemoryAccess(&Cpu, &OpCodes[i]);
-                Stages[i] = STAGE_WB;
-                continue;
-            }
-            if (Stages[i] == STAGE_WB)
-            {
-                WriteBack(&Cpu, &OpCodes[i]);
-                Stages[i] = STAGE_IF;
-                continue;
+                if (Stages[i] < 1)
+                {
+                    ++Stages[i];
+                }
+
+                if (Stages[i] == STAGE_IF)
+                {
+                    InstructionFetch(&Cpu, &MachineCode);
+                    Stages[i] = STAGE_DC;
+                    continue;
+                }
+                if (Stages[i] == STAGE_DC)
+                {
+                    DecodeOpcode(&Cpu, &OpCodes[i], MachineCode, Cpu.pc - 4);
+                    Stages[i] = STAGE_EO;
+                    continue;
+                }
+                if (Stages[i] == STAGE_EO)
+                {
+                    ExecuteOpCode(&Cpu, &OpCodes[i]);
+                    Stages[i] = STAGE_MA;
+                    continue;
+                }
+                if (Stages[i] == STAGE_MA)
+                {
+                    MemoryAccess(&Cpu, &OpCodes[i]);
+                    Stages[i] = STAGE_WB;
+                    continue;
+                }
+                if (Stages[i] == STAGE_WB)
+                {
+                    WriteBack(&Cpu, &OpCodes[i]);
+                    Stages[i] = STAGE_IF;
+                    continue;
+                }
             }
         }
+
+        printf("\x1b[0;0H");
+        DisassemblerPrintRange(&Cpu, Cpu.pc - (5 * 4), 29);
 
         gfxFlushBuffers();
         gfxSwapBuffersGpu();
