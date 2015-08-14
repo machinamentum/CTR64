@@ -250,7 +250,14 @@ SRAV(opcode *OpCode)
 static void
 SLL(opcode *OpCode)
 {
-    printf("sll %s, %s, 0x%02lX", RNT[OpCode->DestinationRegister], RNT[OpCode->RightValue], OpCode->Immediate);
+    if (OpCode->DestinationRegister | OpCode->RightValue | OpCode->Immediate)
+    {
+        printf("sll %s, %s, 0x%02lX", RNT[OpCode->DestinationRegister], RNT[OpCode->RightValue], OpCode->Immediate);
+    }
+    else
+    {
+        printf("nop");
+    }
 }
 
 static void
