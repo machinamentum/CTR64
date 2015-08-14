@@ -357,7 +357,7 @@ DecodeOpcode(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data, u32 IAddress)
     {
         OpCode->LeftValue = Cpu->registers[rs];
         OpCode->RightValue = rt; //rt is used as a function selector here
-        OpCode->Immediate = (Data & IMM16_MASK) >> 0;
+        OpCode->Immediate = SignExtend16((Data & IMM16_MASK) >> 0);
         OpCode->MemAccessType = MEM_ACCESS_BRANCH;
         //destination registers set within function
     }
@@ -374,7 +374,7 @@ DecodeOpcode(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data, u32 IAddress)
     {
         OpCode->LeftValue = Cpu->registers[rs];
         OpCode->RightValue = Cpu->registers[rt];
-        OpCode->Immediate = (Data & IMM16_MASK) >> 0;
+        OpCode->Immediate = SignExtend16((Data & IMM16_MASK) >> 0);
         OpCode->MemAccessType = MEM_ACCESS_BRANCH;
         //destination registers set within function
     }
@@ -382,7 +382,7 @@ DecodeOpcode(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data, u32 IAddress)
     else if ((OpCode->Select0 & 0b111110) == 0b000110)
     {
         OpCode->LeftValue = Cpu->registers[rs];
-        OpCode->Immediate = (Data & IMM16_MASK) >> 0;
+        OpCode->Immediate = SignExtend16((Data & IMM16_MASK) >> 0);
         OpCode->MemAccessType = MEM_ACCESS_BRANCH;
         //destination registers set within function
     }
@@ -390,7 +390,7 @@ DecodeOpcode(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data, u32 IAddress)
     else if ((OpCode->Select0 & 0b111000) == 0b001000)
     {
         OpCode->LeftValue = Cpu->registers[rs];
-        OpCode->Immediate = (Data & IMM16_MASK) >> 0;
+        OpCode->Immediate = SignExtend16((Data & IMM16_MASK) >> 0);
         OpCode->DestinationRegister = rt;
     }
     //lui-imm

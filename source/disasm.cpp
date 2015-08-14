@@ -359,7 +359,7 @@ DisasseblerDecodeOpcode(opcode *OpCode, u32 Data, u32 IAddress)
     {
         OpCode->LeftValue = rs;
         OpCode->RightValue = rt; //rt is used as a function selector here
-        OpCode->Immediate = (Data & IMM16_MASK) >> 0;
+        OpCode->Immediate = SignExtend16((Data & IMM16_MASK) >> 0);
         OpCode->MemAccessType = MEM_ACCESS_BRANCH;
         //destination registers set within function
     }
@@ -376,7 +376,7 @@ DisasseblerDecodeOpcode(opcode *OpCode, u32 Data, u32 IAddress)
     {
         OpCode->LeftValue = rs;
         OpCode->RightValue = rt;
-        OpCode->Immediate = (Data & IMM16_MASK) >> 0;
+        OpCode->Immediate = SignExtend16((Data & IMM16_MASK) >> 0);
         OpCode->MemAccessType = MEM_ACCESS_BRANCH;
         //destination registers set within function
     }
@@ -384,7 +384,7 @@ DisasseblerDecodeOpcode(opcode *OpCode, u32 Data, u32 IAddress)
     else if ((OpCode->Select0 & 0b111110) == 0b000110)
     {
         OpCode->LeftValue = rs;
-        OpCode->Immediate = (Data & IMM16_MASK) >> 0;
+        OpCode->Immediate = SignExtend16((Data & IMM16_MASK) >> 0);
         OpCode->MemAccessType = MEM_ACCESS_BRANCH;
         //destination registers set within function
     }
@@ -392,7 +392,7 @@ DisasseblerDecodeOpcode(opcode *OpCode, u32 Data, u32 IAddress)
     else if ((OpCode->Select0 & 0b111000) == 0b001000)
     {
         OpCode->LeftValue = rs;
-        OpCode->Immediate = (Data & IMM16_MASK) >> 0;
+        OpCode->Immediate = SignExtend16((Data & IMM16_MASK) >> 0);
         OpCode->DestinationRegister = rt;
     }
     //lui-imm

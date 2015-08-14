@@ -233,5 +233,14 @@ WriteMemHalfWord(MIPS_R3000 *Cpu, u32 Address, u16 value)
     *((u16 *)((u8 *)Cpu->Memory + Base)) = value;
 }
 
+inline u32
+SignExtend16(u32 i) {
+    i = (0x0000FFFF & i);
+    if (0x00008000 & i) {
+        i += 0xFFFF0000;
+    }
+    return i;
+}
+
 
 #endif
