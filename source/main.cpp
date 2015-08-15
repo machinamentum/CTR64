@@ -13,17 +13,9 @@
 #define STAGE_MA 8
 #define STAGE_WB 16
 
-int main(int argc, char **argv)
+void
+ResetCpu(MIPS_R3000 *Cpu)
 {
-
-    if (argc) chdir(argv[0]);
-
-    gfxInitDefault();
-    hidInit(NULL);
-    consoleInit(GFX_BOTTOM, NULL);
-
-    MIPS_R3000 Cpu;
-
     FILE *f = fopen("psx_bios.bin", "rb");
     fseek(f, 0, SEEK_END);
     long fsize = ftell(f);
@@ -36,8 +28,24 @@ int main(int argc, char **argv)
 
     for (int i = 0; i < fsize; ++i)
     {
-        WriteMemByte(&Cpu, RESET_VECTOR + i, BiosBuffer[i]);
+        WriteMemByte(Cpu, RESET_VECTOR + i, BiosBuffer[i]);
     }
+
+    Cpu->pc = RESET_VECTOR;
+}
+
+int main(int argc, char **argv)
+{
+
+    if (argc) chdir(argv[0]);
+
+    gfxInitDefault();
+    hidInit(NULL);
+    consoleInit(GFX_BOTTOM, NULL);
+
+    MIPS_R3000 Cpu;
+
+    ResetCpu(&Cpu);
 
     opcode OpCodes[5];
     int Stages[5];
@@ -69,6 +77,15 @@ int main(int argc, char **argv)
         if (keysDown() & KEY_START)
             break;
 
+        if (keysDown() & KEY_DDOWN)
+        {
+            for (int i = 4; i >= 0; --i)
+            {
+                Stages[i] = -i;
+            }
+            ResetCpu(&Cpu);
+        }
+
         Step = false;
         if (keysUp() & KEY_A)
         {
@@ -76,6 +93,16 @@ int main(int argc, char **argv)
             printf("\e[0;0H\e[2J");
             Step = true;
         }
+
+        if (keysHeld() & KEY_Y)
+            Step = true;
+
+        if (keysUp() & KEY_Y)
+        {
+            printf("\x1b[0;0H");
+            printf("\e[0;0H\e[2J");
+        }
+        
         if (Step)
         {
             for (int i  = 0; i < 5; ++i)
@@ -118,7 +145,7 @@ int main(int argc, char **argv)
             }
         }
         printf("\x1b[0;0H");
-        DisassemblerPrintRange(&Cpu, Cpu.pc - (5 * 4), 29);
+        DisassemblerPrintRange(&Cpu, Cpu.pc - (13 * 4), 29, Cpu.pc);
 
         gfxFlushBuffers();
         gfxSwapBuffersGpu();

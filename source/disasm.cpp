@@ -654,12 +654,33 @@ DisassemblerPrintOpCode(opcode *OpCode)
 }
 
 void
-DisassemblerPrintRange(MIPS_R3000 *Cpu, u32 Base, u32 Count)
+DisassemblerPrintRange(MIPS_R3000 *Cpu, u32 Base, u32 Count, u32 PC)
 {
     for (u32 i = 0; i < Count; ++i)
     {
         u32 MachineCode = MemReadWord(Cpu, Base + (i * 4));
         opcode OpCode;
+        printf("\x1b[0m");
+        if (Base + i * 4 == PC)
+        {
+            printf("\x1b[32m"); // IF
+        }
+        if (Base + i * 4 == PC - 4)
+        {
+            printf("\x1b[33m"); // DC
+        }
+        if (Base + i * 4 == PC - 8)
+        {
+            printf("\x1b[31m"); // EXE
+        }
+        if (Base + i * 4 == PC - 12)
+        {
+            printf("\x1b[34m"); // MEM
+        }
+        if (Base + i * 4 == PC - 16)
+        {
+            printf("\x1b[36m"); // WB
+        }
         DisasseblerDecodeOpcode(&OpCode, MachineCode, Base + i * 4);
         DisassemblerPrintOpCode(&OpCode);
     }
