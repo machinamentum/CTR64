@@ -18,6 +18,9 @@
 #define IMM16_MASK \
 (0xFFFF << 0)
 
+#define IMM25_MASK \
+(0x1FFFFFF << 0)
+
 #define IMM26_MASK \
 (0x3FFFFFF << 0)
 
@@ -41,12 +44,13 @@
 #define C0BRK_VECTOR (0x80000040)
 #define GNRAL_VECTOR (0x80000080)
 
-#define C0_PRID  (0x00000002)
+#define C0_PRID_VALUE  (0x00000002)
 
 #define C0_BVA    9
 #define C0_STATUS 13
 #define C0_CAUSE  14
 #define C0_EPC    15
+#define C0_PRID   16
 
 #define C0_STATUS_IEc    (1 << 0)
 #define C0_STATUS_KUc    (1 << 1)
@@ -98,6 +102,12 @@
 #define MEM_ACCESS_HALF   2
 #define MEM_ACCESS_WORD   4
 
+#define WRITE_BACK_C0     0
+#define WRITE_BACK_C1     1
+#define WRITE_BACK_C2     2
+#define WRITE_BACK_C3     3
+#define WRITE_BACK_CPU    4
+
 
 struct opcode
 {
@@ -106,11 +116,13 @@ struct opcode
     u8 Select1;
     u8 MemAccessType = MEM_ACCESS_NONE;
     u8 MemAccessMode = MEM_ACCESS_WORD;
+    u8 WriteBackMode = WRITE_BACK_CPU;
 
     u32 LeftValue;
     u32 RightValue;
     u32 Immediate;
     u32 Result;
+    u32 FunctionSelect;
 
     u8 DestinationRegister = 0;
     u8 RADestinationRegister = 0; // Used for return address writing
@@ -138,7 +150,7 @@ struct C0Processor
             u32 sr;
             u32 cause;
             u32 epc;
-            u32 prid = C0_PRID;
+            u32 prid = C0_PRID_VALUE;
         };
     };
 };

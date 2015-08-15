@@ -1,6 +1,7 @@
 
 #include <3ds.h>
 #include <cstdio>
+#include <cstdlib>
 #include "mips.h"
 #include "debugger.h"
 #include "disasm.h"
@@ -63,6 +64,47 @@ static const char *RNT[34] =
 
     "hi:lo"
 };
+
+static const char *C0RNT[17] =
+{
+    "r0",
+    "r1",
+    "r2",
+    "bpc",
+    "r4",
+    "bda",
+    "jumpdest",
+    "dcic",
+    "bva",
+    "bdam",
+    "r10",
+    "bpcm",
+    "sr",
+    "cause",
+    "epc",
+    "prid",
+};
+
+static char ScratchString[4];
+
+inline const char *
+C0Name(u8 Reg)
+{
+    if (Reg > C0_PRID)
+    {
+        snprintf(ScratchString, 3, "r%d",  Reg);
+        return ScratchString;
+    }
+
+    return C0RNT[Reg];
+}
+
+inline const char *
+CNName(u8 Reg)
+{
+    snprintf(ScratchString, 3, "r%d",  Reg);
+    return ScratchString;
+}
 
 //Arithmetic
 static void
@@ -272,6 +314,139 @@ SRA(opcode *OpCode)
     printf("sra %s, %s, 0x%02lX", RNT[OpCode->DestinationRegister], RNT[OpCode->RightValue], OpCode->Immediate);
 }
 
+// coprocessor ops
+static void
+COP0(opcode *OpCode)
+{
+    switch (OpCode->FunctionSelect) {
+        case 0b00000:
+            printf("mfc0 %s, %s", RNT[OpCode->DestinationRegister], C0Name(OpCode->LeftValue));
+            break;
+        case 0b00010:
+            printf("cfc0 %s, %s", RNT[OpCode->DestinationRegister], C0Name(OpCode->LeftValue - 32));
+            break;
+        case 0b00100:
+            printf("mtc0 %s, %s", RNT[OpCode->LeftValue], C0Name(OpCode->DestinationRegister));
+            break;
+        case 0b00110:
+            printf("ctc0 %s, %s", RNT[OpCode->LeftValue], C0Name(OpCode->DestinationRegister - 32));
+            break;
+        case 0b01000:
+        {
+            if (OpCode->RightValue)
+            {
+                printf("bc0t 0x%04lX", OpCode->Immediate);
+            }
+            else
+            {
+                printf("bc0f 0x%04lX", OpCode->Immediate);
+            }
+        } break;
+        case 0b10000:
+            printf("cop0 0x%08lX", OpCode->Immediate);
+            break;
+    }
+}
+
+static void
+COP1(opcode *OpCode)
+{
+    switch (OpCode->FunctionSelect) {
+        case 0b00000:
+            printf("mfc1 %s, %s", RNT[OpCode->DestinationRegister], CNName(OpCode->LeftValue));
+            break;
+        case 0b00010:
+            printf("cfc1 %s, %s", RNT[OpCode->DestinationRegister], CNName(OpCode->LeftValue - 32));
+            break;
+        case 0b00100:
+            printf("mtc1 %s, %s", RNT[OpCode->LeftValue], CNName(OpCode->DestinationRegister));
+            break;
+        case 0b00110:
+            printf("ctc1 %s, %s", RNT[OpCode->LeftValue], CNName(OpCode->DestinationRegister - 32));
+            break;
+        case 0b01000:
+        {
+            if (OpCode->RightValue)
+            {
+                printf("bc1t 0x%04lX", OpCode->Immediate);
+            }
+            else
+            {
+                printf("bc1f 0x%04lX", OpCode->Immediate);
+            }
+        } break;
+        case 0b10000:
+            printf("cop1 0x%08lX", OpCode->Immediate);
+            break;
+    }
+}
+
+static void
+COP2(opcode *OpCode)
+{
+    switch (OpCode->FunctionSelect) {
+        case 0b00000:
+            printf("mfc2 %s, %s", RNT[OpCode->DestinationRegister], CNName(OpCode->LeftValue));
+            break;
+        case 0b00010:
+            printf("cfc2 %s, %s", RNT[OpCode->DestinationRegister], CNName(OpCode->LeftValue - 32));
+            break;
+        case 0b00100:
+            printf("mtc2 %s, %s", RNT[OpCode->LeftValue], CNName(OpCode->DestinationRegister));
+            break;
+        case 0b00110:
+            printf("ctc2 %s, %s", RNT[OpCode->LeftValue], CNName(OpCode->DestinationRegister - 32));
+            break;
+        case 0b01000:
+        {
+            if (OpCode->RightValue)
+            {
+                printf("bc2t 0x%04lX", OpCode->Immediate);
+            }
+            else
+            {
+                printf("bc2f 0x%04lX", OpCode->Immediate);
+            }
+        } break;
+        case 0b10000:
+            printf("cop2 0x%08lX", OpCode->Immediate);
+            break;
+    }
+}
+
+static void
+COP3(opcode *OpCode)
+{
+    switch (OpCode->FunctionSelect) {
+        case 0b00000:
+            printf("mfc3 %s, %s", RNT[OpCode->DestinationRegister], CNName(OpCode->LeftValue));
+            break;
+        case 0b00010:
+            printf("cfc3 %s, %s", RNT[OpCode->DestinationRegister], CNName(OpCode->LeftValue - 32));
+            break;
+        case 0b00100:
+            printf("mtc3 %s, %s", RNT[OpCode->LeftValue], CNName(OpCode->DestinationRegister));
+            break;
+        case 0b00110:
+            printf("ctc3 %s, %s", RNT[OpCode->LeftValue], CNName(OpCode->DestinationRegister - 32));
+            break;
+        case 0b01000:
+        {
+            if (OpCode->RightValue)
+            {
+                printf("bc3t 0x%04lX", OpCode->Immediate);
+            }
+            else
+            {
+                printf("bc3f 0x%04lX", OpCode->Immediate);
+            }
+        } break;
+        case 0b10000:
+            printf("cop3 0x%08lX", OpCode->Immediate);
+            break;
+    }
+}
+
 
 void
 DisasseblerDecodeOpcode(opcode *OpCode, u32 Data, u32 IAddress)
@@ -417,7 +592,51 @@ DisasseblerDecodeOpcode(opcode *OpCode, u32 Data, u32 IAddress)
         OpCode->Immediate = (Data & IMM16_MASK) >> 0;
         OpCode->MemAccessType = MEM_ACCESS_WRITE;
     }
-    // TODO C0P instruction decoding
+    // coprocessor main instruction decoding
+    else if ((OpCode->Select0 & 0b010000) == 0b010000)
+    {
+        OpCode->FunctionSelect = rs;
+        // mfc, cfc
+        if (rs < 0b00100)
+        {
+            OpCode->DestinationRegister = rt;
+            OpCode->LeftValue = rd + (rs & 0b00010 ? 32 : 0);
+        }
+        // mtc, ctc
+        else if (rs < 0b01000)
+        {
+            OpCode->WriteBackMode = OpCode->Select0 & 0b111;
+            OpCode->DestinationRegister = rd + (rs & 0b00010 ? 32 : 0);
+            OpCode->LeftValue = rt;
+        }
+        // BCnF, BCnT
+        else if (rs == 0b01000)
+        {
+            OpCode->RightValue = rt; // used as secondary function select
+            OpCode->Immediate = SignExtend16((Data & IMM16_MASK) >> 0);
+        }
+        else if (rs & 0b10000)
+        {
+            OpCode->Immediate = (Data & IMM25_MASK) >> 0;
+        }
+    }
+    //lwc
+    else if ((OpCode->Select0 & 0b111000) == 0b110000)
+    {
+        OpCode->WriteBackMode = OpCode->Select0 & 0b111;
+        OpCode->LeftValue = rs;
+        OpCode->DestinationRegister = rt;
+        OpCode->Immediate = (Data & IMM16_MASK) >> 0;
+        OpCode->MemAccessType = MEM_ACCESS_READ;
+    }
+    //swc
+    else if ((OpCode->Select0 & 0b111000) == 0b111000)
+    {
+        OpCode->LeftValue = rs;
+        OpCode->RightValue = rt;
+        OpCode->Immediate = (Data & IMM16_MASK) >> 0;
+        OpCode->MemAccessType = MEM_ACCESS_WRITE;
+    }
 }
 
 static void
@@ -471,10 +690,10 @@ InitJumpTables()
     PrimaryJumpTable[0x0D] = OrI;
     PrimaryJumpTable[0x0E] = XOrI;
     PrimaryJumpTable[0x0F] = LUI;
-    //    PrimaryJumpTable[0x10] = COP0;
-    //    PrimaryJumpTable[0x11] = COP1;
-    //    PrimaryJumpTable[0x12] = COP2;
-    //    PrimaryJumpTable[0x13] = COP3;
+    PrimaryJumpTable[0x10] = COP0;
+    PrimaryJumpTable[0x11] = COP1;
+    PrimaryJumpTable[0x12] = COP2;
+    PrimaryJumpTable[0x13] = COP3;
     //    PrimaryJumpTable[0x20] = LB;
     //    PrimaryJumpTable[0x21] = LH;
     //    PrimaryJumpTable[0x22] = LWL;
