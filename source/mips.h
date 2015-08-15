@@ -216,6 +216,7 @@ void DecodeOpcode(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data, u32 IAddress);
 void ExecuteOpCode(MIPS_R3000 *Cpu, opcode *OpCode);
 void MemoryAccess(MIPS_R3000 *Cpu, opcode *OpCode);
 void WriteBack(MIPS_R3000 *Cpu, opcode *OpCode);
+void DumpState(MIPS_R3000 *Cpu);
 
 inline u32
 MemReadWord(MIPS_R3000 *Cpu, u32 Address)

@@ -3,8 +3,8 @@
 #include "mips.h"
 #include "debugger.h"
 
-static void
-DumpState(MIPS_R3000 *Cpu, opcode *Op)
+void
+DumpState(MIPS_R3000 *Cpu)
 {
     printf("\x1b[0;0H");
     for (int i = 0; i < 32; ++i)
@@ -14,8 +14,6 @@ DumpState(MIPS_R3000 *Cpu, opcode *Op)
     }
     printf("RA : 0x%08lX\n", Cpu->ra);
     printf("PC : 0x%08lX\n", Cpu->pc);
-    printf("Select 0: 0x%02X\n", Op->Select0);
-    printf("Select 1: 0x%02X\n", Op->Select1);
 }
 
 //Exceptions
@@ -135,6 +133,7 @@ BranchZero(MIPS_R3000 *Cpu, opcode *OpCode)
                 OpCode->RADestinationRegister = REG_INDEX_RA;
             }
             OpCode->DestinationRegister = REG_INDEX_PC;
+            OpCode->MemAccessType = MEM_ACCESS_BRANCH;
         }
     }
     else
@@ -147,6 +146,7 @@ BranchZero(MIPS_R3000 *Cpu, opcode *OpCode)
                 OpCode->RADestinationRegister = REG_INDEX_RA;
             }
             OpCode->DestinationRegister = REG_INDEX_PC;
+            OpCode->MemAccessType = MEM_ACCESS_BRANCH;
         }
     }
 }
@@ -158,6 +158,7 @@ BEQ(MIPS_R3000 *Cpu, opcode *OpCode)
     {
         OpCode->Result = OpCode->CurrentAddress + 4 + OpCode->Immediate * 4;
         OpCode->DestinationRegister = REG_INDEX_PC;
+        OpCode->MemAccessType = MEM_ACCESS_BRANCH;
     }
 }
 
@@ -168,6 +169,7 @@ BNE(MIPS_R3000 *Cpu, opcode *OpCode)
     {
         OpCode->Result = OpCode->CurrentAddress + 4 + OpCode->Immediate * 4;
         OpCode->DestinationRegister = REG_INDEX_PC;
+        OpCode->MemAccessType = MEM_ACCESS_BRANCH;
     }
 }
 
@@ -178,6 +180,7 @@ BLEZ(MIPS_R3000 *Cpu, opcode *OpCode)
     {
         OpCode->Result = OpCode->CurrentAddress + 4 + OpCode->Immediate * 4;
         OpCode->DestinationRegister = REG_INDEX_PC;
+        OpCode->MemAccessType = MEM_ACCESS_BRANCH;
     }
 }
 
@@ -188,6 +191,7 @@ BGTZ(MIPS_R3000 *Cpu, opcode *OpCode)
     {
         OpCode->Result = OpCode->CurrentAddress + 4 + OpCode->Immediate * 4;
         OpCode->DestinationRegister = REG_INDEX_PC;
+        OpCode->MemAccessType = MEM_ACCESS_BRANCH;
     }
 }
 
@@ -416,7 +420,6 @@ DecodeOpcode(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data, u32 IAddress)
         OpCode->LeftValue = Cpu->registers[rs];
         OpCode->RightValue = rt; //rt is used as a function selector here
         OpCode->Immediate = SignExtend16((Data & IMM16_MASK) >> 0);
-        OpCode->MemAccessType = MEM_ACCESS_BRANCH;
         //destination registers set within function
     }
     //j/jal
@@ -433,7 +436,6 @@ DecodeOpcode(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data, u32 IAddress)
         OpCode->LeftValue = Cpu->registers[rs];
         OpCode->RightValue = Cpu->registers[rt];
         OpCode->Immediate = SignExtend16((Data & IMM16_MASK) >> 0);
-        OpCode->MemAccessType = MEM_ACCESS_BRANCH;
         //destination registers set within function
     }
     //blez/bgtz
@@ -441,7 +443,6 @@ DecodeOpcode(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data, u32 IAddress)
     {
         OpCode->LeftValue = Cpu->registers[rs];
         OpCode->Immediate = SignExtend16((Data & IMM16_MASK) >> 0);
-        OpCode->MemAccessType = MEM_ACCESS_BRANCH;
         //destination registers set within function
     }
     //alu-imm

@@ -41,7 +41,8 @@ int main(int argc, char **argv)
 
     gfxInitDefault();
     hidInit(NULL);
-    consoleInit(GFX_BOTTOM, NULL);
+    PrintConsole BottomConsole;
+    consoleInit(GFX_BOTTOM, &BottomConsole);
 
     MIPS_R3000 Cpu;
 
@@ -69,6 +70,10 @@ int main(int argc, char **argv)
 #endif
 
     bool Step = false;
+
+    PrintConsole TopConsole;
+    consoleInit(GFX_TOP, &TopConsole);
+    consoleSelect(&BottomConsole);
 
     while (aptMainLoop())
     {
@@ -146,6 +151,10 @@ int main(int argc, char **argv)
         }
         printf("\x1b[0;0H");
         DisassemblerPrintRange(&Cpu, Cpu.pc - (13 * 4), 29, Cpu.pc);
+        consoleSelect(&TopConsole);
+        DumpState(&Cpu);
+        consoleSelect(&BottomConsole);
+
 
         gfxFlushBuffers();
         gfxSwapBuffersGpu();
