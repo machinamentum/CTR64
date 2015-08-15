@@ -13,6 +13,7 @@
 
 static int udpfd = -1;
 static int listenfd = -1;
+static int datafd = -1;
 static sockaddr_in host_dbg;
 
 static void *SOC_buffer = NULL;
@@ -132,6 +133,30 @@ int DebuggerOpen()
 
     printf("connected\n");
 
+    return 0;
+}
+
+int DebuggerGetCommand(dbg_command *Cmd)
+{
+    if (datafd < 0)
+    {
+        datafd = accept(listenfd, (struct sockaddr*)NULL, NULL);
+    }
+    Cmd->Cmd = DEBUGGER_CMD_NONE;
+    int DataLength;
+    socklen_t fromlen = sizeof(host_dbg);
+    int Length = recv(datafd, &DataLength, sizeof(DataLength), 0);
+    if (Length != -1)
+    {
+        Cmd->Data = malloc(DataLength);
+        Length = recv(datafd, Cmd->Data, DataLength, 0);
+        if (Length != -1)
+        {
+            Cmd->PayloadSize = Length;
+            Cmd->Cmd = DEBUGGER_CMD_LOAD_KERNEL;
+            return Cmd->Cmd;
+        }
+    }
     return 0;
 }
 

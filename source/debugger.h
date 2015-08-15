@@ -4,9 +4,14 @@
 
 #define DEBUGGER_PORT 24537
 
+#define DEBUGGER_CMD_LOAD_KERNEL 1
+#define DEBUGGER_CMD_NONE        0
+
 struct dbg_command
 {
-
+    unsigned int Cmd;
+    unsigned int PayloadSize;
+    void *Data;
 };
 
 struct dbg_info
@@ -16,7 +21,7 @@ struct dbg_info
 
 #ifndef DEBUGGER_HOST
 int DebuggerOpen();
-//int DebuggerGetCommand(dbg_command *);
+int DebuggerGetCommand(dbg_command *);
 //int DebuggerSendInfo(dbg_info *);
 int DebuggerClose();
 int DebuggerPrint(const char *str);

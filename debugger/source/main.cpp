@@ -6,6 +6,7 @@
 #include <netinet/in.h>
 #include <fcntl.h>
 #include <cstring>
+#include <cstdlib>
 
 #include "debugger.h"
 
@@ -74,6 +75,50 @@ FindCTRXClient(in_addr *ClientAddr) {
     return 0;
 }
 
+static int
+FileExists(const char* Path)
+{
+    return access(Path, F_OK) != -1;
+}
+
+static int
+FileSize(const char *Path)
+{
+    FILE *File = fopen (Path, "rb");
+    fseek (File, 0, SEEK_END);
+    int Length = ftell (File);
+    fseek (File, 0, SEEK_SET);
+    fclose (File);
+    return Length;
+}
+
+static char *
+SlurpFile(const char* Path)
+{
+    char *Buffer = 0;
+    long Length;
+    FILE *File = fopen (Path, "rb");
+    fseek (File, 0, SEEK_END);
+    Length = ftell (File);
+    fseek (File, 0, SEEK_SET);
+    Buffer = (char *)malloc (Length);
+    fread (Buffer, 1, Length, File);
+    fclose (File);
+    return Buffer;
+}
+
+#include <sys/poll.h>
+
+static int
+HasInputWaiting()
+{
+    struct pollfd fds;
+    int ret;
+    fds.fd = 0; /* this is STDIN */
+    fds.events = POLLIN;
+    return poll(&fds, 1, 0);
+}
+
 int main(int argc, char **argv)
 {
     printf("Searching for CTRX client...");
@@ -89,6 +134,18 @@ int main(int argc, char **argv)
         return 1;
     }
 
+    int sock = socket(AF_INET,SOCK_STREAM,0);
+    if (sock < 0)  perror("create connection socket");
+
+    sockaddr_in s;
+    s.sin_family = AF_INET;
+    s.sin_port = htons(DEBUGGER_PORT);
+    s.sin_addr.s_addr = ClientAddr.s_addr;
+
+    if (connect(sock,(struct sockaddr *)&s,sizeof(s)) < 0 ) {
+        return -1;
+    }
+
     int listenfd = socket(PF_INET, SOCK_DGRAM, 0);
     sockaddr_in ClientSock = {};
     ClientSock.sin_family = AF_INET;
@@ -100,14 +157,62 @@ int main(int argc, char **argv)
         return -1;
     }
 
+
+    char Input[512];
+    printf("\n> ");
+    fflush(stdout);
+
     while (true)
     {
-        char recvbuf[256];
-        socklen_t fromlen = sizeof(ClientAddr);
-        int Length = recvfrom(listenfd, recvbuf, sizeof(recvbuf), 0, (sockaddr *) &ClientSock, &fromlen);
-        if (Length != -1)
+
+        if (HasInputWaiting())
         {
-            printf("%s\n", recvbuf);
+            for (int i = 0; i < 512; ++i)
+            {
+                Input[i] = 0;
+            }
+
+            scanf("%511s", Input);
+            if (strncmp(Input, "load", 4) == 0)
+            {
+                for (int i = 0; i < 512; ++i)
+                {
+                    Input[i] = 0;
+                }
+
+                scanf("%511s", Input);
+                printf("Loading kernel: %s\n", Input);
+                int Size = FileSize(Input);
+                if (FileExists(Input))
+                {
+                    printf("Slurping kernel of size %d bytes\n", Size);
+                    char *Data = SlurpFile(Input);
+                    printf("Sending to CTRX...\n");
+                    printf("Sending Size...\n");
+                    send(sock, &Size, sizeof(Size), 0);
+                    printf("Sending Kernel...\n");
+                    send(sock, Data, Size, 0);
+                    printf("Done\n> ");
+                    fflush(stdout);
+                }
+                else
+                {
+                    printf("File doesn't exist!\n> ");
+                    fflush(stdout);
+                }
+            }
         }
+
+//        {
+//            char recvbuf[256];
+//            socklen_t fromlen = sizeof(ClientAddr);
+//            int Length = recvfrom(listenfd, recvbuf, sizeof(recvbuf), 0, (sockaddr *) &ClientSock, &fromlen);
+//            if (Length != -1)
+//            {
+//                printf("\nClient: %s\n", recvbuf);
+//            }
+//        }
+
     }
 }
+

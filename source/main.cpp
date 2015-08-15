@@ -16,21 +16,6 @@
 void
 ResetCpu(MIPS_R3000 *Cpu)
 {
-    FILE *f = fopen("psx_bios.bin", "rb");
-    fseek(f, 0, SEEK_END);
-    long fsize = ftell(f);
-    fseek(f, 0, SEEK_SET);
-
-    u8 *BiosBuffer = (u8 *)linearAlloc(fsize + 1);
-    fread(BiosBuffer, fsize, 1, f);
-    fclose(f);
-
-
-    for (int i = 0; i < fsize; ++i)
-    {
-        WriteMemByte(Cpu, RESET_VECTOR + i, BiosBuffer[i]);
-    }
-
     Cpu->pc = RESET_VECTOR;
 }
 
@@ -45,6 +30,20 @@ int main(int argc, char **argv)
     consoleInit(GFX_BOTTOM, &BottomConsole);
 
     MIPS_R3000 Cpu;
+
+    FILE *f = fopen("psx_bios.bin", "rb");
+    fseek(f, 0, SEEK_END);
+    long fsize = ftell(f);
+    fseek(f, 0, SEEK_SET);
+
+    u8 *BiosBuffer = (u8 *)linearAlloc(fsize + 1);
+    fread(BiosBuffer, fsize, 1, f);
+    fclose(f);
+
+    for (int i = 0; i < fsize; ++i)
+    {
+        WriteMemByte(&Cpu, RESET_VECTOR + i, BiosBuffer[i]);
+    }
 
     ResetCpu(&Cpu);
 
@@ -154,6 +153,23 @@ int main(int argc, char **argv)
         consoleSelect(&TopConsole);
         DumpState(&Cpu);
         consoleSelect(&BottomConsole);
+
+#ifdef ENABLE_DEBUGGER
+        dbg_command Cmd;
+        if (DebuggerGetCommand(&Cmd))
+        {
+            if (Cmd.Cmd == DEBUGGER_CMD_LOAD_KERNEL)
+            {
+                for (unsigned int i = 0; i < Cmd.PayloadSize; ++i)
+                {
+                    WriteMemByte(&Cpu, RESET_VECTOR + i, ((char *)Cmd.Data)[i]);
+                }
+
+                ResetCpu(&Cpu);
+                printf("\e[0;0H\e[2J");
+            }
+        }
+#endif
 
 
         gfxFlushBuffers();
