@@ -7,16 +7,21 @@ SECTIONS
     . = 0xBFC00000;
     _start = .;
 
-    .text :
+    .text.boot :
     {
-        KEEP(*(.text.boot))
-        *(.text)
+        *(.text.boot)
+    }
+
+    . = 0xBFC00100;
+    .rodata.rom_header :
+    {
+        *(.rodata.rom_header)
     }
     . = ALIGN(256);
 
-    .rodata :
+    .text :
     {
-        *(.rodata)
+        *(.text)
     }
     . = ALIGN(256);
 

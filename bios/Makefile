@@ -45,11 +45,13 @@ CFLAGS	:=	 -Wall -O2 -mword-relocations \
 			-fomit-frame-pointer -ffast-math \
 			$(ARCH)
 
+BUILD_DATE := $(shell date +%Y%m%d)
+
 CFLAGS	+=	$(INCLUDE)
 
 CXXFLAGS	:= -std=c++11 $(CFLAGS) -fno-rtti -fno-exceptions
 
-ASFLAGS	:=	$(ARCH)
+ASFLAGS	:=	$(ARCH) --defsym KERNEL_BUILD_DATE=0x$(BUILD_DATE)
 LDFLAGS	=	$(ARCH) -Wl,-Map,$(notdir $*.map)
 
 LIBS	:= -nostdlib -nostartfiles -nodefaultlibs
