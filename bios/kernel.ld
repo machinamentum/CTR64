@@ -37,4 +37,9 @@ SECTIONS
         *(.data)
     }
 
+    /DISCARD/ :
+    {
+        *(.*)
+    }
+
 }
