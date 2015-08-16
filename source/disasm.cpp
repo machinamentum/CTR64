@@ -151,6 +151,36 @@ LUI(opcode *OpCode)
     printf("lui %s, 0x%04lX", RNT[OpCode->DestinationRegister], OpCode->Immediate);
 }
 
+static void
+LW(opcode *OpCode)
+{
+    printf("lw %s, 0x%04lX(%s)", RNT[OpCode->DestinationRegister], OpCode->Immediate, RNT[OpCode->LeftValue]);
+}
+
+static void
+LBU(opcode *OpCode)
+{
+    printf("lbu %s, 0x%04lX(%s)", RNT[OpCode->DestinationRegister], OpCode->Immediate, RNT[OpCode->LeftValue]);
+}
+
+static void
+LHU(opcode *OpCode)
+{
+    printf("lhu %s, 0x%04lX(%s)", RNT[OpCode->DestinationRegister], OpCode->Immediate, RNT[OpCode->LeftValue]);
+}
+
+static void
+LB(opcode *OpCode)
+{
+    printf("lb %s, 0x%04lX(%s)", RNT[OpCode->DestinationRegister], OpCode->Immediate, RNT[OpCode->LeftValue]);
+}
+
+static void
+LH(opcode *OpCode)
+{
+    printf("lh %s, 0x%04lX(%s)", RNT[OpCode->DestinationRegister], OpCode->Immediate, RNT[OpCode->LeftValue]);
+}
+
 
 // Jump/Call
 static void
@@ -715,12 +745,12 @@ InitJumpTables()
     PrimaryJumpTable[0x11] = COP1;
     PrimaryJumpTable[0x12] = COP2;
     PrimaryJumpTable[0x13] = COP3;
-    //    PrimaryJumpTable[0x20] = LB;
-    //    PrimaryJumpTable[0x21] = LH;
+    PrimaryJumpTable[0x20] = LB;
+    PrimaryJumpTable[0x21] = LH;
     //    PrimaryJumpTable[0x22] = LWL;
-    //    PrimaryJumpTable[0x23] = LW;
-    //    PrimaryJumpTable[0x24] = LBU;
-    //    PrimaryJumpTable[0x25] = LHU;
+    PrimaryJumpTable[0x23] = LW;
+    PrimaryJumpTable[0x24] = LBU;
+    PrimaryJumpTable[0x25] = LHU;
     //    PrimaryJumpTable[0x26] = LWR;
     PrimaryJumpTable[0x28] = SB;
     PrimaryJumpTable[0x29] = SH;

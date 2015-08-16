@@ -226,6 +226,20 @@ MemReadWord(MIPS_R3000 *Cpu, u32 Address)
     return *((u32 *)((u8 *)Cpu->Memory + Base));
 }
 
+inline u8
+ReadMemByte(MIPS_R3000 *Cpu, u32 Address, u8 value)
+{
+    u32 Base = Address & 0x00FFFFFF;
+    return *((u8 *)Cpu->Memory + Base);
+}
+
+inline u16
+ReadMemHalfWord(MIPS_R3000 *Cpu, u32 Address, u16 value)
+{
+    u32 Base = Address & 0x00FFFFFF;
+    return *((u16 *)((u8 *)Cpu->Memory + Base));
+}
+
 inline void
 WriteMemByte(MIPS_R3000 *Cpu, u32 Address, u8 value)
 {
@@ -248,10 +262,21 @@ WriteMemHalfWord(MIPS_R3000 *Cpu, u32 Address, u16 value)
 }
 
 inline u32
-SignExtend16(u32 i) {
+SignExtend16(u32 i)
+{
     i = (0x0000FFFF & i);
     if (0x00008000 & i) {
         i += 0xFFFF0000;
+    }
+    return i;
+}
+
+inline u32
+SignExtend8(u32 i)
+{
+    i = (0x000000FF & i);
+    if (0x00000080 & i) {
+        i += 0xFFFFFF00;
     }
     return i;
 }

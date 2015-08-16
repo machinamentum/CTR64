@@ -88,6 +88,43 @@ LUI(MIPS_R3000 *Cpu, opcode *OpCode)
     OpCode->Result = OpCode->Immediate << 16;
 }
 
+static void
+LW(MIPS_R3000 *Cpu, opcode *OpCode)
+{
+    OpCode->Result = OpCode->LeftValue + OpCode->Immediate;
+    OpCode->MemAccessMode = MEM_ACCESS_WORD;
+}
+
+static void
+LBU(MIPS_R3000 *Cpu, opcode *OpCode)
+{
+    OpCode->Result = OpCode->LeftValue + OpCode->Immediate;
+    OpCode->MemAccessMode = MEM_ACCESS_BYTE;
+}
+
+static void
+LHU(MIPS_R3000 *Cpu, opcode *OpCode)
+{
+    OpCode->Result = OpCode->LeftValue + OpCode->Immediate;
+    OpCode->MemAccessMode = MEM_ACCESS_HALF;
+}
+
+static void
+LB(MIPS_R3000 *Cpu, opcode *OpCode)
+{
+    OpCode->Result = OpCode->LeftValue + OpCode->Immediate;
+    OpCode->MemAccessMode = MEM_ACCESS_BYTE;
+    OpCode->FunctionSelect = 1;
+}
+
+static void
+LH(MIPS_R3000 *Cpu, opcode *OpCode)
+{
+    OpCode->Result = OpCode->LeftValue + OpCode->Immediate;
+    OpCode->MemAccessMode = MEM_ACCESS_HALF;
+    OpCode->FunctionSelect = 1;
+}
+
 
 // Jump/Call
 static void
@@ -563,13 +600,52 @@ MemoryAccess(MIPS_R3000 *Cpu, opcode *OpCode)
     }
     if (OpCode->MemAccessType & MEM_ACCESS_READ)
     {
-        // TODO memory reads
+        if (OpCode->MemAccessMode & MEM_ACCESS_BYTE)
+        {
+            if (OpCode->FunctionSelect)
+            {
+                OpCode->Result = SignExtend8(ReadMemByte(Cpu, OpCode->Result, OpCode->RightValue));
+            }
+            else
+            {
+                OpCode->Result = ReadMemByte(Cpu, OpCode->Result, OpCode->RightValue);
+            }
+        }
+
+        if (OpCode->MemAccessMode & MEM_ACCESS_HALF)
+        {
+            if (OpCode->FunctionSelect)
+            {
+                OpCode->Result = SignExtend16(ReadMemHalfWord(Cpu, OpCode->Result, OpCode->RightValue));
+            }
+            else
+            {
+                OpCode->Result = ReadMemHalfWord(Cpu, OpCode->Result, OpCode->RightValue);
+            }
+
+        }
+
+        if (OpCode->MemAccessMode & MEM_ACCESS_BYTE)
+        {
+            WriteMemWord(Cpu, OpCode->Result, OpCode->RightValue);
+        }
     }
 }
 
 void
 WriteBack(MIPS_R3000 *Cpu, opcode *OpCode)
 {
+    if (OpCode->WriteBackMode == WRITE_BACK_CPU)
+    {
+        if (OpCode->DestinationRegister) // Never overwrite Zero
+        {
+            Cpu->registers[OpCode->DestinationRegister] = OpCode->Result;
+        }
+        if (OpCode->RADestinationRegister)
+        {
+            Cpu->registers[OpCode->RADestinationRegister] = OpCode->CurrentAddress + 8;
+        }
+    }
     if (OpCode->WriteBackMode == WRITE_BACK_C0)
     {
         Cpu->CP0.registers[OpCode->DestinationRegister] = OpCode->Result;
@@ -593,6 +669,8 @@ ExecuteWriteRegisters(MIPS_R3000 *Cpu, opcode *OpCode)
         {
             Cpu->registers[OpCode->RADestinationRegister] = OpCode->CurrentAddress + 8;
         }
+
+        OpCode->DestinationRegister = 0;
     }
 }
 
@@ -625,12 +703,12 @@ InitJumpTables()
     PrimaryJumpTable[0x11] = COP1;
     PrimaryJumpTable[0x12] = COP2;
     PrimaryJumpTable[0x13] = COP3;
-    //    PrimaryJumpTable[0x20] = LB;
-    //    PrimaryJumpTable[0x21] = LH;
+    PrimaryJumpTable[0x20] = LB;
+    PrimaryJumpTable[0x21] = LH;
     //    PrimaryJumpTable[0x22] = LWL;
-    //    PrimaryJumpTable[0x23] = LW;
-    //    PrimaryJumpTable[0x24] = LBU;
-    //    PrimaryJumpTable[0x25] = LHU;
+    PrimaryJumpTable[0x23] = LW;
+    PrimaryJumpTable[0x24] = LBU;
+    PrimaryJumpTable[0x25] = LHU;
     //    PrimaryJumpTable[0x26] = LWR;
     PrimaryJumpTable[0x28] = SB;
     PrimaryJumpTable[0x29] = SH;
