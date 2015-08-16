@@ -144,7 +144,6 @@ int DebuggerGetCommand(dbg_command *Cmd)
     }
     Cmd->Cmd = DEBUGGER_CMD_NONE;
     int DataLength;
-    socklen_t fromlen = sizeof(host_dbg);
     int Length = recv(datafd, &DataLength, sizeof(DataLength), 0);
     if (Length != -1)
     {

@@ -155,7 +155,7 @@ int main(int argc, char **argv)
         DumpState(&Cpu);
         for (int i = 0; i < 5; ++i)
         {
-            printf("Stage %d: 0x%08lX\n", i, Stages[i]);
+            printf("Stage %d: 0x%08X\n", i, Stages[i]);
         }
         consoleSelect(&BottomConsole);
 
