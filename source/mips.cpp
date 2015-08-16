@@ -59,6 +59,27 @@ SubU(MIPS_R3000 *Cpu, opcode *OpCode)
     OpCode->Result = OpCode->LeftValue - OpCode->RightValue;
 }
 
+static void
+Add(MIPS_R3000 *Cpu, opcode *OpCode)
+{
+    OpCode->Result = OpCode->LeftValue + OpCode->RightValue;
+    // TODO overflow trap
+}
+
+static void
+AddI(MIPS_R3000 *Cpu, opcode *OpCode)
+{
+    OpCode->Result = OpCode->LeftValue + OpCode->Immediate;
+    // TODO overflow trap
+}
+
+static void
+Sub(MIPS_R3000 *Cpu, opcode *OpCode)
+{
+    OpCode->Result = OpCode->LeftValue - OpCode->RightValue;
+    // TODO overflow trap
+}
+
 //Store
 static void
 SW(MIPS_R3000 *Cpu, opcode *OpCode)
@@ -678,7 +699,7 @@ InitJumpTables()
     PrimaryJumpTable[0x05] = BNE;
     PrimaryJumpTable[0x06] = BLEZ;
     PrimaryJumpTable[0x07] = BGTZ;
-    //    PrimaryJumpTable[0x08] = AddI;
+    PrimaryJumpTable[0x08] = AddI;
     PrimaryJumpTable[0x09] = AddIU;
     //    PrimaryJumpTable[0x0A] = SLTI;
     //    PrimaryJumpTable[0x0B] = SLTIU;
@@ -729,9 +750,9 @@ InitJumpTables()
     //    SecondaryJumpTable[0x19] = MultU;
     //    SecondaryJumpTable[0x1A] = Div;
     //    SecondaryJumpTable[0x1B] = DivU;
-    //    SecondaryJumpTable[0x20] = Add;
+    SecondaryJumpTable[0x20] = Add;
     SecondaryJumpTable[0x21] = AddU;
-    //    SecondaryJumpTable[0x22] = Sub;
+    SecondaryJumpTable[0x22] = Sub;
     SecondaryJumpTable[0x23] = SubU;
     SecondaryJumpTable[0x24] = And;
     SecondaryJumpTable[0x25] = Or;

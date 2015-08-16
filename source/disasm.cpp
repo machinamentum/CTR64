@@ -125,6 +125,24 @@ SubU(opcode *OpCode)
     printf("subu %s, %s, %s", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], RNT[OpCode->RightValue]);
 }
 
+static void
+Add(opcode *OpCode)
+{
+    printf("add %s, %s, %s", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], RNT[OpCode->RightValue]);
+}
+
+static void
+AddI(opcode *OpCode)
+{
+    printf("addi %s, %s, 0x%04lX", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], OpCode->Immediate);
+}
+
+static void
+Sub(opcode *OpCode)
+{
+    printf("sub %s, %s, %s", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], RNT[OpCode->RightValue]);
+}
+
 //Store
 static void
 SW(opcode *OpCode)
@@ -733,7 +751,7 @@ InitJumpTables()
     PrimaryJumpTable[0x05] = BNE;
     PrimaryJumpTable[0x06] = BLEZ;
     PrimaryJumpTable[0x07] = BGTZ;
-    //    PrimaryJumpTable[0x08] = AddI;
+    PrimaryJumpTable[0x08] = AddI;
     PrimaryJumpTable[0x09] = AddIU;
     //    PrimaryJumpTable[0x0A] = SLTI;
     //    PrimaryJumpTable[0x0B] = SLTIU;
@@ -784,9 +802,9 @@ InitJumpTables()
     //    SecondaryJumpTable[0x19] = MultU;
     //    SecondaryJumpTable[0x1A] = Div;
     //    SecondaryJumpTable[0x1B] = DivU;
-    //    SecondaryJumpTable[0x20] = Add;
+    SecondaryJumpTable[0x20] = Add;
     SecondaryJumpTable[0x21] = AddU;
-    //    SecondaryJumpTable[0x22] = Sub;
+    SecondaryJumpTable[0x22] = Sub;
     SecondaryJumpTable[0x23] = SubU;
     SecondaryJumpTable[0x24] = And;
     SecondaryJumpTable[0x25] = Or;
