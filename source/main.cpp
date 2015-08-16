@@ -76,6 +76,7 @@ int main(int argc, char **argv)
     PrintConsole TopConsole;
     consoleInit(GFX_TOP, &TopConsole);
     consoleSelect(&BottomConsole);
+    int CyclesToRun = 1;
 
     while (aptMainLoop())
     {
@@ -91,6 +92,23 @@ int main(int argc, char **argv)
                 Stages[i] = -(i + 1);
             }
             ResetCpu(&Cpu);
+        }
+
+        if (keysHeld() & KEY_DLEFT)
+        {
+            CyclesToRun -= 1000;
+            if (CyclesToRun < 1)
+                CyclesToRun = 1;
+        }
+
+        if (keysHeld() & KEY_DRIGHT)
+        {
+            CyclesToRun += 1000;
+        }
+
+        if (keysDown() & KEY_DUP)
+        {
+            CyclesToRun = 1;
         }
 
         Step = false;
@@ -112,45 +130,48 @@ int main(int argc, char **argv)
         
         if (Step)
         {
-            for (int i  = 0; i < 5; ++i)
+            for (int t = 0; t < CyclesToRun; ++t)
             {
-                if (Stages[i] < 0)
+                for (int i  = 0; i < 5; ++i)
                 {
-                    ++Stages[i];
-                }
-                
-                Stages[i] %= 5;
+                    if (Stages[i] < 0)
+                    {
+                        ++Stages[i];
+                    }
+                    
+                    Stages[i] %= 5;
 
-                if (Stages[i] == STAGE_IF)
-                {
-                    InstructionFetch(&Cpu, &MachineCodes[i]);
-                    Stages[i]++;
-                    continue;
-                }
-                if (Stages[i] == STAGE_DC)
-                {
-                    DecodeOpcode(&Cpu, &OpCodes[i], MachineCodes[i], Cpu.pc - 4);
-                    Stages[i]++;
-                    continue;
-                }
-                if (Stages[i] == STAGE_EO)
-                {
-                    ExecuteOpCode(&Cpu, &OpCodes[i]);
-                    ExecuteWriteRegisters(&Cpu, &OpCodes[i]);
-                    Stages[i]++;
-                    continue;
-                }
-                if (Stages[i] == STAGE_MA)
-                {
-                    MemoryAccess(&Cpu, &OpCodes[i]);
-                    Stages[i]++;
-                    continue;
-                }
-                if (Stages[i] == STAGE_WB)
-                {
-                    WriteBack(&Cpu, &OpCodes[i]);
-                    Stages[i]++;
-                    continue;
+                    if (Stages[i] == STAGE_IF)
+                    {
+                        InstructionFetch(&Cpu, &MachineCodes[i]);
+                        Stages[i]++;
+                        continue;
+                    }
+                    if (Stages[i] == STAGE_DC)
+                    {
+                        DecodeOpcode(&Cpu, &OpCodes[i], MachineCodes[i], Cpu.pc - 4);
+                        Stages[i]++;
+                        continue;
+                    }
+                    if (Stages[i] == STAGE_EO)
+                    {
+                        ExecuteOpCode(&Cpu, &OpCodes[i]);
+                        ExecuteWriteRegisters(&Cpu, &OpCodes[i]);
+                        Stages[i]++;
+                        continue;
+                    }
+                    if (Stages[i] == STAGE_MA)
+                    {
+                        MemoryAccess(&Cpu, &OpCodes[i]);
+                        Stages[i]++;
+                        continue;
+                    }
+                    if (Stages[i] == STAGE_WB)
+                    {
+                        WriteBack(&Cpu, &OpCodes[i]);
+                        Stages[i]++;
+                        continue;
+                    }
                 }
             }
         }
@@ -162,6 +183,7 @@ int main(int argc, char **argv)
         {
             printf("Stage %d: 0x%08X\n", i, Stages[i]);
         }
+        printf("Cycles: %d\n", CyclesToRun);
         consoleSelect(&BottomConsole);
 
 #ifdef ENABLE_DEBUGGER
