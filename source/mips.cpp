@@ -345,6 +345,31 @@ SRA(MIPS_R3000 *Cpu, opcode *OpCode)
     OpCode->Result = ((s32)OpCode->RightValue) >> OpCode->Immediate;
 }
 
+// comparison
+static void
+SLT(MIPS_R3000 *Cpu, opcode *OpCode)
+{
+    OpCode->Result = ((s32)OpCode->LeftValue < (s32)OpCode->RightValue ? 1 : 0);
+}
+
+static void
+SLTU(MIPS_R3000 *Cpu, opcode *OpCode)
+{
+    OpCode->Result = (OpCode->LeftValue < OpCode->RightValue ? 1 : 0);
+}
+
+static void
+SLTI(MIPS_R3000 *Cpu, opcode *OpCode)
+{
+    OpCode->Result = ((s32)OpCode->LeftValue < (s32)OpCode->Immediate ? 1 : 0);
+}
+
+static void
+SLTIU(MIPS_R3000 *Cpu, opcode *OpCode)
+{
+    OpCode->Result = (OpCode->LeftValue < OpCode->Immediate ? 1 : 0);
+}
+
 // coprocessor ops
 static void
 COP0(MIPS_R3000 *Cpu, opcode *OpCode)
@@ -746,8 +771,8 @@ InitJumpTables()
     PrimaryJumpTable[0x07] = BGTZ;
     PrimaryJumpTable[0x08] = AddI;
     PrimaryJumpTable[0x09] = AddIU;
-    //    PrimaryJumpTable[0x0A] = SLTI;
-    //    PrimaryJumpTable[0x0B] = SLTIU;
+    PrimaryJumpTable[0x0A] = SLTI;
+    PrimaryJumpTable[0x0B] = SLTIU;
     PrimaryJumpTable[0x0C] = AndI;
     PrimaryJumpTable[0x0D] = OrI;
     PrimaryJumpTable[0x0E] = XOrI;
@@ -803,6 +828,6 @@ InitJumpTables()
     SecondaryJumpTable[0x25] = Or;
     SecondaryJumpTable[0x26] = XOr;
     SecondaryJumpTable[0x27] = NOr;
-    //    SecondaryJumpTable[0x2A] = SLT;
-    //    SecondaryJumpTable[0x2B] = SLTU;
+    SecondaryJumpTable[0x2A] = SLT;
+    SecondaryJumpTable[0x2B] = SLTU;
 }
