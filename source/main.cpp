@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include "debugger.h"
 #include "mips.h"
+#include "gpu.h"
 #include "disasm.h"
 
 #define STAGE_IF 0
@@ -30,6 +31,8 @@ int main(int argc, char **argv)
     consoleInit(GFX_BOTTOM, &BottomConsole);
 
     MIPS_R3000 Cpu;
+    GPU Gpu;
+    Cpu.CP1 = &Gpu;
 
     FILE *f = fopen("psx_bios.bin", "rb");
     fseek(f, 0, SEEK_END);

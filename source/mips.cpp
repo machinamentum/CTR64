@@ -3,6 +3,19 @@
 #include "mips.h"
 #include "debugger.h"
 
+
+static void
+C0ExecuteOperation(Coprocessor *Cp, u32 FunctionCode)
+{
+
+}
+
+MIPS_R3000::
+MIPS_R3000()
+{
+    CP0.ExecuteOperation = C0ExecuteOperation;
+}
+
 void
 DumpState(MIPS_R3000 *Cpu)
 {
@@ -364,7 +377,7 @@ COP0(MIPS_R3000 *Cpu, opcode *OpCode)
     }
     else
     {
-        // TODO call coprocessor functions
+        Cpu->CP0.ExecuteOperation(&Cpu->CP0, OpCode->Immediate);
     }
 }
 
@@ -378,7 +391,39 @@ COP1(MIPS_R3000 *Cpu, opcode *OpCode)
 static void
 COP2(MIPS_R3000 *Cpu, opcode *OpCode)
 {
-    // TODO GTE
+    if (Cpu->CP1)
+    {
+        if (OpCode->FunctionSelect < 0b10000)
+        {
+            if (OpCode->FunctionSelect < 0b01000)
+            {
+                OpCode->Result = OpCode->LeftValue;
+            }
+            else
+            {
+                if (OpCode->RightValue)
+                {
+                    if (Cpu->CP0.sr & C0_STATUS_CU1)
+                    {
+                        OpCode->MemAccessType = MEM_ACCESS_BRANCH;
+                        OpCode->Result = OpCode->CurrentAddress + OpCode->Immediate;
+                    }
+                }
+                else
+                {
+                    if ((Cpu->CP0.sr & C0_STATUS_CU1) == 0)
+                    {
+                        OpCode->MemAccessType = MEM_ACCESS_BRANCH;
+                        OpCode->Result = OpCode->CurrentAddress + OpCode->Immediate;
+                    }
+                }
+            }
+        }
+        else
+        {
+            Cpu->CP1->ExecuteOperation(Cpu->CP1, OpCode->Immediate);
+        }
+    }
 }
 
 static void

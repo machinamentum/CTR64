@@ -1,6 +1,7 @@
 #ifndef MIPS_H
 #define MIPS_H
 
+#include <3ds.h>
 #include <3ds/types.h>
 
 #define PRIMARY_OP_MASK \
@@ -128,7 +129,7 @@ struct opcode
     u8 RADestinationRegister = 0; // Used for return address writing
 };
 
-struct C0Processor
+struct Coprocessor
 {
     union
     {
@@ -153,6 +154,8 @@ struct C0Processor
             u32 prid = C0_PRID_VALUE;
         };
     };
+
+    void (*ExecuteOperation)(Coprocessor *Cp, u32 FunctionCode) = NULL;
 };
 
 struct MIPS_R3000
@@ -207,8 +210,13 @@ struct MIPS_R3000
         };
     };
 
+    MIPS_R3000();
+
     void *Memory = linearAlloc(0x1000000);
-    C0Processor CP0;
+    Coprocessor CP0;
+    Coprocessor *CP1 = NULL;
+    Coprocessor *CP2 = NULL;
+    Coprocessor *CP3 = NULL;
 };
 
 void InstructionFetch(MIPS_R3000 *Cpu, u32 *Code);
