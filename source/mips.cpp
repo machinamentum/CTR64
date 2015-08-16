@@ -524,7 +524,8 @@ DecodeOpcode(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data, u32 IAddress)
 void
 InstructionFetch(MIPS_R3000 *Cpu, u32 *Code)
 {
-    *Code = MemReadWord(Cpu, Cpu->pc += 4);
+    *Code = MemReadWord(Cpu, Cpu->pc);
+    Cpu->pc += 4;
 }
 
 static void
@@ -542,11 +543,6 @@ ExecuteOpCode(MIPS_R3000 *Cpu, opcode *OpCode)
 void
 MemoryAccess(MIPS_R3000 *Cpu, opcode *OpCode)
 {
-    if (OpCode->MemAccessType & MEM_ACCESS_BRANCH)
-    {
-        Cpu->pc = OpCode->Result;
-        OpCode->DestinationRegister = 0;
-    }
     if (OpCode->MemAccessType & MEM_ACCESS_WRITE)
     {
         if (OpCode->MemAccessMode & MEM_ACCESS_BYTE)
@@ -574,6 +570,19 @@ MemoryAccess(MIPS_R3000 *Cpu, opcode *OpCode)
 void
 WriteBack(MIPS_R3000 *Cpu, opcode *OpCode)
 {
+    if (OpCode->WriteBackMode == WRITE_BACK_C0)
+    {
+        Cpu->CP0.registers[OpCode->DestinationRegister] = OpCode->Result;
+    }
+    else if (OpCode->WriteBackMode == WRITE_BACK_C2)
+    {
+        // TODO GTE
+    }
+}
+
+void
+ExecuteWriteRegisters(MIPS_R3000 *Cpu, opcode *OpCode)
+{
     if (OpCode->WriteBackMode == WRITE_BACK_CPU)
     {
         if (OpCode->DestinationRegister) // Never overwrite Zero
@@ -584,14 +593,6 @@ WriteBack(MIPS_R3000 *Cpu, opcode *OpCode)
         {
             Cpu->registers[OpCode->RADestinationRegister] = OpCode->CurrentAddress + 8;
         }
-    }
-    else if (OpCode->WriteBackMode == WRITE_BACK_C0)
-    {
-        Cpu->CP0.registers[OpCode->DestinationRegister] = OpCode->Result;
-    }
-    else if (OpCode->WriteBackMode == WRITE_BACK_C2)
-    {
-        // TODO GTE
     }
 }
 

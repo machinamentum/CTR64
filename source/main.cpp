@@ -131,6 +131,7 @@ int main(int argc, char **argv)
                 if (Stages[i] == STAGE_EO)
                 {
                     ExecuteOpCode(&Cpu, &OpCodes[i]);
+                    ExecuteWriteRegisters(&Cpu, &OpCodes[i]);
                     Stages[i] = STAGE_MA;
                     continue;
                 }
@@ -152,6 +153,10 @@ int main(int argc, char **argv)
         DisassemblerPrintRange(&Cpu, Cpu.pc - (13 * 4), 29, Cpu.pc);
         consoleSelect(&TopConsole);
         DumpState(&Cpu);
+        for (int i = 0; i < 5; ++i)
+        {
+            printf("Stage %d: 0x%08lX\n", i, Stages[i]);
+        }
         consoleSelect(&BottomConsole);
 
 #ifdef ENABLE_DEBUGGER
@@ -164,7 +169,10 @@ int main(int argc, char **argv)
                 {
                     WriteMemByte(&Cpu, RESET_VECTOR + i, ((char *)Cmd.Data)[i]);
                 }
-
+                for (int i = 4; i >= 0; --i)
+                {
+                    Stages[i] = -i;
+                }
                 ResetCpu(&Cpu);
                 printf("\e[0;0H\e[2J");
             }
