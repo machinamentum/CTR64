@@ -7,11 +7,11 @@
 #include "mips.h"
 #include "disasm.h"
 
-#define STAGE_IF 1
-#define STAGE_DC 2
-#define STAGE_EO 4
-#define STAGE_MA 8
-#define STAGE_WB 16
+#define STAGE_IF 0
+#define STAGE_DC 1
+#define STAGE_EO 2
+#define STAGE_MA 3
+#define STAGE_WB 4
 
 void
 ResetCpu(MIPS_R3000 *Cpu)
@@ -52,10 +52,10 @@ int main(int argc, char **argv)
 
     for (int i = 4; i >= 0; --i)
     {
-        Stages[i] = -i;
+        Stages[i] = -(i + 1);
     }
 
-    u32 MachineCode = 0;
+    u32 MachineCodes[5];
 #ifdef ENABLE_DEBUGGER
     if (DebuggerOpen())
     {
@@ -85,7 +85,7 @@ int main(int argc, char **argv)
         {
             for (int i = 4; i >= 0; --i)
             {
-                Stages[i] = -i;
+                Stages[i] = -(i + 1);
             }
             ResetCpu(&Cpu);
         }
@@ -111,40 +111,42 @@ int main(int argc, char **argv)
         {
             for (int i  = 0; i < 5; ++i)
             {
-                if (Stages[i] < 1)
+                if (Stages[i] < 0)
                 {
                     ++Stages[i];
                 }
+                
+                Stages[i] %= 5;
 
                 if (Stages[i] == STAGE_IF)
                 {
-                    InstructionFetch(&Cpu, &MachineCode);
-                    Stages[i] = STAGE_DC;
+                    InstructionFetch(&Cpu, &MachineCodes[i]);
+                    Stages[i]++;
                     continue;
                 }
                 if (Stages[i] == STAGE_DC)
                 {
-                    DecodeOpcode(&Cpu, &OpCodes[i], MachineCode, Cpu.pc - 4);
-                    Stages[i] = STAGE_EO;
+                    DecodeOpcode(&Cpu, &OpCodes[i], MachineCodes[i], Cpu.pc - 4);
+                    Stages[i]++;
                     continue;
                 }
                 if (Stages[i] == STAGE_EO)
                 {
                     ExecuteOpCode(&Cpu, &OpCodes[i]);
                     ExecuteWriteRegisters(&Cpu, &OpCodes[i]);
-                    Stages[i] = STAGE_MA;
+                    Stages[i]++;
                     continue;
                 }
                 if (Stages[i] == STAGE_MA)
                 {
                     MemoryAccess(&Cpu, &OpCodes[i]);
-                    Stages[i] = STAGE_WB;
+                    Stages[i]++;
                     continue;
                 }
                 if (Stages[i] == STAGE_WB)
                 {
                     WriteBack(&Cpu, &OpCodes[i]);
-                    Stages[i] = STAGE_IF;
+                    Stages[i]++;
                     continue;
                 }
             }
@@ -171,7 +173,7 @@ int main(int argc, char **argv)
                 }
                 for (int i = 4; i >= 0; --i)
                 {
-                    Stages[i] = -i;
+                    Stages[i] = -(i + 1);
                 }
                 ResetCpu(&Cpu);
                 printf("\e[0;0H\e[2J");

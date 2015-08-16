@@ -468,7 +468,7 @@ DecodeOpcode(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data, u32 IAddress)
         //RADestinationRegister set within function
     }
     //beq/bne
-    else if ((OpCode->Select0 & 0b111110) == 0b0000100)
+    else if ((OpCode->Select0 & 0b111110) == 0b000100)
     {
         OpCode->LeftValue = Cpu->registers[rs];
         OpCode->RightValue = Cpu->registers[rt];
@@ -635,17 +635,6 @@ MemoryAccess(MIPS_R3000 *Cpu, opcode *OpCode)
 void
 WriteBack(MIPS_R3000 *Cpu, opcode *OpCode)
 {
-    if (OpCode->WriteBackMode == WRITE_BACK_CPU)
-    {
-        if (OpCode->DestinationRegister) // Never overwrite Zero
-        {
-            Cpu->registers[OpCode->DestinationRegister] = OpCode->Result;
-        }
-        if (OpCode->RADestinationRegister)
-        {
-            Cpu->registers[OpCode->RADestinationRegister] = OpCode->CurrentAddress + 8;
-        }
-    }
     if (OpCode->WriteBackMode == WRITE_BACK_C0)
     {
         Cpu->CP0.registers[OpCode->DestinationRegister] = OpCode->Result;
@@ -669,8 +658,6 @@ ExecuteWriteRegisters(MIPS_R3000 *Cpu, opcode *OpCode)
         {
             Cpu->registers[OpCode->RADestinationRegister] = OpCode->CurrentAddress + 8;
         }
-
-        OpCode->DestinationRegister = 0;
     }
 }
 

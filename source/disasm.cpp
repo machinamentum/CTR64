@@ -577,7 +577,7 @@ DisasseblerDecodeOpcode(opcode *OpCode, u32 Data, u32 IAddress)
         //RADestinationRegister set within function
     }
     //beq/bne
-    else if ((OpCode->Select0 & 0b111110) == 0b0000100)
+    else if ((OpCode->Select0 & 0b111110) == 0b000100)
     {
         OpCode->LeftValue = rs;
         OpCode->RightValue = rt;
