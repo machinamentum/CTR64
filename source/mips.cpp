@@ -4,6 +4,73 @@
 #include "debugger.h"
 
 
+
+inline u32
+MemReadWord(MIPS_R3000 *Cpu, u32 Address)
+{
+    u32 Base = Address & 0x00FFFFFF;
+    return *((u32 *)((u8 *)Cpu->Memory + Base));
+}
+
+inline u8
+ReadMemByte(MIPS_R3000 *Cpu, u32 Address, u8 value)
+{
+    u32 Base = Address & 0x00FFFFFF;
+    return *((u8 *)Cpu->Memory + Base);
+}
+
+inline u16
+ReadMemHalfWord(MIPS_R3000 *Cpu, u32 Address, u16 value)
+{
+    u32 Base = Address & 0x00FFFFFF;
+    return *((u16 *)((u8 *)Cpu->Memory + Base));
+}
+
+inline void
+WriteMemByte(MIPS_R3000 *Cpu, u32 Address, u8 value)
+{
+    u32 Base = Address & 0x00FFFFFF;
+    for (u32 i = 0; i < Cpu->NumMMR; ++i)
+    {
+        if (Base == Cpu->MemMappedRegisters[i].Address)
+        {
+            Cpu->MemMappedRegisters[i].RegisterFunc(Cpu->MemMappedRegisters[i].Object, value);
+            return;
+        }
+    }
+    *((u8 *)Cpu->Memory + Base) = value;
+}
+
+inline void
+WriteMemWord(MIPS_R3000 *Cpu, u32 Address, u32 value)
+{
+    u32 Base = Address & 0x00FFFFFF;
+    for (u32 i = 0; i < Cpu->NumMMR; ++i)
+    {
+        if (Base == Cpu->MemMappedRegisters[i].Address)
+        {
+             Cpu->MemMappedRegisters[i].RegisterFunc(Cpu->MemMappedRegisters[i].Object, value);
+            return;
+        }
+    }
+    *((u32 *)((u8 *)Cpu->Memory + Base)) = value;
+}
+
+inline void
+WriteMemHalfWord(MIPS_R3000 *Cpu, u32 Address, u16 value)
+{
+    u32 Base = Address & 0x00FFFFFF;
+    for (u32 i = 0; i < Cpu->NumMMR; ++i)
+    {
+        if (Base == Cpu->MemMappedRegisters[i].Address)
+        {
+             Cpu->MemMappedRegisters[i].RegisterFunc(Cpu->MemMappedRegisters[i].Object, value);
+            return;
+        }
+    }
+    *((u16 *)((u8 *)Cpu->Memory + Base)) = value;
+}
+
 static void
 C0ExecuteOperation(Coprocessor *Cp, u32 FunctionCode)
 {
@@ -750,6 +817,14 @@ ExecuteWriteRegisters(MIPS_R3000 *Cpu, opcode *OpCode)
             Cpu->registers[OpCode->RADestinationRegister] = OpCode->CurrentAddress + 8;
         }
     }
+}
+
+void
+MapRegister(MIPS_R3000 *Cpu, mmr MMR)
+{
+    Cpu->MemMappedRegisters[Cpu->NumMMR] = MMR;
+    Cpu->MemMappedRegisters[Cpu->NumMMR].Address &= 0x00FFFFFF;
+    ++Cpu->NumMMR;
 }
 
 static void __attribute__((constructor))

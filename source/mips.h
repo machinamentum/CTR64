@@ -109,7 +109,6 @@
 #define WRITE_BACK_C3     3
 #define WRITE_BACK_CPU    4
 
-
 struct opcode
 {
     u32 CurrentAddress = 0;
@@ -156,6 +155,13 @@ struct Coprocessor
     };
 
     void (*ExecuteOperation)(Coprocessor *Cp, u32 FunctionCode) = NULL;
+};
+
+struct mmr
+{
+    u32 Address;
+    void *Object;
+    void (*RegisterFunc)(void *, u32 Value);
 };
 
 struct MIPS_R3000
@@ -217,6 +223,8 @@ struct MIPS_R3000
     Coprocessor *CP1 = NULL;
     Coprocessor *CP2 = NULL;
     Coprocessor *CP3 = NULL;
+    mmr MemMappedRegisters[64];
+    u32 NumMMR = 0;
 };
 
 void InstructionFetch(MIPS_R3000 *Cpu, u32 *Code);
@@ -226,44 +234,45 @@ void ExecuteWriteRegisters(MIPS_R3000 *Cpu, opcode *OpCode);
 void MemoryAccess(MIPS_R3000 *Cpu, opcode *OpCode);
 void WriteBack(MIPS_R3000 *Cpu, opcode *OpCode);
 void DumpState(MIPS_R3000 *Cpu);
+void MapRegister(MIPS_R3000 *Cpu, mmr MMR);
 
 inline u32
-MemReadWord(MIPS_R3000 *Cpu, u32 Address)
+MemReadWordRaw(MIPS_R3000 *Cpu, u32 Address)
 {
     u32 Base = Address & 0x00FFFFFF;
     return *((u32 *)((u8 *)Cpu->Memory + Base));
 }
 
 inline u8
-ReadMemByte(MIPS_R3000 *Cpu, u32 Address, u8 value)
+ReadMemByteRaw(MIPS_R3000 *Cpu, u32 Address, u8 value)
 {
     u32 Base = Address & 0x00FFFFFF;
     return *((u8 *)Cpu->Memory + Base);
 }
 
 inline u16
-ReadMemHalfWord(MIPS_R3000 *Cpu, u32 Address, u16 value)
+ReadMemHalfWordRaw(MIPS_R3000 *Cpu, u32 Address, u16 value)
 {
     u32 Base = Address & 0x00FFFFFF;
     return *((u16 *)((u8 *)Cpu->Memory + Base));
 }
 
 inline void
-WriteMemByte(MIPS_R3000 *Cpu, u32 Address, u8 value)
+WriteMemByteRaw(MIPS_R3000 *Cpu, u32 Address, u8 value)
 {
     u32 Base = Address & 0x00FFFFFF;
     *((u8 *)Cpu->Memory + Base) = value;
 }
 
 inline void
-WriteMemWord(MIPS_R3000 *Cpu, u32 Address, u32 value)
+WriteMemWordRaw(MIPS_R3000 *Cpu, u32 Address, u32 value)
 {
     u32 Base = Address & 0x00FFFFFF;
     *((u32 *)((u8 *)Cpu->Memory + Base)) = value;
 }
 
 inline void
-WriteMemHalfWord(MIPS_R3000 *Cpu, u32 Address, u16 value)
+WriteMemHalfWordRaw(MIPS_R3000 *Cpu, u32 Address, u16 value)
 {
     u32 Base = Address & 0x00FFFFFF;
     *((u16 *)((u8 *)Cpu->Memory + Base)) = value;

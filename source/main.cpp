@@ -33,6 +33,8 @@ int main(int argc, char **argv)
     MIPS_R3000 Cpu;
     GPU Gpu;
     Cpu.CP1 = &Gpu;
+    MapRegister(&Cpu, (mmr) {GPU_GP0, &Gpu, GpuGp0});
+    MapRegister(&Cpu, (mmr) {GPU_GP1, &Gpu, GpuGp1});
 
     FILE *f = fopen("psx_bios.bin", "rb");
     fseek(f, 0, SEEK_END);
@@ -45,7 +47,7 @@ int main(int argc, char **argv)
 
     for (int i = 0; i < fsize; ++i)
     {
-        WriteMemByte(&Cpu, RESET_VECTOR + i, BiosBuffer[i]);
+        WriteMemByteRaw(&Cpu, RESET_VECTOR + i, BiosBuffer[i]);
     }
 
     ResetCpu(&Cpu);
@@ -194,7 +196,7 @@ int main(int argc, char **argv)
             {
                 for (unsigned int i = 0; i < Cmd.PayloadSize; ++i)
                 {
-                    WriteMemByte(&Cpu, RESET_VECTOR + i, ((char *)Cmd.Data)[i]);
+                    WriteMemByteRaw(&Cpu, RESET_VECTOR + i, ((char *)Cmd.Data)[i]);
                 }
                 for (int i = 4; i >= 0; --i)
                 {
