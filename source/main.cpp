@@ -50,6 +50,8 @@ int main(int argc, char **argv)
         WriteMemByteRaw(&Cpu, RESET_VECTOR + i, BiosBuffer[i]);
     }
 
+    WriteMemWordRaw(&Cpu, 0xBFC003C4, 0x00000000);
+
     ResetCpu(&Cpu);
 
     opcode OpCodes[5];
