@@ -41,7 +41,7 @@ INCLUDES	:=	include
 #---------------------------------------------------------------------------------
 ARCH	:=	-march=mips1 -mtune=r3000
 
-CFLAGS	:=	 -Wall -O2 -mword-relocations \
+CFLAGS	:=	 -Wall -mno-mips16 -fno-zero-initialized-in-bss -mgp32 -EL\
 			-fomit-frame-pointer -ffast-math \
 			$(ARCH)
 
@@ -51,7 +51,7 @@ CFLAGS	+=	$(INCLUDE)
 
 CXXFLAGS	:= -std=c++11 $(CFLAGS) -fno-rtti -fno-exceptions
 
-ASFLAGS	:=	$(ARCH) --defsym KERNEL_BUILD_DATE=0x$(BUILD_DATE)
+ASFLAGS	:=	$(ARCH) -msoft-float --defsym KERNEL_BUILD_DATE=0x$(BUILD_DATE) $(INCLUDE)
 LDFLAGS	=	$(ARCH) -Wl,-Map,$(notdir $*.map)
 
 LIBS	:= -nostdlib -nostartfiles -nodefaultlibs
@@ -118,7 +118,7 @@ $(BUILD):
 #---------------------------------------------------------------------------------
 clean:
 	@echo clean ...
-	@rm -fr $(BUILD) $(TARGET).bin $(TARGET).elf
+	@rm -fr $(BUILD) $(TARGET).bin $(TARGET).elf PSX-BIOS.ROM
 
 
 #---------------------------------------------------------------------------------
@@ -136,12 +136,16 @@ endif
 
 $(OUTPUT).bin	:	$(OUTPUT).elf
 	$(OBJCOPY) $^ -O binary $@
+	cp $@ ../PSX-BIOS.ROM
 
 $(OUTPUT).elf	:	$(OFILES)
 	$(CC) -T ../kernel.ld -o $@ $^ $(AFLAGS) $(LIBS)
 
 %.o	:	%.s
 	$(AS) $^ -o $@ $(ASFLAGS)
+
+%.o	:	%.c
+	$(CC) $^ -c -o $@ $(CFLAGS)
 
 -include $(DEPENDS)
 

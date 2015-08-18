@@ -1,10 +1,9 @@
 /* kernel.ld - linker script for free, as in freedom, psx bios */
 ENTRY(_start)
 
-
 SECTIONS
 {
-    . = 0xBFC00000;
+    . = 0x1FC00000;
     _start = .;
 
     .text.boot :
@@ -12,7 +11,7 @@ SECTIONS
         *(.text.boot)
     }
 
-    . = 0xBFC00100;
+    . = 0x1FC00100;
     .rodata.rom_header :
     {
         *(.rodata.rom_header)
@@ -25,16 +24,15 @@ SECTIONS
     }
     . = ALIGN(256);
 
+    .data :
+    {
+        *(.data)
+    }
+
     .bss :
     {
         bss = .;
         *(.bss)
-    }
-    . = ALIGN(256);
-
-    .data :
-    {
-        *(.data)
     }
 
     /DISCARD/ :
