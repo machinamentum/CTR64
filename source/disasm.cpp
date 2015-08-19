@@ -732,7 +732,7 @@ DisassemblerPrintRange(MIPS_R3000 *Cpu, u32 Base, u32 Count, u32 PC)
 {
     for (u32 i = 0; i < Count; ++i)
     {
-        u32 MachineCode = MemReadWordRaw(Cpu, Base + (i * 4));
+        u32 MachineCode = ReadMemWordRaw(Cpu, Base + (i * 4));
         opcode OpCode;
         printf("\x1b[0m");
         if (Base + i * 4 == PC)

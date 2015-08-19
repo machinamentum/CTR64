@@ -237,7 +237,7 @@ void DumpState(MIPS_R3000 *Cpu);
 void MapRegister(MIPS_R3000 *Cpu, mmr MMR);
 
 inline u32
-MemReadWordRaw(MIPS_R3000 *Cpu, u32 Address)
+ReadMemWordRaw(MIPS_R3000 *Cpu, u32 Address)
 {
     u32 Base = Address & 0x00FFFFFF;
     return *((u32 *)((u8 *)Cpu->Memory + Base));

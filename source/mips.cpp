@@ -6,21 +6,21 @@
 
 
 inline u32
-MemReadWord(MIPS_R3000 *Cpu, u32 Address)
+ReadMemWord(MIPS_R3000 *Cpu, u32 Address)
 {
     u32 Base = Address & 0x00FFFFFF;
     return *((u32 *)((u8 *)Cpu->Memory + Base));
 }
 
 inline u8
-ReadMemByte(MIPS_R3000 *Cpu, u32 Address, u8 value)
+ReadMemByte(MIPS_R3000 *Cpu, u32 Address)
 {
     u32 Base = Address & 0x00FFFFFF;
     return *((u8 *)Cpu->Memory + Base);
 }
 
 inline u16
-ReadMemHalfWord(MIPS_R3000 *Cpu, u32 Address, u16 value)
+ReadMemHalfWord(MIPS_R3000 *Cpu, u32 Address)
 {
     u32 Base = Address & 0x00FFFFFF;
     return *((u16 *)((u8 *)Cpu->Memory + Base));
@@ -719,7 +719,7 @@ DecodeOpcode(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data, u32 IAddress)
 void
 InstructionFetch(MIPS_R3000 *Cpu, u32 *Code)
 {
-    *Code = MemReadWord(Cpu, Cpu->pc);
+    *Code = ReadMemWord(Cpu, Cpu->pc);
     Cpu->pc += 4;
 }
 
@@ -762,11 +762,11 @@ MemoryAccess(MIPS_R3000 *Cpu, opcode *OpCode)
         {
             if (OpCode->FunctionSelect)
             {
-                OpCode->Result = SignExtend8(ReadMemByte(Cpu, OpCode->Result, OpCode->RightValue));
+                OpCode->Result = SignExtend8(ReadMemByte(Cpu, OpCode->Result));
             }
             else
             {
-                OpCode->Result = ReadMemByte(Cpu, OpCode->Result, OpCode->RightValue);
+                OpCode->Result = ReadMemByte(Cpu, OpCode->Result);
             }
         }
 
@@ -774,18 +774,18 @@ MemoryAccess(MIPS_R3000 *Cpu, opcode *OpCode)
         {
             if (OpCode->FunctionSelect)
             {
-                OpCode->Result = SignExtend16(ReadMemHalfWord(Cpu, OpCode->Result, OpCode->RightValue));
+                OpCode->Result = SignExtend16(ReadMemHalfWord(Cpu, OpCode->Result));
             }
             else
             {
-                OpCode->Result = ReadMemHalfWord(Cpu, OpCode->Result, OpCode->RightValue);
+                OpCode->Result = ReadMemHalfWord(Cpu, OpCode->Result);
             }
 
         }
 
-        if (OpCode->MemAccessMode & MEM_ACCESS_BYTE)
+        if (OpCode->MemAccessMode & MEM_ACCESS_WORD)
         {
-            WriteMemWord(Cpu, OpCode->Result, OpCode->RightValue);
+            OpCode->Result = ReadMemWord(Cpu, OpCode->Result);
         }
     }
 }
@@ -806,7 +806,7 @@ WriteBack(MIPS_R3000 *Cpu, opcode *OpCode)
 void
 ExecuteWriteRegisters(MIPS_R3000 *Cpu, opcode *OpCode)
 {
-    if (OpCode->WriteBackMode == WRITE_BACK_CPU)
+    if (OpCode->WriteBackMode == WRITE_BACK_CPU && (OpCode->MemAccessType == MEM_ACCESS_NONE || OpCode->MemAccessType == MEM_ACCESS_BRANCH))
     {
         if (OpCode->DestinationRegister) // Never overwrite Zero
         {
