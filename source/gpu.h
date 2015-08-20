@@ -10,6 +10,8 @@
 #define GPU_READ (0x1F801810)
 #define GPU_STAT (0x1F801814)
 
+#define GPU_STAT_DISP_EN        (1 << 23)
+
 #define GP0_COMMAND_NOP         (0x00)
 #define GP0_COMMAND_CLEAR_CACHE (0x01)
 #define GP0_COMMAND_FILL_RECT   (0x02)
@@ -105,13 +107,15 @@
 #define GTE_REG_FLAG           (63)
 
 
-
 struct GPU : public Coprocessor
 {
 
     GPU();
-
+    void *GfxHandle;
     u32 Status;
+    u32 Gp0PacketsLeft = 0;
+    u32 Gp0WaitingCmd;
+    u32 Gp0Packets[16];
 };
 
 void GpuGp0(void *, u32);

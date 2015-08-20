@@ -343,7 +343,7 @@ AndI(MIPS_R3000 *Cpu, opcode *OpCode)
 static void
 OrI(MIPS_R3000 *Cpu, opcode *OpCode)
 {
-    OpCode->Result = OpCode->LeftValue | OpCode->Immediate;
+    OpCode->Result = OpCode->LeftValue | (OpCode->Immediate & 0xFFFF);
 }
 
 static void
@@ -372,7 +372,7 @@ NOr(MIPS_R3000 *Cpu, opcode *OpCode)
 static void
 XOrI(MIPS_R3000 *Cpu, opcode *OpCode)
 {
-    OpCode->Result = OpCode->LeftValue ^ OpCode->Immediate;
+    OpCode->Result = OpCode->LeftValue ^ (OpCode->Immediate & 0xFFFF);
 }
 
 //shifts
@@ -750,7 +750,7 @@ MemoryAccess(MIPS_R3000 *Cpu, opcode *OpCode)
             WriteMemHalfWord(Cpu, OpCode->Result, OpCode->RightValue);
         }
 
-        if (OpCode->MemAccessMode & MEM_ACCESS_BYTE)
+        if (OpCode->MemAccessMode & MEM_ACCESS_WORD)
         {
             WriteMemWord(Cpu, OpCode->Result, OpCode->RightValue);
         }
@@ -793,7 +793,19 @@ MemoryAccess(MIPS_R3000 *Cpu, opcode *OpCode)
 void
 WriteBack(MIPS_R3000 *Cpu, opcode *OpCode)
 {
-    if (OpCode->WriteBackMode == WRITE_BACK_C0)
+
+    if (OpCode->WriteBackMode == WRITE_BACK_CPU)
+    {
+        if (OpCode->DestinationRegister) // Never overwrite Zero
+        {
+            Cpu->registers[OpCode->DestinationRegister] = OpCode->Result;
+        }
+        if (OpCode->RADestinationRegister)
+        {
+            Cpu->registers[OpCode->RADestinationRegister] = OpCode->CurrentAddress + 8;
+        }
+    }
+    else if (OpCode->WriteBackMode == WRITE_BACK_C0)
     {
         Cpu->CP0.registers[OpCode->DestinationRegister] = OpCode->Result;
     }
@@ -816,6 +828,9 @@ ExecuteWriteRegisters(MIPS_R3000 *Cpu, opcode *OpCode)
         {
             Cpu->registers[OpCode->RADestinationRegister] = OpCode->CurrentAddress + 8;
         }
+
+        OpCode->DestinationRegister = 0;
+        OpCode->RADestinationRegister = 0;
     }
 }
 

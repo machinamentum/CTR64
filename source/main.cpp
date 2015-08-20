@@ -7,6 +7,7 @@
 #include "mips.h"
 #include "gpu.h"
 #include "disasm.h"
+#include <gfx_device.h>
 
 #define STAGE_IF 0
 #define STAGE_DC 1
@@ -50,14 +51,16 @@ int main(int argc, char **argv)
         WriteMemByteRaw(&Cpu, RESET_VECTOR + i, BiosBuffer[i]);
     }
 
-    WriteMemWordRaw(&Cpu, 0xBFC003C4, 0x00000000);
+//    WriteMemWordRaw(&Cpu, 0xBFC003C4, 0x00000000);
+//	WriteMemWordRaw(&Cpu, 0xBFC00270, 0x00000000);
+//	WriteMemWordRaw(&Cpu, 0xBFC00320, 0x00000000);
 
     ResetCpu(&Cpu);
 
-    opcode OpCodes[5];
+    opcode OpCodes[4];
     int Stages[5];
 
-    for (int i = 4; i >= 0; --i)
+    for (int i = 3; i >= 0; --i)
     {
         Stages[i] = -(i + 1);
     }
@@ -77,9 +80,9 @@ int main(int argc, char **argv)
 
     bool Step = false;
 
-    PrintConsole TopConsole;
-    consoleInit(GFX_TOP, &TopConsole);
-    consoleSelect(&BottomConsole);
+//    PrintConsole TopConsole;
+//    consoleInit(GFX_TOP, &TopConsole);
+//    consoleSelect(&BottomConsole);
     int CyclesToRun = 1;
 
     while (aptMainLoop())
@@ -91,7 +94,7 @@ int main(int argc, char **argv)
 
         if (keysDown() & KEY_DDOWN)
         {
-            for (int i = 4; i >= 0; --i)
+            for (int i = 3; i >= 0; --i)
             {
                 Stages[i] = -(i + 1);
             }
@@ -131,64 +134,59 @@ int main(int argc, char **argv)
             printf("\x1b[0;0H");
             printf("\e[0;0H\e[2J");
         }
-        
+
         if (Step)
         {
             for (int t = 0; t < CyclesToRun; ++t)
             {
-                for (int i  = 0; i < 5; ++i)
-                {
-                    if (Stages[i] < 0)
-                    {
-                        ++Stages[i];
-                    }
-                    
-                    Stages[i] %= 5;
 
-                    if (Stages[i] == STAGE_IF)
+                for (int i = 0; i < 4; ++i)
+                {
+                    if (Stages[i] == STAGE_MA)
                     {
-                        InstructionFetch(&Cpu, &MachineCodes[i]);
-                        Stages[i]++;
-                        continue;
+                        MemoryAccess(&Cpu, &OpCodes[i]);
+                        WriteBack(&Cpu, &OpCodes[i]);
+                        break;
                     }
-                    if (Stages[i] == STAGE_DC)
-                    {
-                        DecodeOpcode(&Cpu, &OpCodes[i], MachineCodes[i], Cpu.pc - 4);
-                        Stages[i]++;
-                        continue;
-                    }
+                }
+
+                for (int i = 0; i < 4; ++i)
+                {
                     if (Stages[i] == STAGE_EO)
                     {
                         ExecuteOpCode(&Cpu, &OpCodes[i]);
                         ExecuteWriteRegisters(&Cpu, &OpCodes[i]);
-                        Stages[i]++;
-                        continue;
+                        break;
                     }
-                    if (Stages[i] == STAGE_MA)
+                }
+
+                for (int i = 0; i < 4; ++i)
+                {
+                    if (Stages[i] == STAGE_DC)
                     {
-                        MemoryAccess(&Cpu, &OpCodes[i]);
-                        Stages[i]++;
-                        continue;
+                        DecodeOpcode(&Cpu, &OpCodes[i], MachineCodes[i], Cpu.pc - 4);
+                        break;
                     }
-                    if (Stages[i] == STAGE_WB)
+                }
+
+                for (int i = 0; i < 4; ++i)
+                {
+                    if (Stages[i] == STAGE_IF)
                     {
-                        WriteBack(&Cpu, &OpCodes[i]);
-                        Stages[i]++;
-                        continue;
+                        InstructionFetch(&Cpu, &MachineCodes[i]);
+                        break;
                     }
+                }
+
+                for (int i = 0; i < 4; ++i)
+                {
+                    ++Stages[i];
+                    Stages[i] %= 4;
                 }
             }
         }
         printf("\x1b[0;0H");
         DisassemblerPrintRange(&Cpu, Cpu.pc - (13 * 4), 29, Cpu.pc);
-        consoleSelect(&TopConsole);
-        DumpState(&Cpu);
-        for (int i = 0; i < 5; ++i)
-        {
-            printf("Stage %d: 0x%08X\n", i, Stages[i]);
-        }
-        printf("Cycles: %d\n", CyclesToRun);
-        consoleSelect(&BottomConsole);
 
 #ifdef ENABLE_DEBUGGER
         dbg_command Cmd;
@@ -200,7 +198,7 @@ int main(int argc, char **argv)
                 {
                     WriteMemByteRaw(&Cpu, RESET_VECTOR + i, ((char *)Cmd.Data)[i]);
                 }
-                for (int i = 4; i >= 0; --i)
+                for (int i = 3; i >= 0; --i)
                 {
                     Stages[i] = -(i + 1);
                 }
@@ -210,7 +208,7 @@ int main(int argc, char **argv)
         }
 #endif
 
-
+        gfxFlush(gfxGetFramebuffer(GFX_TOP, GFX_LEFT, NULL, NULL));
         gfxFlushBuffers();
         gfxSwapBuffersGpu();
         gspWaitForVBlank();
