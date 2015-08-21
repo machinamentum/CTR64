@@ -139,7 +139,7 @@ $(OUTPUT).bin	:	$(OUTPUT).elf
 	cp $@ ../PSX-BIOS.ROM
 
 $(OUTPUT).elf	:	$(OFILES)
-	$(CC) -T ../kernel.ld -o $@ $^ $(AFLAGS) $(LIBS)
+	$(CC) -T ../kernel.ld -o $@ $^ $(LDFLAGS) $(LIBS)
 
 %.o	:	%.s
 	$(AS) $^ -o $@ $(ASFLAGS)

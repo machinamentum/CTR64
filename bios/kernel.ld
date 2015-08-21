@@ -24,9 +24,15 @@ SECTIONS
     }
     . = ALIGN(256);
 
+    .rodata :
+    {
+        *(.rodata)
+    }
+
     .data :
     {
         *(.data)
+        *(.scommon)
     }
 
     .bss :
@@ -34,6 +40,8 @@ SECTIONS
         bss = .;
         *(.bss)
     }
+
+    __bss_end = .;
 
     /DISCARD/ :
     {
