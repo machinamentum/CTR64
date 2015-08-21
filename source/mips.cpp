@@ -552,7 +552,7 @@ DecodeOpcode(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data, u32 IAddress)
         if ((OpCode->Select1 & 0b111100) == 0)
         {
             OpCode->Immediate = (Data & IMM5_MASK) >> 6;
-            OpCode->LeftValue = Cpu->registers[rt];
+            OpCode->RightValue = Cpu->registers[rt];
             OpCode->DestinationRegister = rd;
         }
         //shift-reg
