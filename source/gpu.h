@@ -19,6 +19,7 @@
 #define GP0_COMMAND_CPU_VRAM    (0xA0)
 #define GP0_COMMAND_VRAM_CPU    (0xC0)
 #define GP0_COMMAND_IRQ1        (0x1F)
+#define GP0_COMMAND_DRAW_MODE   (0xE1)
 
 #define GP1_COMMAND_RST         (0x00)
 #define GP1_COMMAND_RST_FIFO    (0x01)

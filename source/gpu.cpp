@@ -1,6 +1,5 @@
 
 #include "gpu.h"
-
 #include <gfx_device.h>
 #include <GL/gl.h>
 
@@ -17,48 +16,46 @@ GPU()
 {
     ExecuteOperation = GteExecuteOperation;
 
-    GfxHandle = gfxCreateDevice(400, 240);
+    GfxHandle = gfxCreateDevice(240, 400);
     gfxMakeCurrent(GfxHandle);
 
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    glOrtho(0, 320, 240, 0, -1, 1);
+    glOrtho(0.0, 1.0, 1.0, 0.0, -1.0, 1.0);
+
+    glTranslatef(0.5f, 0.5f, 0.0f);
+    glRotatef(90.0f, 0.0f, 0.0f, 1.0f);
+    glTranslatef(-0.5f, -0.5f, 0.0f);
+
+    glScalef(1.0 / 320.0, 1.0/240.0, 1.0);
 
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 
-    glClearColor(1, 1, 1, 1);
+    glClearColor(0, 0, 0, 1);
     glClear(GL_COLOR_BUFFER_BIT);
+
+    glDisable(GL_DEPTH_TEST);
+
+    glDisable(GL_CULL_FACE);
 }
 
-void
+typedef void (*gpu_func)(GPU *, u32);
+static gpu_func GP0FuncTable[0xFF];
+
+static void
 GpuExecuteCommand(GPU *Gpu, u8 Command, u32 Param)
 {
-    if (Command == GP0_COMMAND_FILL_RECT)
-    {
-        printf("Draw rect\n");
-        float R = (float)(Param & 0xFF) / 255.0f;
-        float G = (float)((Param >> 8) & 0xFF) / 255.0f;
-        float B = (float)((Param >> 16) & 0xFF) / 255.0f;
-        u32 X = Gpu->Gp0Packets[1] & 0xFFFF;
-        u32 Y = Gpu->Gp0Packets[1] >> 16;
-        u32 W = Gpu->Gp0Packets[0] & 0xFFFF;
-        u32 H = Gpu->Gp0Packets[0] >> 16;
-        glColor3f(R, G, B);
-        glBegin(GL_QUADS);
-        glVertex2i(X, Y);
-        glVertex2i(X + W, Y);
-        glVertex2i(X + W, Y + H);
-        glVertex2i(X, Y + H);
-        glEnd();
-        glColor4f(1, 1, 1, 1);
-    }
+    GP0FuncTable[Command](Gpu, Param);
 }
 
 void
 GpuGp0(void *Object, u32 Value)
 {
     GPU *Gpu = (GPU *)Object;
+
+    printf("GP0 0x%08lX\n", Value);
+
     if (Gpu->Gp0PacketsLeft)
     {
         Gpu->Gp0PacketsLeft--;
@@ -73,13 +70,18 @@ GpuGp0(void *Object, u32 Value)
     u32 Param = Value & 0x00FFFFFF;
     u32 Command = Value >> 24;
 
-    printf("GP0 0x%08lX", Value);
+//    printf("GP0 0x%08lX", Value);
 
     if (Command == GP0_COMMAND_FILL_RECT)
     {
-        printf("Fill rect\n");
         Gpu->Gp0WaitingCmd = Value;
         Gpu->Gp0PacketsLeft = 2;
+    }
+
+    if (Command == 0x28)
+    {
+        Gpu->Gp0WaitingCmd = Value;
+        Gpu->Gp0PacketsLeft = 4;
     }
 }
 
@@ -101,4 +103,62 @@ GpuGp1(void *Object, u32 Value)
     {
         Gpu->Status |= GPU_STAT_DISP_EN;
     }
+}
+
+static void
+GP0Nop(GPU *Gpu, u32 Param)
+{
+
+}
+
+static void
+GP0FillRect(GPU *Gpu, u32 Param)
+{
+    float R = (float)(Param & 0xFF) / 255.0f;
+    float G = (float)((Param >> 8) & 0xFF) / 255.0f;
+    float B = (float)((Param >> 16) & 0xFF) / 255.0f;
+    u32 X = Gpu->Gp0Packets[1] & 0xFFFF;
+    u32 Y = Gpu->Gp0Packets[1] >> 16;
+    u32 W = Gpu->Gp0Packets[0] & 0xFFFF;
+    u32 H = Gpu->Gp0Packets[0] >> 16;
+    glColor3f(R, G, B);
+    glBegin(GL_QUADS);
+    glVertex2i(X, Y);
+    glVertex2i(X + W, Y);
+    glVertex2i(X + W, Y + H);
+    glVertex2i(X, Y + H);
+    glEnd();
+    glColor4f(1, 1, 1, 1);
+}
+
+static void
+GP0MonochromeOpaqueQuad(GPU* Gpu, u32 Param)
+{
+    float R = (float)(Param & 0xFF) / 255.0f;
+    float G = (float)((Param >> 8) & 0xFF) / 255.0f;
+    float B = (float)((Param >> 16) & 0xFF) / 255.0f;
+    glColor3f(R, G, B);
+    glBegin(GL_QUADS);
+    glVertex2i((s32)(Gpu->Gp0Packets[0] & 0xFFFF), (s32)(Gpu->Gp0Packets[0] >> 16));
+    glVertex2i((s32)(Gpu->Gp0Packets[1] & 0xFFFF), (s32)(Gpu->Gp0Packets[1] >> 16));
+    glVertex2i((s32)(Gpu->Gp0Packets[3] & 0xFFFF), (s32)(Gpu->Gp0Packets[3] >> 16));
+    glVertex2i((s32)(Gpu->Gp0Packets[2] & 0xFFFF), (s32)(Gpu->Gp0Packets[2] >> 16));
+//    glVertex2i(0, 0);
+//    glVertex2i(30, 0);
+//    glVertex2i(30, 30);
+//    glVertex2i(0, 30);
+    glEnd();
+    glColor4f(1, 1, 1, 1);
+}
+
+static void __attribute__((constructor))
+InitFuncTables()
+{
+    for (int i = 0; i < 0xFF; ++i)
+    {
+        GP0FuncTable[i] = GP0Nop;
+    }
+
+    GP0FuncTable[GP0_COMMAND_FILL_RECT] = GP0FillRect;
+    GP0FuncTable[0x28] = GP0MonochromeOpaqueQuad;
 }
