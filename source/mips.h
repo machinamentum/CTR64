@@ -109,7 +109,7 @@
 #define WRITE_BACK_C3     3
 #define WRITE_BACK_CPU    4
 
-struct __attribute__((packed)) opcode
+struct opcode
 {
     u32 CurrentAddress = 0;
     u8 Select0;
