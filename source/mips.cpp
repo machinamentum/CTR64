@@ -32,9 +32,10 @@ WriteMemByte(MIPS_R3000 *Cpu, u32 Address, u8 value)
     u32 Base = Address & 0x00FFFFFF;
     for (u32 i = 0; i < Cpu->NumMMR; ++i)
     {
-        if (Base == Cpu->MemMappedRegisters[i].Address)
+        mmr *MMR = &Cpu->MemMappedRegisters[i];
+        if (Base == MMR->Address)
         {
-            Cpu->MemMappedRegisters[i].RegisterFunc(Cpu->MemMappedRegisters[i].Object, value);
+            MMR->RegisterFunc(MMR->Object, value);
             return;
         }
     }
@@ -47,9 +48,10 @@ WriteMemWord(MIPS_R3000 *Cpu, u32 Address, u32 value)
     u32 Base = Address & 0x00FFFFFF;
     for (u32 i = 0; i < Cpu->NumMMR; ++i)
     {
-        if (Base == Cpu->MemMappedRegisters[i].Address)
+        mmr *MMR = &Cpu->MemMappedRegisters[i];
+        if (Base == MMR->Address)
         {
-             Cpu->MemMappedRegisters[i].RegisterFunc(Cpu->MemMappedRegisters[i].Object, value);
+            MMR->RegisterFunc(MMR->Object, value);
             return;
         }
     }
@@ -62,9 +64,10 @@ WriteMemHalfWord(MIPS_R3000 *Cpu, u32 Address, u16 value)
     u32 Base = Address & 0x00FFFFFF;
     for (u32 i = 0; i < Cpu->NumMMR; ++i)
     {
-        if (Base == Cpu->MemMappedRegisters[i].Address)
+        mmr *MMR = &Cpu->MemMappedRegisters[i];
+        if (Base == MMR->Address)
         {
-             Cpu->MemMappedRegisters[i].RegisterFunc(Cpu->MemMappedRegisters[i].Object, value);
+            MMR->RegisterFunc(MMR->Object, value);
             return;
         }
     }
@@ -691,27 +694,22 @@ MemoryAccess(MIPS_R3000 *Cpu, opcode *OpCode)
     {
         if (OpCode->MemAccessMode & MEM_ACCESS_BYTE)
         {
+            u32 Value = ReadMemByte(Cpu, OpCode->Result);
             if (OpCode->FunctionSelect)
             {
-                OpCode->Result = SignExtend8(ReadMemByte(Cpu, OpCode->Result));
+                Value = SignExtend8(Value);
             }
-            else
-            {
-                OpCode->Result = ReadMemByte(Cpu, OpCode->Result);
-            }
+            OpCode->Result = Value;
         }
 
         if (OpCode->MemAccessMode & MEM_ACCESS_HALF)
         {
+            u32 Value = ReadMemHalfWord(Cpu, OpCode->Result);
             if (OpCode->FunctionSelect)
             {
-                OpCode->Result = SignExtend16(ReadMemHalfWord(Cpu, OpCode->Result));
+                Value = SignExtend16(Value);
             }
-            else
-            {
-                OpCode->Result = ReadMemHalfWord(Cpu, OpCode->Result);
-            }
-
+            OpCode->Result = Value;
         }
 
         if (OpCode->MemAccessMode & MEM_ACCESS_WORD)

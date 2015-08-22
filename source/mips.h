@@ -111,19 +111,19 @@
 
 struct opcode
 {
-    u32 CurrentAddress = 0;
-    u8 Select0;
-    u8 Select1;
     u32 LeftValue;
     u32 RightValue;
     u32 Immediate;
     u32 Result;
+    u8 Select0;
+    u8 Select1;
     u8 FunctionSelect;
     u8 MemAccessType = MEM_ACCESS_NONE;
     u8 MemAccessMode = MEM_ACCESS_WORD;
     u8 WriteBackMode = WRITE_BACK_CPU;
     u8 DestinationRegister = 0;
     u8 RADestinationRegister = 0; // Used for return address writing
+    u32 CurrentAddress = 0;
 };
 
 struct Coprocessor
@@ -277,23 +277,15 @@ WriteMemHalfWordRaw(MIPS_R3000 *Cpu, u32 Address, u16 value)
 }
 
 inline u32
-SignExtend16(u32 i)
+SignExtend16(s16 i)
 {
-    i = (0x0000FFFF & i);
-    if (0x00008000 & i) {
-        i += 0xFFFF0000;
-    }
-    return i;
+    return (u32)(s32)i;
 }
 
 inline u32
-SignExtend8(u32 i)
+SignExtend8(s8 i)
 {
-    i = (0x000000FF & i);
-    if (0x00000080 & i) {
-        i += 0xFFFFFF00;
-    }
-    return i;
+    return (u32)(s32)i;
 }
 
 
