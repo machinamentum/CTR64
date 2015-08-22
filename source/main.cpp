@@ -51,10 +51,6 @@ int main(int argc, char **argv)
         WriteMemByteRaw(&Cpu, RESET_VECTOR + i, BiosBuffer[i]);
     }
 
-//    WriteMemWordRaw(&Cpu, 0xBFC003C4, 0x00000000);
-//	WriteMemWordRaw(&Cpu, 0xBFC00270, 0x00000000);
-//	WriteMemWordRaw(&Cpu, 0xBFC00320, 0x00000000);
-
     ResetCpu(&Cpu);
 
     opcode OpCodes[4];
@@ -142,46 +138,33 @@ int main(int argc, char **argv)
 
                 for (int i = 0; i < 4; ++i)
                 {
+                    ++Stages[i];
+                    Stages[i] %= 4;
                     if (Stages[i] == STAGE_MA)
                     {
                         MemoryAccess(&Cpu, &OpCodes[i]);
                         WriteBack(&Cpu, &OpCodes[i]);
-                        break;
+                        continue;
                     }
-                }
 
-                for (int i = 0; i < 4; ++i)
-                {
                     if (Stages[i] == STAGE_EO)
                     {
                         ExecuteOpCode(&Cpu, &OpCodes[i]);
                         ExecuteWriteRegisters(&Cpu, &OpCodes[i]);
-                        break;
+                        continue;
                     }
-                }
 
-                for (int i = 0; i < 4; ++i)
-                {
                     if (Stages[i] == STAGE_DC)
                     {
                         DecodeOpcode(&Cpu, &OpCodes[i], MachineCodes[i], Cpu.pc - 4);
-                        break;
+                        continue;
                     }
-                }
 
-                for (int i = 0; i < 4; ++i)
-                {
                     if (Stages[i] == STAGE_IF)
                     {
                         InstructionFetch(&Cpu, &MachineCodes[i]);
-                        break;
+                        continue;
                     }
-                }
-
-                for (int i = 0; i < 4; ++i)
-                {
-                    ++Stages[i];
-                    Stages[i] %= 4;
                 }
             }
         }
