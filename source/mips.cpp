@@ -114,7 +114,9 @@ ReservedInstructionException(MIPS_R3000 *Cpu, opcode *Op)
 {
     // TODO exceptions & coprocessor0
 //    DumpState(Cpu, Op);
+#ifdef ENABLE_DEBUGGER
     DebuggerPrint(__func__);
+#endif
 }
 
 
@@ -278,7 +280,7 @@ BranchZero(MIPS_R3000 *Cpu, opcode *OpCode)
     //bltz, bgez, bltzal, bgezal
     u8 type = OpCode->FunctionSelect;
     OpCode->Result = OpCode->CurrentAddress + 4 + OpCode->Immediate * 4;
-    u32 Check = OpCode->LeftValue;
+    s32 Check = OpCode->LeftValue;
 
     if (type & 0b00001)
     {
@@ -506,9 +508,9 @@ COP2(MIPS_R3000 *Cpu, opcode *OpCode)
     {
         if (OpCode->FunctionSelect < 0b10000)
         {
-            if (OpCode->FunctionSelect < 0b01000)
+            if (OpCode->FunctionSelect > 0b00100) // < 0b01000
             {
-                OpCode->Result = OpCode->LeftValue;
+                OpCode->Result = OpCode->RightValue;
             }
             else
             {
@@ -624,7 +626,6 @@ DecodeOpcode(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data, u32 IAddress)
         {
             OpCode->WriteBackMode = OpCode->Select0 & 0b111;
             OpCode->DestinationRegister = rd + (rs & 0b00010 ? 32 : 0);
-            OpCode->LeftValue = Cpu->registers[rt];
         }
         // BCnF, BCnT
         else if (rs == 0b01000)
@@ -657,16 +658,66 @@ InstructionFetch(MIPS_R3000 *Cpu, u32 *Code)
     Cpu->pc += 4;
 }
 
-static void
-ExecuteSecondary(MIPS_R3000 *Cpu, opcode *Op)
+inline void
+ExecuteWriteRegisters(MIPS_R3000 *Cpu, opcode *OpCode)
 {
-    SecondaryJumpTable[Op->Select1](Cpu, Op);
+    if (OpCode->WriteBackMode == WRITE_BACK_CPU && (OpCode->MemAccessType == MEM_ACCESS_NONE || OpCode->MemAccessType == MEM_ACCESS_BRANCH))
+    {
+        if (OpCode->DestinationRegister) // Never overwrite Zero
+        {
+            Cpu->registers[OpCode->DestinationRegister] = OpCode->Result;
+        }
+        if (OpCode->RADestinationRegister)
+        {
+            Cpu->registers[OpCode->RADestinationRegister] = OpCode->CurrentAddress + 8;
+        }
+
+        OpCode->DestinationRegister = 0;
+        OpCode->RADestinationRegister = 0;
+    }
 }
 
 void
 ExecuteOpCode(MIPS_R3000 *Cpu, opcode *OpCode)
 {
-    PrimaryJumpTable[OpCode->Select0](Cpu, OpCode);
+    u8 Select0 = OpCode->Select0;
+    jt_func Func;
+    if (Select0)
+    {
+        Func = PrimaryJumpTable[Select0];
+    }
+    else
+    {
+        Func = SecondaryJumpTable[OpCode->Select1];
+    }
+
+    Func(Cpu, OpCode);
+    ExecuteWriteRegisters(Cpu, OpCode);
+}
+
+inline void
+WriteBack(MIPS_R3000 *Cpu, opcode *OpCode)
+{
+
+    if (OpCode->WriteBackMode == WRITE_BACK_CPU && OpCode->MemAccessType == MEM_ACCESS_NONE)
+    {
+        if (OpCode->DestinationRegister) // Never overwrite Zero
+        {
+            Cpu->registers[OpCode->DestinationRegister] = OpCode->Result;
+        }
+        if (OpCode->RADestinationRegister)
+        {
+            Cpu->registers[OpCode->RADestinationRegister] = OpCode->CurrentAddress + 8;
+        }
+    }
+    else if (OpCode->WriteBackMode == WRITE_BACK_C0)
+    {
+        Cpu->CP0.registers[OpCode->DestinationRegister] = OpCode->Result;
+    }
+    else if (OpCode->WriteBackMode == WRITE_BACK_C2)
+    {
+        // TODO GTE
+    }
 }
 
 void
@@ -717,50 +768,8 @@ MemoryAccess(MIPS_R3000 *Cpu, opcode *OpCode)
             OpCode->Result = ReadMemWord(Cpu, OpCode->Result);
         }
     }
-}
 
-void
-WriteBack(MIPS_R3000 *Cpu, opcode *OpCode)
-{
-
-    if (OpCode->WriteBackMode == WRITE_BACK_CPU && OpCode->MemAccessType == MEM_ACCESS_NONE)
-    {
-        if (OpCode->DestinationRegister) // Never overwrite Zero
-        {
-            Cpu->registers[OpCode->DestinationRegister] = OpCode->Result;
-        }
-        if (OpCode->RADestinationRegister)
-        {
-            Cpu->registers[OpCode->RADestinationRegister] = OpCode->CurrentAddress + 8;
-        }
-    }
-    else if (OpCode->WriteBackMode == WRITE_BACK_C0)
-    {
-        Cpu->CP0.registers[OpCode->DestinationRegister] = OpCode->Result;
-    }
-    else if (OpCode->WriteBackMode == WRITE_BACK_C2)
-    {
-        // TODO GTE
-    }
-}
-
-void
-ExecuteWriteRegisters(MIPS_R3000 *Cpu, opcode *OpCode)
-{
-    if (OpCode->WriteBackMode == WRITE_BACK_CPU && (OpCode->MemAccessType == MEM_ACCESS_NONE || OpCode->MemAccessType == MEM_ACCESS_BRANCH))
-    {
-        if (OpCode->DestinationRegister) // Never overwrite Zero
-        {
-            Cpu->registers[OpCode->DestinationRegister] = OpCode->Result;
-        }
-        if (OpCode->RADestinationRegister)
-        {
-            Cpu->registers[OpCode->RADestinationRegister] = OpCode->CurrentAddress + 8;
-        }
-
-        OpCode->DestinationRegister = 0;
-        OpCode->RADestinationRegister = 0;
-    }
+    WriteBack(Cpu, OpCode);
 }
 
 void
@@ -780,7 +789,7 @@ InitJumpTables()
         SecondaryJumpTable[i] = ReservedInstructionException;
     }
 
-    PrimaryJumpTable[0x00] = ExecuteSecondary;
+//    PrimaryJumpTable[0x00] = ExecuteSecondary;
     PrimaryJumpTable[0x01] = BranchZero;
     PrimaryJumpTable[0x02] = J;
     PrimaryJumpTable[0x03] = JAL;

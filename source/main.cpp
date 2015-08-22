@@ -54,14 +54,14 @@ int main(int argc, char **argv)
     ResetCpu(&Cpu);
 
     opcode OpCodes[4];
-    int Stages[5];
+    int Stages[4];
 
     for (int i = 3; i >= 0; --i)
     {
         Stages[i] = -(i + 1);
     }
 
-    u32 MachineCodes[5];
+    u32 MachineCodes[4];
 #ifdef ENABLE_DEBUGGER
     if (DebuggerOpen())
     {
@@ -143,14 +143,12 @@ int main(int argc, char **argv)
                     if (Stages[i] == STAGE_MA)
                     {
                         MemoryAccess(&Cpu, &OpCodes[i]);
-                        WriteBack(&Cpu, &OpCodes[i]);
                         continue;
                     }
 
                     if (Stages[i] == STAGE_EO)
                     {
                         ExecuteOpCode(&Cpu, &OpCodes[i]);
-                        ExecuteWriteRegisters(&Cpu, &OpCodes[i]);
                         continue;
                     }
 
