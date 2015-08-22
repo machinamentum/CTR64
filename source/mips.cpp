@@ -166,6 +166,7 @@ SW(MIPS_R3000 *Cpu, opcode *OpCode)
 {
     OpCode->Result = OpCode->LeftValue + OpCode->Immediate;
     OpCode->MemAccessMode = MEM_ACCESS_WORD;
+    OpCode->MemAccessType = MEM_ACCESS_WRITE;
 }
 
 static void
@@ -173,6 +174,7 @@ SH(MIPS_R3000 *Cpu, opcode *OpCode)
 {
     OpCode->Result = OpCode->LeftValue + OpCode->Immediate;
     OpCode->MemAccessMode = MEM_ACCESS_HALF;
+    OpCode->MemAccessType = MEM_ACCESS_WRITE;
 }
 
 static void
@@ -180,6 +182,7 @@ SB(MIPS_R3000 *Cpu, opcode *OpCode)
 {
     OpCode->Result = OpCode->LeftValue + OpCode->Immediate;
     OpCode->MemAccessMode = MEM_ACCESS_BYTE;
+    OpCode->MemAccessType = MEM_ACCESS_WRITE;
 }
 
 //Load
@@ -194,6 +197,7 @@ LW(MIPS_R3000 *Cpu, opcode *OpCode)
 {
     OpCode->Result = OpCode->LeftValue + OpCode->Immediate;
     OpCode->MemAccessMode = MEM_ACCESS_WORD;
+    OpCode->MemAccessType = MEM_ACCESS_READ;
 }
 
 static void
@@ -201,6 +205,7 @@ LBU(MIPS_R3000 *Cpu, opcode *OpCode)
 {
     OpCode->Result = OpCode->LeftValue + OpCode->Immediate;
     OpCode->MemAccessMode = MEM_ACCESS_BYTE;
+    OpCode->MemAccessType = MEM_ACCESS_READ;
 }
 
 static void
@@ -208,6 +213,7 @@ LHU(MIPS_R3000 *Cpu, opcode *OpCode)
 {
     OpCode->Result = OpCode->LeftValue + OpCode->Immediate;
     OpCode->MemAccessMode = MEM_ACCESS_HALF;
+    OpCode->MemAccessType = MEM_ACCESS_READ;
 }
 
 static void
@@ -215,6 +221,7 @@ LB(MIPS_R3000 *Cpu, opcode *OpCode)
 {
     OpCode->Result = OpCode->LeftValue + OpCode->Immediate;
     OpCode->MemAccessMode = MEM_ACCESS_BYTE;
+    OpCode->MemAccessType = MEM_ACCESS_READ;
     OpCode->FunctionSelect = 1;
 }
 
@@ -223,6 +230,7 @@ LH(MIPS_R3000 *Cpu, opcode *OpCode)
 {
     OpCode->Result = OpCode->LeftValue + OpCode->Immediate;
     OpCode->MemAccessMode = MEM_ACCESS_HALF;
+    OpCode->MemAccessType = MEM_ACCESS_READ;
     OpCode->FunctionSelect = 1;
 }
 
@@ -232,6 +240,8 @@ static void
 J(MIPS_R3000 *Cpu, opcode *OpCode)
 {
     OpCode->Result = (Cpu->pc & 0xF0000000) + (OpCode->Immediate * 4);
+    OpCode->DestinationRegister = REG_INDEX_PC;
+    OpCode->MemAccessType = MEM_ACCESS_BRANCH;
 }
 
 static void
@@ -239,25 +249,31 @@ JAL(MIPS_R3000 *Cpu, opcode *OpCode)
 {
     OpCode->RADestinationRegister = REG_INDEX_RA;
     OpCode->Result = (Cpu->pc & 0xF0000000) + (OpCode->Immediate * 4);
+    OpCode->DestinationRegister = REG_INDEX_PC;
+    OpCode->MemAccessType = MEM_ACCESS_BRANCH;
 }
 
 static void
 JR(MIPS_R3000 *Cpu, opcode *OpCode)
 {
     OpCode->Result = OpCode->LeftValue;
+    OpCode->DestinationRegister = REG_INDEX_PC;
+    OpCode->MemAccessType = MEM_ACCESS_BRANCH;
 }
 
 static void
 JALR(MIPS_R3000 *Cpu, opcode *OpCode)
 {
     OpCode->Result = OpCode->LeftValue;
+    OpCode->DestinationRegister = REG_INDEX_PC;
+    OpCode->MemAccessType = MEM_ACCESS_BRANCH;
 }
 
 static void
 BranchZero(MIPS_R3000 *Cpu, opcode *OpCode)
 {
     //bltz, bgez, bltzal, bgezal
-    u8 type = OpCode->RightValue;
+    u8 type = OpCode->FunctionSelect;
     OpCode->Result = OpCode->CurrentAddress + 4 + OpCode->Immediate * 4;
     u32 Check = OpCode->LeftValue;
 
@@ -529,154 +545,75 @@ COP3(MIPS_R3000 *Cpu, opcode *OpCode)
 void
 DecodeOpcode(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data, u32 IAddress)
 {
-    OpCode->CurrentAddress = IAddress;
-    OpCode->Select0 = (Data & PRIMARY_OP_MASK) >> 26;
-    OpCode->Select1 = (Data & SECONDARY_OP_MASK) >> 0;
-    OpCode->MemAccessType = MEM_ACCESS_NONE;
-    OpCode->MemAccessMode = MEM_ACCESS_WORD;
-    OpCode->WriteBackMode = WRITE_BACK_CPU;
-    OpCode->LeftValue = 0;
-    OpCode->RightValue = 0;
-    OpCode->Immediate = 0;
-    OpCode->Result = 0;
-    OpCode->DestinationRegister = 0;
-    OpCode->RADestinationRegister = 0;
-    OpCode->FunctionSelect = 0;
     u8 rs = (Data & REG_RS_MASK) >> 21;
     u8 rt = (Data & REG_RT_MASK) >> 16;
     u8 rd = (Data & REG_RD_MASK) >> 11;
+    u8 Select0 = (Data & PRIMARY_OP_MASK) >> 26;
+    u8 Select1 = (Data & SECONDARY_OP_MASK) >> 0;
 
-    if (OpCode->Select0 == 0)
+    OpCode->CurrentAddress = IAddress;
+    OpCode->Select0 = Select0;
+    OpCode->Select1 = Select1;
+    OpCode->MemAccessType = MEM_ACCESS_NONE;
+    OpCode->WriteBackMode = WRITE_BACK_CPU;
+    OpCode->DestinationRegister = 0;
+    OpCode->RADestinationRegister = 0;
+    OpCode->FunctionSelect = 0;
+
+    OpCode->LeftValue = Cpu->registers[rs];
+    OpCode->RightValue = Cpu->registers[rt];
+
+    if (Select0 == 0)
     {
+        OpCode->DestinationRegister = rd;
         //shift-imm
-        if ((OpCode->Select1 & 0b111100) == 0)
+        if ((Select1 & 0b111100) == 0)
         {
             OpCode->Immediate = (Data & IMM5_MASK) >> 6;
-            OpCode->RightValue = Cpu->registers[rt];
-            OpCode->DestinationRegister = rd;
-        }
-        //shift-reg
-        else if ((OpCode->Select1 & 0b111000) == 0)
-        {
-            OpCode->LeftValue = Cpu->registers[rs];
-            OpCode->RightValue = Cpu->registers[rt];
-            OpCode->DestinationRegister = rd;
-        }
-        //jr
-        else if (OpCode->Select1 == 0b001000)
-        {
-            OpCode->LeftValue = Cpu->registers[rs];
-            OpCode->DestinationRegister = REG_INDEX_PC;
-            OpCode->MemAccessType = MEM_ACCESS_BRANCH;
+
         }
         //jalr
-        else if (OpCode->Select1 == 0b001001)
+        else if (Select1 == 0b001001)
         {
-            OpCode->LeftValue = Cpu->registers[rs];
-            OpCode->DestinationRegister = REG_INDEX_PC;
             OpCode->RADestinationRegister = rd;
-            OpCode->MemAccessType = MEM_ACCESS_BRANCH;
         }
         //sys/brk
-        else if ((OpCode->Select1 & 0b111110) == 0b001100)
+        else if ((Select1 & 0b111110) == 0b001100)
         {
             OpCode->Immediate = (Data & COMMENT20_MASK) >> 6;
         }
-        //mfhi/mflo
-        else if ((OpCode->Select1 & 0b111101) == 0b010000)
-        {
-            OpCode->DestinationRegister = rd;
-        }
-        //mthi/mtlo
-        else if ((OpCode->Select1 & 0b111101) == 0b010001)
-        {
-            OpCode->DestinationRegister = REG_INDEX_HL;
-            OpCode->LeftValue = Cpu->registers[rs];
-        }
-        //mul/div
-        else if ((OpCode->Select1 & 0b111100) == 0b011000)
-        {
-            OpCode->LeftValue = Cpu->registers[rs];
-            OpCode->RightValue = Cpu->registers[rt];
-            OpCode->DestinationRegister = REG_INDEX_HL;
-        }
-        //alu-reg
-        else if (OpCode->Select1 & 0b100000)
-        {
-            OpCode->LeftValue = Cpu->registers[rs];
-            OpCode->RightValue = Cpu->registers[rt];
-            OpCode->DestinationRegister = rd;
-        }
-
+        //mthi/mtlo: these can set destination register in function
+        return;
     }
+
+    OpCode->Immediate = SignExtend16((Data & IMM16_MASK) >> 0);
+    OpCode->DestinationRegister = rt;
     //bltz, bgez, bltzal bgezal
-    else if (OpCode->Select0 == 0b000001)
+    if (Select0 == 0b000001)
     {
-        OpCode->LeftValue = Cpu->registers[rs];
-        OpCode->RightValue = rt; //rt is used as a function selector here
-        OpCode->Immediate = SignExtend16((Data & IMM16_MASK) >> 0);
+        OpCode->FunctionSelect = rt;
         //destination registers set within function
     }
     //j/jal
-    else if ((OpCode->Select0 & 0b111110) == 0b000010)
+    else if ((Select0 & 0b111110) == 0b000010)
     {
         OpCode->Immediate = (Data & IMM26_MASK) >> 0;
-        OpCode->DestinationRegister = REG_INDEX_PC;
-        OpCode->MemAccessType = MEM_ACCESS_BRANCH;
         //RADestinationRegister set within function
     }
     //beq/bne
-    else if ((OpCode->Select0 & 0b111110) == 0b000100)
-    {
-        OpCode->LeftValue = Cpu->registers[rs];
-        OpCode->RightValue = Cpu->registers[rt];
-        OpCode->Immediate = SignExtend16((Data & IMM16_MASK) >> 0);
-        //destination registers set within function
-    }
     //blez/bgtz
-    else if ((OpCode->Select0 & 0b111110) == 0b000110)
-    {
-        OpCode->LeftValue = Cpu->registers[rs];
-        OpCode->Immediate = SignExtend16((Data & IMM16_MASK) >> 0);
-        //destination registers set within function
-    }
     //alu-imm
-    else if ((OpCode->Select0 & 0b111000) == 0b001000)
-    {
-        OpCode->LeftValue = Cpu->registers[rs];
-        OpCode->Immediate = SignExtend16((Data & IMM16_MASK) >> 0);
-        OpCode->DestinationRegister = rt;
-    }
     //lui-imm
-    else if (OpCode->Select0 == 0b001111)
-    {
-        OpCode->Immediate = (Data & IMM16_MASK) >> 0;
-        OpCode->DestinationRegister = rt;
-    }
     //load
-    else if ((OpCode->Select0 & 0b111000) == 0b100000)
-    {
-        OpCode->LeftValue = Cpu->registers[rs];
-        OpCode->Immediate = (Data & IMM16_MASK) >> 0;
-        OpCode->DestinationRegister = rt;
-        OpCode->MemAccessType = MEM_ACCESS_READ;
-    }
     //store
-    else if ((OpCode->Select0 & 0b111000) == 0b101000)
-    {
-        OpCode->LeftValue = Cpu->registers[rs];
-        OpCode->RightValue = Cpu->registers[rt];
-        OpCode->Immediate = (Data & IMM16_MASK) >> 0;
-        OpCode->MemAccessType = MEM_ACCESS_WRITE;
-    }
+
     // coprocessor main instruction decoding
-    else if ((OpCode->Select0 & 0b010000) == 0b010000)
+    else if ((Select0 & 0b010000) == 0b010000)
     {
         OpCode->FunctionSelect = rs;
         // mfc, cfc
         if (rs < 0b00100)
         {
-            OpCode->DestinationRegister = rt;
             OpCode->LeftValue = Cpu->CP0.registers[rd + (rs & 0b00010 ? 32 : 0)];
         }
         // mtc, ctc
@@ -690,7 +627,6 @@ DecodeOpcode(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data, u32 IAddress)
         else if (rs == 0b01000)
         {
             OpCode->RightValue = rt; // used as secondary function select
-            OpCode->Immediate = SignExtend16((Data & IMM16_MASK) >> 0);
         }
         else if (rs & 0b10000)
         {
@@ -698,20 +634,15 @@ DecodeOpcode(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data, u32 IAddress)
         }
     }
     //lwc
-    else if ((OpCode->Select0 & 0b111000) == 0b110000)
+    else if ((Select0 & 0b111000) == 0b110000)
     {
         OpCode->WriteBackMode = OpCode->Select0 & 0b111;
-        OpCode->LeftValue = Cpu->registers[rs];
-        OpCode->DestinationRegister = rt;
-        OpCode->Immediate = (Data & IMM16_MASK) >> 0;
         OpCode->MemAccessType = MEM_ACCESS_READ;
     }
     //swc
-    else if ((OpCode->Select0 & 0b111000) == 0b111000)
+    else if ((Select0 & 0b111000) == 0b111000)
     {
-        OpCode->LeftValue = Cpu->registers[rs];
         OpCode->RightValue = Cpu->CP0.registers[rt];
-        OpCode->Immediate = (Data & IMM16_MASK) >> 0;
         OpCode->MemAccessType = MEM_ACCESS_WRITE;
     }
 }
@@ -794,7 +725,7 @@ void
 WriteBack(MIPS_R3000 *Cpu, opcode *OpCode)
 {
 
-    if (OpCode->WriteBackMode == WRITE_BACK_CPU)
+    if (OpCode->WriteBackMode == WRITE_BACK_CPU && OpCode->MemAccessType == MEM_ACCESS_NONE)
     {
         if (OpCode->DestinationRegister) // Never overwrite Zero
         {
