@@ -109,21 +109,19 @@
 #define WRITE_BACK_C3     3
 #define WRITE_BACK_CPU    4
 
-struct opcode
+struct __attribute__((packed)) opcode
 {
     u32 CurrentAddress = 0;
     u8 Select0;
     u8 Select1;
-    u8 MemAccessType = MEM_ACCESS_NONE;
-    u8 MemAccessMode = MEM_ACCESS_WORD;
-    u8 WriteBackMode = WRITE_BACK_CPU;
-
     u32 LeftValue;
     u32 RightValue;
     u32 Immediate;
     u32 Result;
-    u32 FunctionSelect;
-
+    u8 FunctionSelect;
+    u8 MemAccessType = MEM_ACCESS_NONE;
+    u8 MemAccessMode = MEM_ACCESS_WORD;
+    u8 WriteBackMode = WRITE_BACK_CPU;
     u8 DestinationRegister = 0;
     u8 RADestinationRegister = 0; // Used for return address writing
 };
