@@ -214,6 +214,10 @@ struct MIPS_R3000
         };
     };
 
+    opcode OpCodes[4];
+    int Stages[4];
+    u32 MachineCodes[4];
+
     MIPS_R3000();
 
     void *Memory = linearAlloc(0x1000000);
@@ -225,12 +229,9 @@ struct MIPS_R3000
     u32 NumMMR = 0;
 };
 
-void InstructionFetch(MIPS_R3000 *Cpu, u32 *Code);
-void DecodeOpcode(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data, u32 IAddress);
-void ExecuteOpCode(MIPS_R3000 *Cpu, opcode *OpCode);
-void MemoryAccess(MIPS_R3000 *Cpu, opcode *OpCode);
 void DumpState(MIPS_R3000 *Cpu);
 void MapRegister(MIPS_R3000 *Cpu, mmr MMR);
+void StepCpu(MIPS_R3000 *Cpu, u32 Steps);
 
 inline u32
 ReadMemWordRaw(MIPS_R3000 *Cpu, u32 Address)

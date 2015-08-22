@@ -9,12 +9,6 @@
 #include "disasm.h"
 #include <gfx_device.h>
 
-#define STAGE_IF 0
-#define STAGE_DC 1
-#define STAGE_EO 2
-#define STAGE_MA 3
-#define STAGE_WB 4
-
 void
 ResetCpu(MIPS_R3000 *Cpu)
 {
@@ -53,15 +47,7 @@ int main(int argc, char **argv)
 
     ResetCpu(&Cpu);
 
-    opcode OpCodes[4];
-    int Stages[4];
-
-    for (int i = 3; i >= 0; --i)
-    {
-        Stages[i] = -(i + 1);
-    }
-
-    u32 MachineCodes[4];
+    
 #ifdef ENABLE_DEBUGGER
     if (DebuggerOpen())
     {
@@ -90,10 +76,10 @@ int main(int argc, char **argv)
 
         if (keysDown() & KEY_DDOWN)
         {
-            for (int i = 3; i >= 0; --i)
-            {
-                Stages[i] = -(i + 1);
-            }
+//            for (int i = 3; i >= 0; --i)
+//            {
+//                Stages[i] = -(i + 1);
+//            }
             ResetCpu(&Cpu);
         }
 
@@ -133,38 +119,7 @@ int main(int argc, char **argv)
 
         if (Step)
         {
-            for (int t = 0; t < CyclesToRun; ++t)
-            {
-
-                for (int i = 0; i < 4; ++i)
-                {
-                    ++Stages[i];
-                    Stages[i] %= 4;
-                    if (Stages[i] == STAGE_MA)
-                    {
-                        MemoryAccess(&Cpu, &OpCodes[i]);
-                        continue;
-                    }
-
-                    if (Stages[i] == STAGE_EO)
-                    {
-                        ExecuteOpCode(&Cpu, &OpCodes[i]);
-                        continue;
-                    }
-
-                    if (Stages[i] == STAGE_DC)
-                    {
-                        DecodeOpcode(&Cpu, &OpCodes[i], MachineCodes[i], Cpu.pc - 4);
-                        continue;
-                    }
-
-                    if (Stages[i] == STAGE_IF)
-                    {
-                        InstructionFetch(&Cpu, &MachineCodes[i]);
-                        continue;
-                    }
-                }
-            }
+            StepCpu(&Cpu, CyclesToRun);
         }
         printf("\x1b[0;0H");
         DisassemblerPrintRange(&Cpu, Cpu.pc - (13 * 4), 29, Cpu.pc);
@@ -178,10 +133,6 @@ int main(int argc, char **argv)
                 for (unsigned int i = 0; i < Cmd.PayloadSize; ++i)
                 {
                     WriteMemByteRaw(&Cpu, RESET_VECTOR + i, ((char *)Cmd.Data)[i]);
-                }
-                for (int i = 3; i >= 0; --i)
-                {
-                    Stages[i] = -(i + 1);
                 }
                 ResetCpu(&Cpu);
                 printf("\e[0;0H\e[2J");

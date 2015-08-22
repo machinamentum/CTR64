@@ -84,6 +84,11 @@ MIPS_R3000::
 MIPS_R3000()
 {
     CP0.ExecuteOperation = C0ExecuteOperation;
+    
+    for (int i = 3; i >= 0; --i)
+    {
+        Stages[i] = -(i + 1);
+    }
 }
 
 void
@@ -547,7 +552,7 @@ COP3(MIPS_R3000 *Cpu, opcode *OpCode)
 }
 
 
-void
+inline void
 DecodeOpcode(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data, u32 IAddress)
 {
     u8 rs = (Data & REG_RS_MASK) >> 21;
@@ -651,7 +656,7 @@ DecodeOpcode(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data, u32 IAddress)
     }
 }
 
-void
+inline void
 InstructionFetch(MIPS_R3000 *Cpu, u32 *Code)
 {
     *Code = ReadMemWord(Cpu, Cpu->pc);
@@ -677,7 +682,7 @@ ExecuteWriteRegisters(MIPS_R3000 *Cpu, opcode *OpCode)
     }
 }
 
-void
+inline void
 ExecuteOpCode(MIPS_R3000 *Cpu, opcode *OpCode)
 {
     u8 Select0 = OpCode->Select0;
@@ -720,7 +725,7 @@ WriteBack(MIPS_R3000 *Cpu, opcode *OpCode)
     }
 }
 
-void
+inline void
 MemoryAccess(MIPS_R3000 *Cpu, opcode *OpCode)
 {
     if (OpCode->MemAccessType & MEM_ACCESS_WRITE)
@@ -778,6 +783,50 @@ MapRegister(MIPS_R3000 *Cpu, mmr MMR)
     Cpu->MemMappedRegisters[Cpu->NumMMR] = MMR;
     Cpu->MemMappedRegisters[Cpu->NumMMR].Address &= 0x00FFFFFF;
     ++Cpu->NumMMR;
+}
+
+#define STAGE_IF 0
+#define STAGE_DC 1
+#define STAGE_EO 2
+#define STAGE_MA 3
+#define STAGE_WB 4
+
+void
+StepCpu(MIPS_R3000 *Cpu, u32 Steps)
+{
+    for (u32 t = 0; t < Steps; ++t)
+    {
+
+        for (int i = 0; i < 4; ++i)
+        {
+            u32 Stage = Cpu->Stages[i];
+            Stage = (Stage + 1) % 4;
+            Cpu->Stages[i] = Stage;
+            if (Stage == STAGE_MA)
+            {
+                MemoryAccess(Cpu, &Cpu->OpCodes[i]);
+                continue;
+            }
+
+            if (Stage == STAGE_EO)
+            {
+                ExecuteOpCode(Cpu, &Cpu->OpCodes[i]);
+                continue;
+            }
+
+            if (Stage == STAGE_DC)
+            {
+                DecodeOpcode(Cpu, &Cpu->OpCodes[i], Cpu->MachineCodes[i], Cpu->pc - 4);
+                continue;
+            }
+
+            if (Stage == STAGE_IF)
+            {
+                InstructionFetch(Cpu, &Cpu->MachineCodes[i]);
+                continue;
+            }
+        }
+    }
 }
 
 static void __attribute__((constructor))
