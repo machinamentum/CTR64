@@ -3,7 +3,6 @@
 #include <cstdio>
 #include <cstdlib>
 #include "mips.h"
-#include "debugger.h"
 #include "disasm.h"
 
 static void

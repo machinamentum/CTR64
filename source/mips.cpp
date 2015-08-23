@@ -1,7 +1,6 @@
 #include <3ds.h>
 #include <cstdio>
 #include "mips.h"
-#include "debugger.h"
 
 
 
@@ -119,9 +118,6 @@ ReservedInstructionException(MIPS_R3000 *Cpu, opcode *Op)
 {
     // TODO exceptions & coprocessor0
 //    DumpState(Cpu, Op);
-#ifdef ENABLE_DEBUGGER
-    DebuggerPrint(__func__);
-#endif
 }
 
 

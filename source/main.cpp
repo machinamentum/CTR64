@@ -3,7 +3,6 @@
 #include <cstdio>
 #include <stdlib.h>
 #include <unistd.h>
-#include "debugger.h"
 #include "mips.h"
 #include "gpu.h"
 #include "disasm.h"
@@ -46,19 +45,6 @@ int main(int argc, char **argv)
     }
 
     ResetCpu(&Cpu);
-
-    
-#ifdef ENABLE_DEBUGGER
-    if (DebuggerOpen())
-    {
-        printf("Could not start debugger client!\n");
-    }
-    else
-    {
-        printf("Started debugger\n");
-    }
-
-#endif
 
     bool Step = false;
 
@@ -124,30 +110,11 @@ int main(int argc, char **argv)
         printf("\x1b[0;0H");
         DisassemblerPrintRange(&Cpu, Cpu.pc - (13 * 4), 29, Cpu.pc);
 
-#ifdef ENABLE_DEBUGGER
-        dbg_command Cmd;
-        if (DebuggerGetCommand(&Cmd))
-        {
-            if (Cmd.Cmd == DEBUGGER_CMD_LOAD_KERNEL)
-            {
-                for (unsigned int i = 0; i < Cmd.PayloadSize; ++i)
-                {
-                    WriteMemByteRaw(&Cpu, RESET_VECTOR + i, ((char *)Cmd.Data)[i]);
-                }
-                ResetCpu(&Cpu);
-                printf("\e[0;0H\e[2J");
-            }
-        }
-#endif
-
         gfxFlush(gfxGetFramebuffer(GFX_TOP, GFX_LEFT, NULL, NULL));
         gfxFlushBuffers();
         gfxSwapBuffersGpu();
         gspWaitForVBlank();
     }
-#ifdef ENABLE_DEBUGGER
-    DebuggerClose();
-#endif
 
     // Exit services
     gfxExit();
