@@ -681,7 +681,7 @@ inline void
 WriteBack(MIPS_R3000 *Cpu, opcode *OpCode)
 {
 
-    if (OpCode->WriteBackMode == WRITE_BACK_CPU && OpCode->MemAccessType == MEM_ACCESS_NONE)
+    if (OpCode->WriteBackMode == WRITE_BACK_CPU)
     {
         if (OpCode->DestinationRegister) // Never overwrite Zero
         {
@@ -782,19 +782,12 @@ StepCpu(MIPS_R3000 *Cpu, u32 Steps)
 
         MemoryAccess(Cpu, &Cpu->OpCodes[1]);
         ExecuteOpCode(Cpu, &Cpu->OpCodes[2]);
-        OpCode = &Cpu->OpCodes[3];
-        *OpCode = {};
-        DecodeOpcode(Cpu, OpCode, Cpu->MachineCode);
-        Cpu->MachineCode = InstructionFetch(Cpu);
-
-        MemoryAccess(Cpu, &Cpu->OpCodes[2]);
-        ExecuteOpCode(Cpu, &Cpu->OpCodes[3]);
         OpCode = &Cpu->OpCodes[0];
         *OpCode = {};
         DecodeOpcode(Cpu, OpCode, Cpu->MachineCode);
         Cpu->MachineCode = InstructionFetch(Cpu);
 
-        MemoryAccess(Cpu, &Cpu->OpCodes[3]);
+        MemoryAccess(Cpu, &Cpu->OpCodes[2]);
         ExecuteOpCode(Cpu, &Cpu->OpCodes[0]);
         OpCode = &Cpu->OpCodes[1];
         *OpCode = {};
