@@ -771,29 +771,18 @@ MapRegister(MIPS_R3000 *Cpu, mmr MMR)
 void
 StepCpu(MIPS_R3000 *Cpu, u32 Steps)
 {
+    u32 BS = Cpu->BaseState;
     for (u32 t = 0; t < Steps; ++t)
     {
-        MemoryAccess(Cpu, &Cpu->OpCodes[0]);
-        ExecuteOpCode(Cpu, &Cpu->OpCodes[1]);
-        opcode *OpCode = &Cpu->OpCodes[2];
+        MemoryAccess(Cpu, &Cpu->OpCodes[BS % 3]);
+        ExecuteOpCode(Cpu, &Cpu->OpCodes[(BS + 1) % 3]);
+        opcode *OpCode = &Cpu->OpCodes[(BS + 2) % 3];
         *OpCode = {};
         DecodeOpcode(Cpu, OpCode, Cpu->MachineCode);
         Cpu->MachineCode = InstructionFetch(Cpu);
-
-        MemoryAccess(Cpu, &Cpu->OpCodes[1]);
-        ExecuteOpCode(Cpu, &Cpu->OpCodes[2]);
-        OpCode = &Cpu->OpCodes[0];
-        *OpCode = {};
-        DecodeOpcode(Cpu, OpCode, Cpu->MachineCode);
-        Cpu->MachineCode = InstructionFetch(Cpu);
-
-        MemoryAccess(Cpu, &Cpu->OpCodes[2]);
-        ExecuteOpCode(Cpu, &Cpu->OpCodes[0]);
-        OpCode = &Cpu->OpCodes[1];
-        *OpCode = {};
-        DecodeOpcode(Cpu, OpCode, Cpu->MachineCode);
-        Cpu->MachineCode = InstructionFetch(Cpu);
+        ++BS;
     }
+    Cpu->BaseState = BS;
 }
 
 static void __attribute__((constructor))

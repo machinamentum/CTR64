@@ -224,6 +224,7 @@ struct MIPS_R3000
 
     opcode OpCodes[4];
     u32 MachineCode = 0;
+    u32 BaseState = 0;
 
     MIPS_R3000();
 
