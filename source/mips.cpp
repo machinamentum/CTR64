@@ -543,23 +543,18 @@ COP3(MIPS_R3000 *Cpu, opcode *OpCode)
 }
 
 
-inline void
-DecodeOpcode(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data, u32 IAddress)
+void
+DecodeOpcode(MIPS_R3000 *Cpu, opcode *OpCode, const u32 Data)
 {
-    u8 rs = (Data & REG_RS_MASK) >> 21;
-    u8 rt = (Data & REG_RT_MASK) >> 16;
-    u8 rd = (Data & REG_RD_MASK) >> 11;
-    u8 Select0 = (Data & PRIMARY_OP_MASK) >> 26;
-    u8 Select1 = (Data & SECONDARY_OP_MASK) >> 0;
+    const u8 rs = (Data & REG_RS_MASK) >> 21;
+    const u8 rt = (Data & REG_RT_MASK) >> 16;
+    const u8 rd = (Data & REG_RD_MASK) >> 11;
+    const u8 Select0 = (Data & PRIMARY_OP_MASK) >> 26;
+    const u8 Select1 = (Data & SECONDARY_OP_MASK);
 
-    OpCode->CurrentAddress = IAddress;
+    OpCode->CurrentAddress = Cpu->pc - 4;
     OpCode->Select0 = Select0;
     OpCode->Select1 = Select1;
-    OpCode->MemAccessType = MEM_ACCESS_NONE;
-    OpCode->WriteBackMode = WRITE_BACK_CPU;
-    OpCode->DestinationRegister = 0;
-    OpCode->RADestinationRegister = 0;
-    OpCode->FunctionSelect = 0;
 
     OpCode->LeftValue = Cpu->registers[rs];
     OpCode->RightValue = Cpu->registers[rt];
@@ -601,13 +596,6 @@ DecodeOpcode(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data, u32 IAddress)
         OpCode->Immediate = (Data & IMM26_MASK) >> 0;
         //RADestinationRegister set within function
     }
-    //beq/bne
-    //blez/bgtz
-    //alu-imm
-    //lui-imm
-    //load
-    //store
-
     // coprocessor main instruction decoding
     else if ((Select0 & 0b010000) == 0b010000)
     {
@@ -636,7 +624,7 @@ DecodeOpcode(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data, u32 IAddress)
     //lwc
     else if ((Select0 & 0b111000) == 0b110000)
     {
-        OpCode->WriteBackMode = OpCode->Select0 & 0b111;
+        OpCode->WriteBackMode = Select0 & 0b111;
         OpCode->MemAccessType = MEM_ACCESS_READ;
     }
     //swc
@@ -647,11 +635,12 @@ DecodeOpcode(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data, u32 IAddress)
     }
 }
 
-inline void
-InstructionFetch(MIPS_R3000 *Cpu, u32 *Code)
+inline u32
+InstructionFetch(MIPS_R3000 *Cpu)
 {
-    *Code = ReadMemWord(Cpu, Cpu->pc);
+    u32 Result = ReadMemWord(Cpu, Cpu->pc);
     Cpu->pc += 4;
+    return Result;
 }
 
 inline void
@@ -716,30 +705,30 @@ WriteBack(MIPS_R3000 *Cpu, opcode *OpCode)
     }
 }
 
-inline void
+void
 MemoryAccess(MIPS_R3000 *Cpu, opcode *OpCode)
 {
-    if (OpCode->MemAccessType & MEM_ACCESS_WRITE)
+    if (OpCode->MemAccessType == MEM_ACCESS_WRITE)
     {
-        if (OpCode->MemAccessMode & MEM_ACCESS_BYTE)
+        if (OpCode->MemAccessMode == MEM_ACCESS_BYTE)
         {
             WriteMemByte(Cpu, OpCode->Result, OpCode->RightValue);
         }
 
-        if (OpCode->MemAccessMode & MEM_ACCESS_HALF)
+        if (OpCode->MemAccessMode == MEM_ACCESS_HALF)
         {
             WriteMemHalfWord(Cpu, OpCode->Result, OpCode->RightValue);
         }
 
-        if (OpCode->MemAccessMode & MEM_ACCESS_WORD)
+        if (OpCode->MemAccessMode == MEM_ACCESS_WORD)
         {
             WriteMemWord(Cpu, OpCode->Result, OpCode->RightValue);
         }
         OpCode->DestinationRegister = 0;
     }
-    if (OpCode->MemAccessType & MEM_ACCESS_READ)
+    if (OpCode->MemAccessType == MEM_ACCESS_READ)
     {
-        if (OpCode->MemAccessMode & MEM_ACCESS_BYTE)
+        if (OpCode->MemAccessMode == MEM_ACCESS_BYTE)
         {
             u32 Value = ReadMemByte(Cpu, OpCode->Result);
             if (OpCode->FunctionSelect)
@@ -749,7 +738,7 @@ MemoryAccess(MIPS_R3000 *Cpu, opcode *OpCode)
             OpCode->Result = Value;
         }
 
-        if (OpCode->MemAccessMode & MEM_ACCESS_HALF)
+        if (OpCode->MemAccessMode == MEM_ACCESS_HALF)
         {
             u32 Value = ReadMemHalfWord(Cpu, OpCode->Result);
             if (OpCode->FunctionSelect)
@@ -759,7 +748,7 @@ MemoryAccess(MIPS_R3000 *Cpu, opcode *OpCode)
             OpCode->Result = Value;
         }
 
-        if (OpCode->MemAccessMode & MEM_ACCESS_WORD)
+        if (OpCode->MemAccessMode == MEM_ACCESS_WORD)
         {
             OpCode->Result = ReadMemWord(Cpu, OpCode->Result);
         }
