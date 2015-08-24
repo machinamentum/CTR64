@@ -119,7 +119,7 @@
 
 struct opcode
 {
-    u32 LeftValue;
+    u32 LeftValue = 0;
     u32 RightValue;
     u32 Immediate;
     u32 Result;
@@ -223,7 +223,6 @@ struct MIPS_R3000
     };
 
     opcode OpCodes[4];
-    int Stages[4];
     u32 MachineCode = 0;
 
     MIPS_R3000();

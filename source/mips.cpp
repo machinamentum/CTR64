@@ -91,14 +91,10 @@ MIPS_R3000::
 MIPS_R3000()
 {
     CP0.ExecuteOperation = C0ExecuteOperation;
-    
-    for (int i = 3; i >= 0; --i)
-    {
-        Stages[i] = -(i + 1);
-    }
 }
 
 //Exceptions
+/*
 static void
 C0GenerateException(MIPS_R3000 *Cpu, u8 Cause, u32 EPC)
 {
@@ -107,6 +103,7 @@ C0GenerateException(MIPS_R3000 *Cpu, u8 Cause, u32 EPC)
     Cpu->CP0.sr |= C0_STATUS_KUc;
     Cpu->pc = GNRAL_VECTOR;
 }
+*/
 
 static void
 ReservedInstructionException(MIPS_R3000 *Cpu, opcode *Op)

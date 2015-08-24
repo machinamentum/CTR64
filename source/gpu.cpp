@@ -74,7 +74,7 @@ GpuGp0(void *Object, u32 Value)
         return;
     }
     
-    u32 Param = Value & 0x00FFFFFF;
+//    u32 Param = Value & 0x00FFFFFF;
     u32 Command = Value >> 24;
 
 //    printf("GP0 0x%08lX", Value);
@@ -96,7 +96,7 @@ void
 GpuGp1(void *Object, u32 Value)
 {
     GPU *Gpu = (GPU *)Object;
-    u32 Param = Value & 0x00FFFFFF;
+//    u32 Param = Value & 0x00FFFFFF;
     u32 Command = Value >> 24;
 
     printf("GP1 0x%08lX", Value);

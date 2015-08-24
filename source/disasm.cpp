@@ -17,7 +17,7 @@ UnknownOpCode(opcode *Op)
 {
     // TODO exceptions & coprocessor0
     //    DumpState(Cpu, Op);
-    printf("Unknown Op: 0x%02X:0x%02X", Op->Select0, Op->Select1);
+    printf("Unknown Op: 0x%02lX:0x%02lX", Op->Select0, Op->Select1);
 }
 
 
