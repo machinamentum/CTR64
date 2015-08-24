@@ -27,7 +27,7 @@ static jt_func PrimaryJumpTable[0x40];
 static jt_func SecondaryJumpTable[0x40];
 static const char *RNT[34] =
 {
-    "zero",
+    "zr",
     "at",
 
     "v0",
@@ -90,6 +90,18 @@ static const char *C0RNT[17] =
     "epc",
     "prid",
 };
+
+void
+DumpState(MIPS_R3000 *Cpu)
+{
+    printf("\x1b[0;0H");
+    for (int i = 0; i < 32; ++i)
+    {
+        printf("%s: 0x%08lX  ", RNT[i], Cpu->registers[i]);
+        if (i % 2 == 1) printf("\n");
+    }
+    printf("PC : 0x%08lX\n", Cpu->pc);
+}
 
 static char ScratchString[4];
 

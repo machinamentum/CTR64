@@ -98,19 +98,6 @@ MIPS_R3000()
     }
 }
 
-void
-DumpState(MIPS_R3000 *Cpu)
-{
-    printf("\x1b[0;0H");
-    for (int i = 0; i < 32; ++i)
-    {
-        printf("R%02d: 0x%08lX  ", i, Cpu->registers[i]);
-        if (i % 2 == 1) printf("\n");
-    }
-    printf("RA : 0x%08lX\n", Cpu->ra);
-    printf("PC : 0x%08lX\n", Cpu->pc);
-}
-
 //Exceptions
 static void
 C0GenerateException(MIPS_R3000 *Cpu, u8 Cause, u32 EPC)
