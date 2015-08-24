@@ -776,36 +776,33 @@ StepCpu(MIPS_R3000 *Cpu, u32 Steps)
 {
     for (u32 t = 0; t < Steps; ++t)
     {
+        MemoryAccess(Cpu, &Cpu->OpCodes[0]);
+        ExecuteOpCode(Cpu, &Cpu->OpCodes[1]);
+        opcode *OpCode = &Cpu->OpCodes[2];
+        *OpCode = {};
+        DecodeOpcode(Cpu, OpCode, Cpu->MachineCode);
+        Cpu->MachineCode = InstructionFetch(Cpu);
 
-        for (int i = 0; i < 4; ++i)
-        {
-            u32 Stage = Cpu->Stages[i];
-            Stage = (Stage + 1) % 4;
-            Cpu->Stages[i] = Stage;
-            if (Stage == STAGE_MA)
-            {
-                MemoryAccess(Cpu, &Cpu->OpCodes[i]);
-                continue;
-            }
+        MemoryAccess(Cpu, &Cpu->OpCodes[1]);
+        ExecuteOpCode(Cpu, &Cpu->OpCodes[2]);
+        OpCode = &Cpu->OpCodes[3];
+        *OpCode = {};
+        DecodeOpcode(Cpu, OpCode, Cpu->MachineCode);
+        Cpu->MachineCode = InstructionFetch(Cpu);
 
-            if (Stage == STAGE_EO)
-            {
-                ExecuteOpCode(Cpu, &Cpu->OpCodes[i]);
-                continue;
-            }
+        MemoryAccess(Cpu, &Cpu->OpCodes[2]);
+        ExecuteOpCode(Cpu, &Cpu->OpCodes[3]);
+        OpCode = &Cpu->OpCodes[0];
+        *OpCode = {};
+        DecodeOpcode(Cpu, OpCode, Cpu->MachineCode);
+        Cpu->MachineCode = InstructionFetch(Cpu);
 
-            if (Stage == STAGE_DC)
-            {
-                DecodeOpcode(Cpu, &Cpu->OpCodes[i], Cpu->MachineCodes[i], Cpu->pc - 4);
-                continue;
-            }
-
-            if (Stage == STAGE_IF)
-            {
-                InstructionFetch(Cpu, &Cpu->MachineCodes[i]);
-                continue;
-            }
-        }
+        MemoryAccess(Cpu, &Cpu->OpCodes[3]);
+        ExecuteOpCode(Cpu, &Cpu->OpCodes[0]);
+        OpCode = &Cpu->OpCodes[1];
+        *OpCode = {};
+        DecodeOpcode(Cpu, OpCode, Cpu->MachineCode);
+        Cpu->MachineCode = InstructionFetch(Cpu);
     }
 }
 

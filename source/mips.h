@@ -105,17 +105,17 @@
 #define MEM_ACCESS_NONE   0
 #define MEM_ACCESS_BRANCH 1
 #define MEM_ACCESS_WRITE  2
-#define MEM_ACCESS_READ   4
+#define MEM_ACCESS_READ   3
 
-#define MEM_ACCESS_BYTE   1
-#define MEM_ACCESS_HALF   2
-#define MEM_ACCESS_WORD   4
+#define MEM_ACCESS_BYTE   2
+#define MEM_ACCESS_HALF   1
+#define MEM_ACCESS_WORD   0
 
-#define WRITE_BACK_C0     0
-#define WRITE_BACK_C1     1
-#define WRITE_BACK_C2     2
-#define WRITE_BACK_C3     3
-#define WRITE_BACK_CPU    4
+#define WRITE_BACK_CPU    0
+#define WRITE_BACK_C0     1
+#define WRITE_BACK_C1     2
+#define WRITE_BACK_C2     3
+#define WRITE_BACK_C3     4
 
 struct opcode
 {
@@ -123,15 +123,15 @@ struct opcode
     u32 RightValue;
     u32 Immediate;
     u32 Result;
-    u8 Select0;
-    u8 Select1;
-    u8 FunctionSelect;
-    u8 MemAccessType = MEM_ACCESS_NONE;
-    u8 MemAccessMode = MEM_ACCESS_WORD;
-    u8 WriteBackMode = WRITE_BACK_CPU;
-    u8 DestinationRegister = 0;
-    u8 RADestinationRegister = 0; // Used for return address writing
-    u32 CurrentAddress = 0;
+    u32 Select0;
+    u32 Select1;
+    u32 FunctionSelect;
+    u32 MemAccessType;
+    u32 MemAccessMode;
+    u32 WriteBackMode;
+    u32 DestinationRegister;
+    u32 RADestinationRegister; // Used for return address writing
+    u32 CurrentAddress;
 };
 
 struct Coprocessor
@@ -224,7 +224,7 @@ struct MIPS_R3000
 
     opcode OpCodes[4];
     int Stages[4];
-    u32 MachineCodes[4];
+    u32 MachineCode = 0;
 
     MIPS_R3000();
 
