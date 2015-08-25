@@ -705,53 +705,56 @@ WriteBack(MIPS_R3000 *Cpu, opcode *OpCode)
 void
 MemoryAccess(MIPS_R3000 *Cpu, opcode *OpCode)
 {
-    if (OpCode->MemAccessType == MEM_ACCESS_WRITE)
+    u32 MemAccessType = OpCode->MemAccessType;
+    u32 MemAccessMode = OpCode->MemAccessMode;
+    u32 Value = OpCode->RightValue;
+    u32 Address = OpCode->Result;
+    if (MemAccessType == MEM_ACCESS_WRITE)
     {
-        if (OpCode->MemAccessMode == MEM_ACCESS_BYTE)
+        if (MemAccessMode == MEM_ACCESS_BYTE)
         {
-            WriteMemByte(Cpu, OpCode->Result, OpCode->RightValue);
+            WriteMemByte(Cpu, Address, Value);
         }
 
-        if (OpCode->MemAccessMode == MEM_ACCESS_HALF)
+        if (MemAccessMode == MEM_ACCESS_HALF)
         {
-            WriteMemHalfWord(Cpu, OpCode->Result, OpCode->RightValue);
+            WriteMemHalfWord(Cpu, Address, Value);
         }
 
-        if (OpCode->MemAccessMode == MEM_ACCESS_WORD)
+        if (MemAccessMode == MEM_ACCESS_WORD)
         {
-            WriteMemWord(Cpu, OpCode->Result, OpCode->RightValue);
+            WriteMemWord(Cpu, Address, Value);
         }
-        OpCode->DestinationRegister = 0;
     }
-    if (OpCode->MemAccessType == MEM_ACCESS_READ)
+    if (MemAccessType == MEM_ACCESS_READ)
     {
-        if (OpCode->MemAccessMode == MEM_ACCESS_BYTE)
+        u32 Signed = OpCode->FunctionSelect;
+        if (MemAccessMode == MEM_ACCESS_BYTE)
         {
-            u32 Value = ReadMemByte(Cpu, OpCode->Result);
-            if (OpCode->FunctionSelect)
+            Value = ReadMemByte(Cpu, Address);
+            if (Signed)
             {
                 Value = SignExtend8(Value);
             }
-            OpCode->Result = Value;
         }
 
-        if (OpCode->MemAccessMode == MEM_ACCESS_HALF)
+        if (MemAccessMode == MEM_ACCESS_HALF)
         {
-            u32 Value = ReadMemHalfWord(Cpu, OpCode->Result);
-            if (OpCode->FunctionSelect)
+            Value = ReadMemHalfWord(Cpu, Address);
+            if (Signed)
             {
                 Value = SignExtend16(Value);
             }
-            OpCode->Result = Value;
         }
 
-        if (OpCode->MemAccessMode == MEM_ACCESS_WORD)
+        if (MemAccessMode == MEM_ACCESS_WORD)
         {
-            OpCode->Result = ReadMemWord(Cpu, OpCode->Result);
+            Value = ReadMemWord(Cpu, Address);
         }
-    }
 
-    WriteBack(Cpu, OpCode);
+        OpCode->Result = Value;
+        WriteBack(Cpu, OpCode);
+    }
 }
 
 void
