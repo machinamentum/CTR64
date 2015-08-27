@@ -36,14 +36,14 @@ _jump_redirect_B:
 
 
 _jump_func_A:
-    ori a0, zr, 4
+    ori a0, zr, 8
     mul a0, $9, a0
     la a1, _jump_table_A
     addu a1, a1, a0
     jr a1
 
 _jump_func_B:
-    ori a0, zr, 4
+    ori a0, zr, 8
     mul a0, $9, a0
     la a1, _jump_table_B
     addu a1, a1, a0
@@ -52,86 +52,168 @@ _jump_func_B:
 
 _jump_table_A:
     j SystemError
+    nop
     j SystemError
+    nop
     j SystemError
+    nop
     j SystemError
+    nop
     j SystemError
+    nop
     j SystemError
+    nop
     j SystemError
+    nop
     j SystemError
+    nop
     j SystemError
+    nop
     j SystemError
+    nop
     j SystemError
+    nop
     j SystemError
+    nop
     j SystemError
+    nop
     j SystemError
+    nop
     j SystemError
+    nop
     j SystemError
+    nop
     j SystemError
+    nop
     j SystemError
+    nop
     j SystemError
+    nop
     j SystemError
+    nop
     j SystemError
+    nop
     j SystemError
+    nop
     j SystemError
+    nop
     j SystemError
+    nop
     j SystemError
+    nop
     j SystemError
+    nop
     j SystemError
+    nop
     j SystemError
+    nop
     j SystemError
+    nop
     j SystemError
+    nop
     j SystemError
+    nop
     j SystemError
+    nop
     j SystemError
+    nop
     j SystemError
+    nop
     j SystemError
+    nop
     j SystemError
+    nop
     j SystemError
+    nop
     j SystemError
+    nop
     j SystemError
+    nop
     j SystemError
+    nop
     j SystemError
+    nop
     j memcpy
+    nop
 
 _jump_table_B:
     j SystemError
+    nop
     j SystemError
+    nop
     j SystemError
+    nop
     j SystemError
+    nop
     j SystemError
+    nop
     j SystemError
+    nop
     j SystemError
+    nop
     j SystemError
+    nop
     j SystemError
+    nop
     j SystemError
+    nop
     j SystemError
+    nop
     j SystemError
+    nop
     j SystemError
+    nop
     j SystemError
+    nop
     j SystemError
+    nop
     j SystemError
+    nop
     j SystemError
+    nop
     j SystemError
+    nop
     j SystemError
+    nop
     j SystemError
+    nop
     j SystemError
+    nop
     j SystemError
+    nop
     j SystemError
+    nop
     j SetDefaultExitFromException
+    nop
     j SetCustomExitFromException
+    nop
     j SystemError
+    nop
     j SystemError
+    nop
     j SystemError
+    nop
     j SystemError
+    nop
     j SystemError
+    nop
     j SystemError
+    nop
     j SystemError
+    nop
     j SystemError
+    nop
     j SystemError
+    nop
     j SystemError
+    nop
     j SystemError
+    nop
     j SystemError
+    nop
     j SystemError
+    nop
     j SystemError
+    nop
     j SystemError
+    nop
