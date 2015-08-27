@@ -12,7 +12,7 @@
     .global _start
 _start:
     nop
-    mtc0 zero, sr
+    mtc0 zr, sr
     nop
     lui sp, 0x801F
     ori sp, sp, 0xFF00
@@ -24,3 +24,114 @@ _start:
     .int KERNEL_BUILD_DATE
     .int 0x43545258
     .asciz "CTRX BIOS"
+
+    .text
+    .global _jump_redirect_A
+_jump_redirect_A:
+    j _jump_func_A
+
+    .global _jump_redirect_B
+_jump_redirect_B:
+    j _jump_func_B
+
+
+_jump_func_A:
+    ori a0, zr, 4
+    mul a0, $9, a0
+    la a1, _jump_table_A
+    addu a1, a1, a0
+    jr a1
+
+_jump_func_B:
+    ori a0, zr, 4
+    mul a0, $9, a0
+    la a1, _jump_table_B
+    addu a1, a1, a0
+    jr a1
+
+
+_jump_table_A:
+    j SystemError
+    j SystemError
+    j SystemError
+    j SystemError
+    j SystemError
+    j SystemError
+    j SystemError
+    j SystemError
+    j SystemError
+    j SystemError
+    j SystemError
+    j SystemError
+    j SystemError
+    j SystemError
+    j SystemError
+    j SystemError
+    j SystemError
+    j SystemError
+    j SystemError
+    j SystemError
+    j SystemError
+    j SystemError
+    j SystemError
+    j SystemError
+    j SystemError
+    j SystemError
+    j SystemError
+    j SystemError
+    j SystemError
+    j SystemError
+    j SystemError
+    j SystemError
+    j SystemError
+    j SystemError
+    j SystemError
+    j SystemError
+    j SystemError
+    j SystemError
+    j SystemError
+    j SystemError
+    j SystemError
+    j memcpy
+
+_jump_table_B:
+    j SystemError
+    j SystemError
+    j SystemError
+    j SystemError
+    j SystemError
+    j SystemError
+    j SystemError
+    j SystemError
+    j SystemError
+    j SystemError
+    j SystemError
+    j SystemError
+    j SystemError
+    j SystemError
+    j SystemError
+    j SystemError
+    j SystemError
+    j SystemError
+    j SystemError
+    j SystemError
+    j SystemError
+    j SystemError
+    j SystemError
+    j SetDefaultExitFromException
+    j SetCustomExitFromException
+    j SystemError
+    j SystemError
+    j SystemError
+    j SystemError
+    j SystemError
+    j SystemError
+    j SystemError
+    j SystemError
+    j SystemError
+    j SystemError
+    j SystemError
+    j SystemError
+    j SystemError
+    j SystemError
+    j SystemError

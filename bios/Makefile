@@ -42,7 +42,8 @@ INCLUDES	:=	include
 ARCH	:=	-march=mips1 -mtune=r3000
 
 CFLAGS	:=	 -Wall -mno-mips16 -fno-zero-initialized-in-bss -mgp32 -EL\
-			-fomit-frame-pointer -ffast-math \
+			-fomit-frame-pointer -ffast-math -fno-builtin \
+			-mno-extern-sdata \
 			$(ARCH)
 
 BUILD_DATE := $(shell date +%Y%m%d)

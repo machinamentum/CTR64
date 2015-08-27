@@ -6,7 +6,7 @@
  * this stuff is worth it, you can buy me a beer in return.   Josh Huelsman
  * ----------------------------------------------------------------------------
  */
-zero = $0
+zr = $0
 at   = $1
 v0   = $2
 v1   = $3
