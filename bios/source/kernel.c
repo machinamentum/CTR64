@@ -89,7 +89,7 @@ memcpy(const void *Dst, const void *Src, uint32_t Len)
     }
 }
 
-static void
+void
 ReturnFromException()
 {
     // TODO
@@ -105,23 +105,135 @@ static const FunctionHook DefaultExitFromExceptionHook =
     0
 };
 
-FunctionHook *SetDefaultExitFromException()
+FunctionHook *
+SetDefaultExitFromException()
 {
     memcpy(&ExitFromExceptionHook, &DefaultExitFromExceptionHook, sizeof(FunctionHook));
     return &ExitFromExceptionHook;
 }
 
-void SetCustomExitFromException(FunctionHook *Hook)
+void
+SetCustomExitFromException(FunctionHook *Hook)
 {
     memcpy(&ExitFromExceptionHook, Hook, sizeof(FunctionHook));
 }
 
-int SystemError()
+int
+SystemError()
 {
     return 0;
 }
 
-static void InstallBIOSJumperCables()
+
+static void
+std_out_puts(const char *Src)
+{
+    if (!Src)
+    {
+        std_out_puts("<NULL>");
+        return;
+    }
+
+    uint32_t *const CTRX_PRINT_STR = (uint32_t *)0x1F802064;
+    *CTRX_PRINT_STR = (uint32_t)Src;
+}
+
+static uint32_t
+GetSystemInfo(uint32_t Index)
+{
+    extern const uint32_t _kernel_build_date;
+    extern const uint32_t _kernel_flags;
+    extern const uint32_t _kernel_ascii_id;
+    switch (Index)
+    {
+        case 0:
+            return _kernel_build_date;
+        case 1:
+            return _kernel_flags;
+        case 2:
+            return (uint32_t)&_kernel_ascii_id;
+        case 3:
+        case 4:
+            return 0;
+        case 5:
+            return 2048;
+        default:
+            return 0;
+    }
+}
+
+static uint32_t RandGenValue = 0;
+
+uint32_t
+rand()
+{
+    RandGenValue = RandGenValue * 0x41C64E6D + 0x3039;
+    return (RandGenValue / 0x10000) & 0x7FFF;
+}
+
+void
+srand(uint32_t Seed)
+{
+    RandGenValue = Seed;
+}
+
+int
+abs(int Value)
+{
+    return (Value < 0 ? -Value : Value);
+}
+
+long int
+labs(long int Value)
+{
+    return (Value < 0 ? -Value : Value);
+}
+
+uint32_t
+todigit(uint32_t c)
+{
+    c &= 0xFF;
+    if (c >= 0x30 && c <0x3A)
+    {
+        return c - 0x30;
+    }
+    if (c > 0x60 && c < 0x7B)
+    {
+        c -= 0x20;
+    }
+    if (c > 0x40 && c < 0x5B)
+    {
+        return c - 0x41 + 10;
+    }
+    if (c >= 0x80)
+    {
+        return -1;
+    }
+    return 0x0098967F;
+}
+
+uint32_t
+strlen(const char *Src)
+{
+    if (!Src) return 0;
+    uint32_t Length = 0;
+    while (*(Src + Length) != '\0');
+    {
+        ++Length;
+    }
+
+    return Length;
+}
+
+void *
+GetB0Table()
+{
+    extern const uint32_t _jump_table_B;
+    return (void *)&_jump_table_B;
+}
+
+static void
+InstallBIOSJumperCables()
 {
     extern const uint32_t _jump_redirect_A;
     extern const uint32_t _jump_redirect_B;

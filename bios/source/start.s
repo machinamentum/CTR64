@@ -21,8 +21,14 @@ _start:
     nop
 
     .section .rodata.rom_header
+    .global _kernel_build_date
+    .global _kernel_flags
+    .global _kernel_ascii_id
+_kernel_build_date:
     .int KERNEL_BUILD_DATE
+_kernel_flags:
     .int 0x43545258
+_kernel_ascii_id:
     .asciz "CTRX BIOS"
 
     .text
@@ -71,7 +77,17 @@ _jump_table_A:
     nop
     j SystemError
     nop
+    j todigit
+    nop
     j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j abs
+    nop
+    j labs
     nop
     j SystemError
     nop
@@ -95,17 +111,7 @@ _jump_table_A:
     nop
     j SystemError
     nop
-    j SystemError
-    nop
-    j SystemError
-    nop
-    j SystemError
-    nop
-    j SystemError
-    nop
-    j SystemError
-    nop
-    j SystemError
+    j strlen
     nop
     j SystemError
     nop
@@ -136,6 +142,7 @@ _jump_table_A:
     j memcpy
     nop
 
+    .global _jump_table_B
 _jump_table_B:
     j SystemError
     nop
@@ -181,7 +188,7 @@ _jump_table_B:
     nop
     j SystemError
     nop
-    j SystemError
+    j ReturnFromException
     nop
     j SetDefaultExitFromException
     nop

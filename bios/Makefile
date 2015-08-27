@@ -43,7 +43,7 @@ ARCH	:=	-march=mips1 -mtune=r3000
 
 CFLAGS	:=	 -Wall -mno-mips16 -fno-zero-initialized-in-bss -mgp32 -EL\
 			-fomit-frame-pointer -ffast-math -fno-builtin \
-			-mno-extern-sdata \
+			-mno-extern-sdata -G0 \
 			$(ARCH)
 
 BUILD_DATE := $(shell date +%Y%m%d)
