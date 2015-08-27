@@ -161,6 +161,43 @@ Sub(opcode *OpCode)
     printf("sub %s, %s, %s", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], RNT[OpCode->RightValue]);
 }
 
+//HI:LO operations
+static void
+MFHI(opcode *OpCode)
+{
+    printf("mfhi %s", RNT[OpCode->DestinationRegister]);
+}
+
+static void
+MFLO(opcode *OpCode)
+{
+    printf("mflo %s", RNT[OpCode->DestinationRegister]);
+}
+
+static void
+Mult(opcode *OpCode)
+{
+    printf("mult %s, %s", RNT[OpCode->LeftValue], RNT[OpCode->RightValue]);
+}
+
+static void
+MultU(opcode *OpCode)
+{
+    printf("multu %s, %s", RNT[OpCode->LeftValue], RNT[OpCode->RightValue]);
+}
+
+static void
+Div(opcode *OpCode)
+{
+    printf("div %s, %s", RNT[OpCode->LeftValue], RNT[OpCode->RightValue]);
+}
+
+static void
+DivU(opcode *OpCode)
+{
+    printf("divu %s, %s", RNT[OpCode->LeftValue], RNT[OpCode->RightValue]);
+}
+
 //Store
 static void
 SW(opcode *OpCode)
@@ -838,14 +875,14 @@ InitJumpTables()
     SecondaryJumpTable[0x09] = JALR;
     //    SecondaryJumpTable[0x0C] = SysCall;
     //    SecondaryJumpTable[0x0D] = Break;
-    //    SecondaryJumpTable[0x10] = MFHI;
+    SecondaryJumpTable[0x10] = MFHI;
     //    SecondaryJumpTable[0x11] = MTHI;
-    //    SecondaryJumpTable[0x12] = MFLO;
+    SecondaryJumpTable[0x12] = MFLO;
     //    SecondaryJumpTable[0x13] = MTLO;
-    //    SecondaryJumpTable[0x18] = Mutl;
-    //    SecondaryJumpTable[0x19] = MultU;
-    //    SecondaryJumpTable[0x1A] = Div;
-    //    SecondaryJumpTable[0x1B] = DivU;
+    SecondaryJumpTable[0x18] = Mult;
+    SecondaryJumpTable[0x19] = MultU;
+    SecondaryJumpTable[0x1A] = Div;
+    SecondaryJumpTable[0x1B] = DivU;
     SecondaryJumpTable[0x20] = Add;
     SecondaryJumpTable[0x21] = AddU;
     SecondaryJumpTable[0x22] = Sub;

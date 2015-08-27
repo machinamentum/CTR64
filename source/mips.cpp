@@ -158,6 +158,78 @@ Sub(MIPS_R3000 *Cpu, opcode *OpCode)
     // TODO overflow trap
 }
 
+//HI:LO operations
+static void
+MFHI(MIPS_R3000 *Cpu, opcode *OpCode)
+{
+    OpCode->Result = Cpu->hi;
+}
+
+static void
+MFLO(MIPS_R3000 *Cpu, opcode *OpCode)
+{
+    OpCode->Result = Cpu->lo;
+}
+
+static void
+Mult(MIPS_R3000 *Cpu, opcode *OpCode)
+{
+    s64 Result = (s64)OpCode->LeftValue * (s64)OpCode->RightValue;
+    Cpu->hi = (Result >> 32) & 0xFFFFFFFF;
+    Cpu->lo = Result & 0xFFFFFFFF;
+}
+
+static void
+MultU(MIPS_R3000 *Cpu, opcode *OpCode)
+{
+    u64 Result = (u64)OpCode->LeftValue * (u64)OpCode->RightValue;
+    Cpu->hi = Result >> 32;
+    Cpu->lo = Result & 0xFFFFFFFF;
+}
+
+static void
+Div(MIPS_R3000 *Cpu, opcode *OpCode)
+{
+    s32 Left = OpCode->LeftValue;
+    s32 Right = OpCode->RightValue;
+    if (!Right)
+    {
+        Cpu->hi = Left;
+        if (Left >= 0)
+        {
+            Cpu->lo = -1;
+        }
+        else
+        {
+            Cpu->lo = 1;
+        }
+        return;
+    }
+    if (Right == -1 && (u32)Left == 0x80000000)
+    {
+        Cpu->hi = 0;
+        Cpu->lo = 0x80000000;
+        return;
+    }
+    Cpu->lo = Left / Right;
+    Cpu->hi = Left % Right;
+}
+
+static void
+DivU(MIPS_R3000 *Cpu, opcode *OpCode)
+{
+    u32 Left = OpCode->LeftValue;
+    u32 Right = OpCode->RightValue;
+    if (!Right)
+    {
+        Cpu->hi = Left;
+        Cpu->lo = 0xFFFFFFFF;
+        return;
+    }
+    Cpu->lo = Left / Right;
+    Cpu->hi = Left % Right;
+}
+
 //Store
 static void
 SW(MIPS_R3000 *Cpu, opcode *OpCode)
@@ -848,14 +920,14 @@ InitJumpTables()
     SecondaryJumpTable[0x09] = JALR;
     //    SecondaryJumpTable[0x0C] = SysCall;
     //    SecondaryJumpTable[0x0D] = Break;
-    //    SecondaryJumpTable[0x10] = MFHI;
+    SecondaryJumpTable[0x10] = MFHI;
     //    SecondaryJumpTable[0x11] = MTHI;
-    //    SecondaryJumpTable[0x12] = MFLO;
+    SecondaryJumpTable[0x12] = MFLO;
     //    SecondaryJumpTable[0x13] = MTLO;
-    //    SecondaryJumpTable[0x18] = Mutl;
-    //    SecondaryJumpTable[0x19] = MultU;
-    //    SecondaryJumpTable[0x1A] = Div;
-    //    SecondaryJumpTable[0x1B] = DivU;
+    SecondaryJumpTable[0x18] = Mult;
+    SecondaryJumpTable[0x19] = MultU;
+    SecondaryJumpTable[0x1A] = Div;
+    SecondaryJumpTable[0x1B] = DivU;
     SecondaryJumpTable[0x20] = Add;
     SecondaryJumpTable[0x21] = AddU;
     SecondaryJumpTable[0x22] = Sub;
