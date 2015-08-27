@@ -40,11 +40,16 @@ ResetCpu(MIPS_R3000 *Cpu)
     Cpu->pc = RESET_VECTOR;
 }
 
+static void
+std_out_puts(void *Memory, u32 Value)
+{
+    char *M = (char *)Memory;
+    printf(M + (Value & 0x00FFFFFF));
+}
+
 int main(int argc, char **argv)
 {
-
-    if (argc) chdir(argv[0]);
-
+	if (argc > 1) chdir(argv[1]);
     gfxInitDefault();
     hidInit(NULL);
     PrintConsole BottomConsole;
@@ -55,6 +60,7 @@ int main(int argc, char **argv)
     Cpu.CP1 = &Gpu;
     MapRegister(&Cpu, (mmr) {GPU_GP0, &Gpu, GpuGp0});
     MapRegister(&Cpu, (mmr) {GPU_GP1, &Gpu, GpuGp1});
+    MapRegister(&Cpu, (mmr) {0x1F802064, Cpu.Memory, std_out_puts});
 
     FILE *f = fopen("boot.exe", "rb");
     fseek(f, 0, SEEK_END);
@@ -122,7 +128,7 @@ int main(int argc, char **argv)
             CyclesToRun = 1;
         }
 
-        Step = false;
+        Step = true;
         if (KeysUp & KEY_A)
         {
             printf("\x1b[0;0H");
@@ -143,8 +149,6 @@ int main(int argc, char **argv)
         {
             StepCpu(&Cpu, CyclesToRun);
         }
-        printf("\x1b[0;0H");
-        DisassemblerPrintRange(&Cpu, Cpu.pc - (13 * 4), 29, Cpu.pc);
 
         gfxFlush(gfxGetFramebuffer(GFX_TOP, GFX_LEFT, NULL, NULL));
         gfxFlushBuffers();
