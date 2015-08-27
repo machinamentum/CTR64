@@ -96,20 +96,25 @@ void
 GpuGp1(void *Object, u32 Value)
 {
     GPU *Gpu = (GPU *)Object;
-//    u32 Param = Value & 0x00FFFFFF;
+    u32 Param = Value & 0x00FFFFFF;
     u32 Command = Value >> 24;
 
-    printf("GP1 0x%08lX", Value);
+    printf("GP1 0x%08lX\n", Value);
 
-    if (Command == GP1_COMMAND_RST)
+    switch (Command)
     {
-        // TODO reset command
+        case GP1_COMMAND_RST:
+            // TODO reset command
+            break;
+        case GP1_COMMAND_DISP_EN:
+            Gpu->Status |= GPU_STAT_DISP_EN;
+            break;
+        case GP1_COMMAND_DMA_DIR:
+            Gpu->Status ^= (-(Param & 3) ^ Gpu->Status) & (3 << 29);
+            break;
     }
 
-    if (Command == GP1_COMMAND_DISP_EN)
-    {
-        Gpu->Status |= GPU_STAT_DISP_EN;
-    }
+
 }
 
 static void
