@@ -174,7 +174,7 @@ struct MIPS_R3000
 {
     union
     {
-        u32 registers[34];
+        u32 registers[35];
         struct
         {
             u32 zero;
@@ -218,7 +218,7 @@ struct MIPS_R3000
             u32 ra;
             u32 pc = RESET_VECTOR;
 
-            u16 hi, lo;
+            u32 hi, lo;
         };
     };
 
