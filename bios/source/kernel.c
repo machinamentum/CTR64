@@ -246,9 +246,13 @@ InstallBIOSJumperCables()
 
 void kmain(void)
 {
+    std_out_puts("CTRX BIOS by machinamentum\n");
     EnableDisplay();
     DrawQuad(Quad);
+    std_out_puts("Attaching jumper cables...");
     InstallBIOSJumperCables();
+    std_out_puts("done\n");
+    std_out_puts("Calling user code...\n");
     typedef void (*UEFunc)(void);
     UEFunc UserEntry = (UEFunc)0x80010000;
     UserEntry();
