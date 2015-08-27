@@ -93,48 +93,47 @@ int main(int argc, char **argv)
     while (aptMainLoop())
     {
         hidScanInput();
+        u32 KeysDown = hidKeysDown();
+        u32 KeysHeld = hidKeysHeld();
+        u32 KeysUp = hidKeysUp();
 
-        if (keysDown() & KEY_START)
+        if (KeysDown & KEY_START)
             break;
 
-        if (keysDown() & KEY_DDOWN)
+        if (KeysDown & KEY_DDOWN)
         {
-//            for (int i = 3; i >= 0; --i)
-//            {
-//                Stages[i] = -(i + 1);
-//            }
             ResetCpu(&Cpu);
         }
 
-        if (keysHeld() & KEY_DLEFT)
+        if (KeysHeld & KEY_DLEFT)
         {
             CyclesToRun -= 1000;
             if (CyclesToRun < 1)
                 CyclesToRun = 1;
         }
 
-        if (keysHeld() & KEY_DRIGHT)
+        if (KeysHeld & KEY_DRIGHT)
         {
             CyclesToRun += 1000;
         }
 
-        if (keysDown() & KEY_DUP)
+        if (KeysDown & KEY_DUP)
         {
             CyclesToRun = 1;
         }
 
         Step = false;
-        if (keysUp() & KEY_A)
+        if (KeysUp & KEY_A)
         {
             printf("\x1b[0;0H");
             printf("\e[0;0H\e[2J");
             Step = true;
         }
 
-        if (keysHeld() & KEY_Y)
+        if (KeysHeld & KEY_Y)
             Step = true;
 
-        if (keysUp() & KEY_Y)
+        if (KeysUp & KEY_Y)
         {
             printf("\x1b[0;0H");
             printf("\e[0;0H\e[2J");
