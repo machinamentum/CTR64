@@ -13,7 +13,26 @@
 #include "mips.h"
 #include "gpu.h"
 #include "disasm.h"
+#include "psxexe.h"
 #include <gfx_device.h>
+
+static void
+LoadPsxExe(MIPS_R3000 *Cpu, psxexe_hdr *Hdr)
+{
+    u32 Address = Hdr->DestAddress;
+    u32 PC = Hdr->InitPC;
+    u32 GP = Hdr->InitGP;
+    u32 SP = Hdr->InitSP + Hdr->OffsetSP;
+    u8 *CodeStart = ((u8 *)Hdr) + 0x800;
+    for (u32 i = 0; i < Hdr->FileSize; ++i)
+    {
+        WriteMemByteRaw(Cpu, Address + i, CodeStart[i]);
+    }
+    Cpu->pc = PC;
+    Cpu->gp = GP;
+    Cpu->sp = SP;
+    Cpu->fp = SP;
+}
 
 void
 ResetCpu(MIPS_R3000 *Cpu)
@@ -37,9 +56,20 @@ int main(int argc, char **argv)
     MapRegister(&Cpu, (mmr) {GPU_GP0, &Gpu, GpuGp0});
     MapRegister(&Cpu, (mmr) {GPU_GP1, &Gpu, GpuGp1});
 
-    FILE *f = fopen("psx_bios.bin", "rb");
+    FILE *f = fopen("boot.exe", "rb");
     fseek(f, 0, SEEK_END);
     long fsize = ftell(f);
+    fseek(f, 0, SEEK_SET);
+
+    u8 *ExeBuffer = (u8 *)linearAlloc(fsize + 1);
+    fread(ExeBuffer, fsize, 1, f);
+    fclose(f);
+
+    LoadPsxExe(&Cpu, (psxexe_hdr *)ExeBuffer);
+
+    f = fopen("psx_bios.bin", "rb");
+    fseek(f, 0, SEEK_END);
+    fsize = ftell(f);
     fseek(f, 0, SEEK_SET);
 
     u8 *BiosBuffer = (u8 *)linearAlloc(fsize + 1);
