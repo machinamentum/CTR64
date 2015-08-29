@@ -92,7 +92,7 @@
 #define C0_CAUSE_RI     10
 #define C0_CAUSE_OVF    11
 
-#define C0_CAUSE_MASK  (0b111111 << 10)
+#define C0_CAUSE_MASK  (0b11111 << 2)
 
 #define MIPS_MODE_KERNEL 1
 #define MIPS_MODE_USER   0

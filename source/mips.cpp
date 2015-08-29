@@ -82,10 +82,7 @@ WriteMemHalfWord(MIPS_R3000 *Cpu, u32 Address, u16 value)
 }
 
 static void
-C0ExecuteOperation(Coprocessor *Cp, u32 FunctionCode)
-{
-
-}
+C0ExecuteOperation(Coprocessor *Cp, u32 FunctionCode);
 
 MIPS_R3000::
 MIPS_R3000()
@@ -94,22 +91,65 @@ MIPS_R3000()
 }
 
 //Exceptions
-/*
+inline void
+C0ExceptionPushSRBits(Coprocessor *CP0)
+{
+    u32 SR = CP0->sr;
+    u32 IEp = (SR >> 2) & 1;
+    u32 KUp = (SR >> 3) & 1;
+    u32 IEc = (SR) & 1;
+    u32 KUc = (SR >> 1) & 1;
+    SR ^= (-IEp ^ SR) & (1 << 4);
+    SR ^= (-KUp ^ SR) & (1 << 5);
+    SR ^= (-IEc ^ SR) & (1 << 2);
+    SR ^= (-KUc ^ SR) & (1 << 3);
+    CP0->sr = SR;
+}
+
+inline void
+C0ExceptionPopSRBits(Coprocessor *CP0)
+{
+    u32 SR = CP0->sr;
+    u32 IEp = (SR >> 2) & 1;
+    u32 KUp = (SR >> 3) & 1;
+    u32 IEo = (SR >> 4) & 1;
+    u32 KUo = (SR >> 5) & 1;
+    SR ^= (-IEp ^ SR) & (1 << 0);
+    SR ^= (-KUp ^ SR) & (1 << 1);
+    SR ^= (-IEo ^ SR) & (1 << 2);
+    SR ^= (-KUo ^ SR) & (1 << 3);
+    CP0->sr = SR;
+}
+
 static void
 C0GenerateException(MIPS_R3000 *Cpu, u8 Cause, u32 EPC)
 {
-    Cpu->CP0.cause = (Cause << 10) & C0_CAUSE_MASK;
+    Cpu->CP0.cause = (Cause << 2) & C0_CAUSE_MASK;
     Cpu->CP0.epc = EPC;
-    Cpu->CP0.sr |= C0_STATUS_KUc;
+    C0ExceptionPushSRBits(&Cpu->CP0);
+    Cpu->CP0.sr &= ~C0_STATUS_KUc;
     Cpu->pc = GNRAL_VECTOR;
 }
-*/
+
+static void
+C0ReturnFromException(Coprocessor *Cp)
+{
+    C0ExceptionPopSRBits(Cp);
+}
+
+static void
+C0ExecuteOperation(Coprocessor *Cp, u32 FunctionCode)
+{
+    if (FunctionCode == 0x10)
+    {
+        C0ReturnFromException(Cp);
+    }
+}
 
 static void
 ReservedInstructionException(MIPS_R3000 *Cpu, opcode *Op)
 {
-    // TODO exceptions & coprocessor0
-//    DumpState(Cpu, Op);
+    C0GenerateException(Cpu, C0_CAUSE_RI, Op->CurrentAddress);
 }
 
 
