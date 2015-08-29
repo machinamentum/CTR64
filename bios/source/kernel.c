@@ -233,6 +233,19 @@ GetB0Table()
 }
 
 static void
+InstallExceptionHandler()
+{
+    uint32_t *GeneralVector = (uint32_t *)0x80000080;
+    extern const uint32_t _exception_handler_size;
+    extern uint32_t _exception_handler_entry;
+    uint32_t *ExceptionHandler = &_exception_handler_entry;
+    for (int i = 0; i < _exception_handler_size; ++i)
+    {
+        GeneralVector[i] = ExceptionHandler[i];
+    }
+}
+
+static void
 InstallBIOSJumperCables()
 {
     extern const uint32_t _jump_redirect_A;
@@ -247,6 +260,7 @@ InstallBIOSJumperCables()
 void kmain(void)
 {
     std_out_puts("CTRX BIOS by machinamentum\n");
+    InstallExceptionHandler();
     EnableDisplay();
     DrawQuad(Quad);
     std_out_puts("Attaching jumper cables...");

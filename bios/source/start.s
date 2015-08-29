@@ -32,13 +32,25 @@ _kernel_ascii_id:
     .asciz "CTRX BIOS"
 
     .text
+    .global _exception_handler_entry
+_exception_handler_entry:
+    mfc0 k0, epc
+    jr k0
+    rfe
+    nop
+    .global _exception_handler_size
+_exception_handler_size:
+    .word . - _exception_handler_entry
+
     .global _jump_redirect_A
 _jump_redirect_A:
     j _jump_func_A
+    nop
 
     .global _jump_redirect_B
 _jump_redirect_B:
     j _jump_func_B
+    nop
 
 
 _jump_func_A:
