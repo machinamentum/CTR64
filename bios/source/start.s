@@ -54,18 +54,20 @@ _jump_redirect_B:
 
 
 _jump_func_A:
-    ori a0, zr, 8
-    mul a0, $9, a0
-    la a1, _jump_table_A
-    addu a1, a1, a0
-    jr a1
+    ori t7, zr, 8
+    mul t7, $9, t7
+    la t8, _jump_table_A
+    addu t8, t8, t7
+    jr t8
+    nop
 
 _jump_func_B:
-    ori a0, zr, 8
-    mul a0, $9, a0
-    la a1, _jump_table_B
-    addu a1, a1, a0
-    jr a1
+    ori t7, zr, 8
+    mul t7, $9, t7
+    la t8, _jump_table_B
+    addu t8, t8, t7
+    jr t8
+    nop
 
 
 _jump_table_A:
