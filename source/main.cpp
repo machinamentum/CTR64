@@ -95,7 +95,8 @@ int main(int argc, char **argv)
 //    consoleInit(GFX_TOP, &TopConsole);
 //    consoleSelect(&BottomConsole);
     int CyclesToRun = 1;
-
+    bool EnableDisassembler = false;
+    bool AutoStep = true;
     while (aptMainLoop())
     {
         hidScanInput();
@@ -125,10 +126,10 @@ int main(int argc, char **argv)
 
         if (KeysDown & KEY_DUP)
         {
-            CyclesToRun = 1;
+            EnableDisassembler = !EnableDisassembler;
         }
 
-        Step = true;
+        Step = false;
         if (KeysUp & KEY_A)
         {
             printf("\x1b[0;0H");
@@ -136,18 +137,18 @@ int main(int argc, char **argv)
             Step = true;
         }
 
-        if (KeysHeld & KEY_Y)
-            Step = true;
+        if (KeysDown & KEY_Y)
+            AutoStep = !AutoStep;
 
-        if (KeysUp & KEY_Y)
-        {
-            printf("\x1b[0;0H");
-            printf("\e[0;0H\e[2J");
-        }
-
-        if (Step)
+        if (Step || AutoStep)
         {
             StepCpu(&Cpu, CyclesToRun);
+        }
+
+        if (EnableDisassembler)
+        {
+            printf("\x1b[0;0H");
+            DisassemblerPrintRange(&Cpu, Cpu.pc - (13 * 4), 29, Cpu.pc);
         }
 
         gfxFlush(gfxGetFramebuffer(GFX_TOP, GFX_LEFT, NULL, NULL));
