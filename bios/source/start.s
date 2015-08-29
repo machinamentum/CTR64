@@ -7,6 +7,7 @@
 * ----------------------------------------------------------------------------
 */
     .include "regdef.h"
+    .include "asm_macros.h"
     .set		noreorder
     .section .text.boot
     .global _start
@@ -34,13 +35,24 @@ _kernel_ascii_id:
     .text
     .global _exception_handler_entry
 _exception_handler_entry:
+    j _exception_handler_entry_main
+    nop
+_exception_handler_size:
+    .word . - _exception_handler_entry
+
+_exception_handler_entry_main:
+    pushall
+    mfc0 a0, cause
+    mfc0 a1, epc
+    jal KernelHandleException
+    nop
+    popall
     mfc0 k0, epc
+    addiu k0, k0, 4
     jr k0
     rfe
     nop
     .global _exception_handler_size
-_exception_handler_size:
-    .word . - _exception_handler_entry
 
     .global _jump_redirect_A
 _jump_redirect_A:

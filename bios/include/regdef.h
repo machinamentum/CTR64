@@ -39,9 +39,10 @@ sp   = $29
 fp   = $30
 ra   = $31
 
-bpc  = $3
-bda  = $5
-dcic = $7
-sr   = $12
-epc  = $14
-prid = $15
+bpc   = $3
+bda   = $5
+dcic  = $7
+sr    = $12
+cause = $13
+epc   = $14
+prid  = $15

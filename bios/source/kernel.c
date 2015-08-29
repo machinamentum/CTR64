@@ -232,6 +232,16 @@ GetB0Table()
     return (void *)&_jump_table_B;
 }
 
+void
+KernelHandleException(uint32_t Cause, uint32_t EPC)
+{
+    Cause = (Cause >> 2) & 0x3F;
+    if (Cause == 0x0A)
+    {
+        std_out_puts("Reserved Instruction exception\n");
+    }
+}
+
 static void
 InstallExceptionHandler()
 {
@@ -239,7 +249,7 @@ InstallExceptionHandler()
     extern const uint32_t _exception_handler_size;
     extern uint32_t _exception_handler_entry;
     uint32_t *ExceptionHandler = &_exception_handler_entry;
-    for (int i = 0; i < _exception_handler_size; ++i)
+    for (int i = 0; i < _exception_handler_size / 4; ++i)
     {
         GeneralVector[i] = ExceptionHandler[i];
     }
@@ -265,6 +275,9 @@ void kmain(void)
     DrawQuad(Quad);
     std_out_puts("Attaching jumper cables...");
     InstallBIOSJumperCables();
+    std_out_puts("done\n");
+    std_out_puts("Testing exception mechanism...\n");
+    __asm__("mthi $3");
     std_out_puts("done\n");
     std_out_puts("Calling user code...\n");
     typedef void (*UEFunc)(void);
