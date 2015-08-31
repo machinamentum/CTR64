@@ -56,6 +56,16 @@ GpuExecuteCommand(GPU *Gpu, u8 Command, u32 Param)
     GP0FuncTable[Command](Gpu, Param);
 }
 
+u32
+GpuStat(void *Object, u32 Address)
+{
+    GPU *Gpu = (GPU *)Object;
+    u32 Status = Gpu->Status;
+    Status |= (1 << 26) | (1 << 27) | (1 << 28); // ready flags
+    printf("GPUSTAT\n");
+    return Status;
+}
+
 void
 GpuGp0(void *Object, u32 Value)
 {
@@ -155,10 +165,6 @@ GP0MonochromeOpaqueQuad(GPU* Gpu, u32 Param)
     glVertex2i((s32)(Gpu->Gp0Packets[1] & 0xFFFF), (s32)(Gpu->Gp0Packets[1] >> 16));
     glVertex2i((s32)(Gpu->Gp0Packets[3] & 0xFFFF), (s32)(Gpu->Gp0Packets[3] >> 16));
     glVertex2i((s32)(Gpu->Gp0Packets[2] & 0xFFFF), (s32)(Gpu->Gp0Packets[2] >> 16));
-//    glVertex2i(0, 0);
-//    glVertex2i(30, 0);
-//    glVertex2i(30, 30);
-//    glVertex2i(0, 30);
     glEnd();
     glColor4f(1, 1, 1, 1);
 }

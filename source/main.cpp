@@ -47,9 +47,15 @@ std_out_puts(void *Memory, u32 Value)
     printf(M + (Value & 0x00FFFFFF));
 }
 
+static u32
+empty_ret(void *Obj, u32 Val)
+{
+    return 0;
+}
+
 int main(int argc, char **argv)
 {
-	if (argc > 1) chdir(argv[1]);
+    if (argc > 1) chdir(argv[1]);
     gfxInitDefault();
     hidInit(NULL);
     PrintConsole BottomConsole;
@@ -58,9 +64,9 @@ int main(int argc, char **argv)
     MIPS_R3000 Cpu;
     GPU Gpu;
     Cpu.CP1 = &Gpu;
-    MapRegister(&Cpu, (mmr) {GPU_GP0, &Gpu, GpuGp0});
-    MapRegister(&Cpu, (mmr) {GPU_GP1, &Gpu, GpuGp1});
-    MapRegister(&Cpu, (mmr) {0x1F802064, Cpu.Memory, std_out_puts});
+    MapRegister(&Cpu, (mmr) {GPU_GP0, &Gpu, GpuGp0, empty_ret});
+    MapRegister(&Cpu, (mmr) {GPU_GP1, &Gpu, GpuGp1, GpuStat});
+    MapRegister(&Cpu, (mmr) {0x1F802064, Cpu.Memory, std_out_puts, empty_ret});
 
     FILE *f = fopen("boot.exe", "rb");
     fseek(f, 0, SEEK_END);

@@ -167,7 +167,8 @@ struct mmr
 {
     u32 Address;
     void *Object;
-    void (*RegisterFunc)(void *, u32 Value);
+    void (*RegisterWriteFunc)(void *, u32 Value);
+    u32  (*RegisterReadFunc)(void *, u32 Address);
 };
 
 struct MIPS_R3000

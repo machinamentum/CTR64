@@ -16,6 +16,15 @@ inline u32
 ReadMemWord(MIPS_R3000 *Cpu, u32 Address)
 {
     u32 Base = Address & 0x00FFFFFF;
+    for (u32 i = 0; i < Cpu->NumMMR; ++i)
+    {
+        mmr *MMR = &Cpu->MemMappedRegisters[i];
+        if (Base == MMR->Address)
+        {
+
+            return MMR->RegisterReadFunc(MMR->Object, Address);
+        }
+    }
     return *((u32 *)((u8 *)Cpu->Memory + Base));
 }
 
@@ -23,6 +32,15 @@ inline u8
 ReadMemByte(MIPS_R3000 *Cpu, u32 Address)
 {
     u32 Base = Address & 0x00FFFFFF;
+    for (u32 i = 0; i < Cpu->NumMMR; ++i)
+    {
+        mmr *MMR = &Cpu->MemMappedRegisters[i];
+        if (Base == MMR->Address)
+        {
+
+            return MMR->RegisterReadFunc(MMR->Object, Address);
+        }
+    }
     return *((u8 *)Cpu->Memory + Base);
 }
 
@@ -30,6 +48,15 @@ inline u16
 ReadMemHalfWord(MIPS_R3000 *Cpu, u32 Address)
 {
     u32 Base = Address & 0x00FFFFFF;
+    for (u32 i = 0; i < Cpu->NumMMR; ++i)
+    {
+        mmr *MMR = &Cpu->MemMappedRegisters[i];
+        if (Base == MMR->Address)
+        {
+
+            return MMR->RegisterReadFunc(MMR->Object, Address);
+        }
+    }
     return *((u16 *)((u8 *)Cpu->Memory + Base));
 }
 
@@ -42,7 +69,8 @@ WriteMemByte(MIPS_R3000 *Cpu, u32 Address, u8 value)
         mmr *MMR = &Cpu->MemMappedRegisters[i];
         if (Base == MMR->Address)
         {
-            MMR->RegisterFunc(MMR->Object, value);
+            
+            MMR->RegisterWriteFunc(MMR->Object, value);
             return;
         }
     }
@@ -58,7 +86,7 @@ WriteMemWord(MIPS_R3000 *Cpu, u32 Address, u32 value)
         mmr *MMR = &Cpu->MemMappedRegisters[i];
         if (Base == MMR->Address)
         {
-            MMR->RegisterFunc(MMR->Object, value);
+            MMR->RegisterWriteFunc(MMR->Object, value);
             return;
         }
     }
@@ -74,7 +102,7 @@ WriteMemHalfWord(MIPS_R3000 *Cpu, u32 Address, u16 value)
         mmr *MMR = &Cpu->MemMappedRegisters[i];
         if (Base == MMR->Address)
         {
-            MMR->RegisterFunc(MMR->Object, value);
+            MMR->RegisterWriteFunc(MMR->Object, value);
             return;
         }
     }
