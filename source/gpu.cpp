@@ -210,6 +210,12 @@ GP0MonochromeOpaqueQuad(GPU* Gpu, u32 Param)
     glColor4f(1, 1, 1, 1);
 }
 
+void
+DMA2Write(void *Object, u32 Value)
+{
+    printf("DMA2 0x%08lX\n", Value);
+}
+
 static void __attribute__((constructor))
 InitFuncTables()
 {

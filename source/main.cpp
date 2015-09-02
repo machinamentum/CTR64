@@ -41,10 +41,10 @@ ResetCpu(MIPS_R3000 *Cpu)
 }
 
 static void
-std_out_puts(void *Memory, u32 Value)
+std_out_puts(void *Ref, u32 Value)
 {
-    char *M = (char *)Memory;
-    printf(M + (Value & 0x00FFFFFF));
+    MIPS_R3000 *Cpu = (MIPS_R3000 *)Ref;
+    printf((char *)MapVirtualAddress(Cpu, Value));
 }
 
 static u32
@@ -66,7 +66,8 @@ int main(int argc, char **argv)
     Cpu.CP1 = &Gpu;
     MapRegister(&Cpu, (mmr) {GPU_GP0, &Gpu, GpuGp0, empty_ret});
     MapRegister(&Cpu, (mmr) {GPU_GP1, &Gpu, GpuGp1, GpuStat});
-    MapRegister(&Cpu, (mmr) {0x1F802064, Cpu.Memory, std_out_puts, empty_ret});
+    MapRegister(&Cpu, (mmr) {0x1F802064, &Cpu, std_out_puts, empty_ret});
+    MapRegister(&Cpu, (mmr) {0x1F8010A0, &Cpu, DMA2Write, empty_ret});
 
     FILE *f = fopen("boot.exe", "rb");
     fseek(f, 0, SEEK_END);

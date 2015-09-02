@@ -133,6 +133,7 @@ struct GPU : public Coprocessor
 
 void GpuGp0(void *, u32);
 void GpuGp1(void *, u32);
+void DMA2Write(void *, u32);
 u32  GpuStat(void *, u32);
 
 #endif
