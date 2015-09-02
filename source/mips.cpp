@@ -25,7 +25,7 @@ ReadMemWord(MIPS_R3000 *Cpu, u32 Address)
             return MMR->RegisterReadFunc(MMR->Object, Address);
         }
     }
-    return *((u32 *)((u8 *)Cpu->Memory + Base));
+    return *((u32 *)((u8 *)MapVirtualAddress(Cpu, Base)));
 }
 
 inline u8
@@ -41,7 +41,7 @@ ReadMemByte(MIPS_R3000 *Cpu, u32 Address)
             return MMR->RegisterReadFunc(MMR->Object, Address);
         }
     }
-    return *((u8 *)Cpu->Memory + Base);
+    return *((u8 *)MapVirtualAddress(Cpu, Base));
 }
 
 inline u16
@@ -57,7 +57,7 @@ ReadMemHalfWord(MIPS_R3000 *Cpu, u32 Address)
             return MMR->RegisterReadFunc(MMR->Object, Address);
         }
     }
-    return *((u16 *)((u8 *)Cpu->Memory + Base));
+    return *((u16 *)((u8 *)MapVirtualAddress(Cpu, Base)));
 }
 
 inline void
@@ -74,7 +74,7 @@ WriteMemByte(MIPS_R3000 *Cpu, u32 Address, u8 value)
             return;
         }
     }
-    *((u8 *)Cpu->Memory + Base) = value;
+    *((u8 *)MapVirtualAddress(Cpu, Base)) = value;
 }
 
 inline void
@@ -90,7 +90,7 @@ WriteMemWord(MIPS_R3000 *Cpu, u32 Address, u32 value)
             return;
         }
     }
-    *((u32 *)((u8 *)Cpu->Memory + Base)) = value;
+    *((u32 *)((u8 *)MapVirtualAddress(Cpu, Base))) = value;
 }
 
 inline void
@@ -106,7 +106,7 @@ WriteMemHalfWord(MIPS_R3000 *Cpu, u32 Address, u16 value)
             return;
         }
     }
-    *((u16 *)((u8 *)Cpu->Memory + Base)) = value;
+    *((u16 *)((u8 *)MapVirtualAddress(Cpu, Base))) = value;
 }
 
 static void

@@ -229,7 +229,8 @@ struct MIPS_R3000
 
     MIPS_R3000();
 
-    void *Memory = linearAlloc(0x1000000);
+    void *RAM = linearAlloc(2048 * 1000);
+    void *BIOS = linearAlloc(512 * 1000);
     Coprocessor CP0;
     Coprocessor *CP1 = NULL;
     Coprocessor *CP2 = NULL;
@@ -242,46 +243,64 @@ void MapRegister(MIPS_R3000 *Cpu, mmr MMR);
 void StepCpu(MIPS_R3000 *Cpu, u32 Steps);
 void C0GenerateException(MIPS_R3000 *, u8, u32);
 
+inline void *
+MapVirtualAddress(MIPS_R3000 *Cpu, u32 Address)
+{
+    const u32 BIOS_SIZE = 512 * 1000;
+    const u32 RAM_SIZE = 2048 * 1000;
+    u32 Base = Address & 0x00FFFFFF;
+    if (Base >= 0xC00000 && (Base - 0xC00000) < BIOS_SIZE)
+    {
+        return ((u8 *)Cpu->BIOS) + (Base - 0xC00000);
+    }
+    if (Base < RAM_SIZE * 4)
+    {
+        return ((u8 *)Cpu->RAM) + (Base % RAM_SIZE);
+    }
+
+    return NULL;
+}
+
 inline u32
 ReadMemWordRaw(MIPS_R3000 *Cpu, u32 Address)
 {
     u32 Base = Address & 0x00FFFFFF;
-    return *((u32 *)((u8 *)Cpu->Memory + Base));
+    return *((u32 *)((u8 *)MapVirtualAddress(Cpu, Base)));
 }
 
 inline u8
 ReadMemByteRaw(MIPS_R3000 *Cpu, u32 Address, u8 value)
 {
     u32 Base = Address & 0x00FFFFFF;
-    return *((u8 *)Cpu->Memory + Base);
+    return *((u8 *)MapVirtualAddress(Cpu, Base));
 }
 
 inline u16
 ReadMemHalfWordRaw(MIPS_R3000 *Cpu, u32 Address, u16 value)
 {
     u32 Base = Address & 0x00FFFFFF;
-    return *((u16 *)((u8 *)Cpu->Memory + Base));
+    return *((u16 *)((u8 *)MapVirtualAddress(Cpu, Base)));
 }
 
 inline void
 WriteMemByteRaw(MIPS_R3000 *Cpu, u32 Address, u8 value)
 {
     u32 Base = Address & 0x00FFFFFF;
-    *((u8 *)Cpu->Memory + Base) = value;
+    *((u8 *)MapVirtualAddress(Cpu, Base)) = value;
 }
 
 inline void
 WriteMemWordRaw(MIPS_R3000 *Cpu, u32 Address, u32 value)
 {
     u32 Base = Address & 0x00FFFFFF;
-    *((u32 *)((u8 *)Cpu->Memory + Base)) = value;
+    *((u32 *)((u8 *)MapVirtualAddress(Cpu, Base))) = value;
 }
 
 inline void
 WriteMemHalfWordRaw(MIPS_R3000 *Cpu, u32 Address, u16 value)
 {
     u32 Base = Address & 0x00FFFFFF;
-    *((u16 *)((u8 *)Cpu->Memory + Base)) = value;
+    *((u16 *)((u8 *)MapVirtualAddress(Cpu, Base))) = value;
 }
 
 inline u32
