@@ -276,9 +276,10 @@ void kmain(void)
     std_out_puts("Attaching jumper cables...");
     InstallBIOSJumperCables();
     std_out_puts("done\n");
-    std_out_puts("Testing exception mechanism...\n");
-    __asm__("mthi $3");
-    std_out_puts("done\n");
+
+    std_out_puts("Enabling exceptions\n");
+    extern void _enable_interrupts();
+    _enable_interrupts();
     std_out_puts("Calling user code...\n");
     typedef void (*UEFunc)(void);
     UEFunc UserEntry = (UEFunc)0x80010000;

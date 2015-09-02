@@ -33,6 +33,13 @@ _kernel_ascii_id:
     .asciz "CTRX BIOS"
 
     .text
+    .global _enable_interrupts
+_enable_interrupts:
+    addiu t0, zr, 1
+    mtc0 t0, sr
+    jr ra
+    nop
+
     .global _exception_handler_entry
 _exception_handler_entry:
     j _exception_handler_entry_main
