@@ -103,6 +103,7 @@ int main(int argc, char **argv)
     int CyclesToRun = 1;
     bool EnableDisassembler = false;
     bool AutoStep = true;
+    u32 IRQ0Steps = 0;
     while (aptMainLoop())
     {
         hidScanInput();
@@ -149,6 +150,13 @@ int main(int argc, char **argv)
         if (Step || AutoStep)
         {
             StepCpu(&Cpu, CyclesToRun);
+            IRQ0Steps += CyclesToRun;
+            if (IRQ0Steps > 550000)
+            {
+                C0GenerateException(&Cpu, 0, Cpu.pc - 4);
+                Cpu.CP0.cause |= (1 << 8);
+                IRQ0Steps = 0;
+            }
         }
 
         if (EnableDisassembler)
