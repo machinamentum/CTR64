@@ -231,6 +231,7 @@ struct MIPS_R3000
 
     void *RAM = linearAlloc(2048 * 1000);
     void *BIOS = linearAlloc(512 * 1000);
+    void *Dummy = linearAlloc(512);
     Coprocessor CP0;
     Coprocessor *CP1 = NULL;
     Coprocessor *CP2 = NULL;
@@ -258,7 +259,7 @@ MapVirtualAddress(MIPS_R3000 *Cpu, u32 Address)
         return ((u8 *)Cpu->RAM) + (Base % RAM_SIZE);
     }
 
-    return NULL;
+    return Cpu->Dummy;
 }
 
 inline u32
