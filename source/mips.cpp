@@ -149,14 +149,17 @@ C0ExceptionPopSRBits(Coprocessor *CP0)
     CP0->sr = SR;
 }
 
-static void
+void
 C0GenerateException(MIPS_R3000 *Cpu, u8 Cause, u32 EPC)
 {
-    Cpu->CP0.cause = (Cause << 2) & C0_CAUSE_MASK;
-    Cpu->CP0.epc = EPC;
-    C0ExceptionPushSRBits(&Cpu->CP0);
-    Cpu->CP0.sr &= ~C0_STATUS_KUc;
-    Cpu->pc = GNRAL_VECTOR;
+    if (Cpu->CP0.sr & C0_STATUS_IEc)
+    {
+        Cpu->CP0.cause = (Cause << 2) & C0_CAUSE_MASK;
+        Cpu->CP0.epc = EPC;
+        C0ExceptionPushSRBits(&Cpu->CP0);
+        Cpu->CP0.sr &= ~C0_STATUS_KUc;
+        Cpu->pc = GNRAL_VECTOR;
+    }
 }
 
 static void
@@ -180,6 +183,17 @@ ReservedInstructionException(MIPS_R3000 *Cpu, opcode *Op)
     C0GenerateException(Cpu, C0_CAUSE_RI, Op->CurrentAddress);
 }
 
+static void
+SysCall(MIPS_R3000 *Cpu, opcode *OpCode)
+{
+    C0GenerateException(Cpu, C0_CAUSE_SYSCALL, OpCode->CurrentAddress);
+}
+
+static void
+Break(MIPS_R3000 *Cpu, opcode *OpCode)
+{
+    C0GenerateException(Cpu, C0_CAUSE_BKPT, OpCode->CurrentAddress);
+}
 
 typedef void (*jt_func)(MIPS_R3000 *, opcode *);
 
@@ -237,6 +251,20 @@ static void
 MFLO(MIPS_R3000 *Cpu, opcode *OpCode)
 {
     OpCode->Result = Cpu->lo;
+}
+
+static void
+MTHI(MIPS_R3000 *Cpu, opcode *OpCode)
+{
+    Cpu->hi = OpCode->LeftValue;
+    OpCode->DestinationRegister = 0;
+}
+
+static void
+MTLO(MIPS_R3000 *Cpu, opcode *OpCode)
+{
+    Cpu->lo = OpCode->LeftValue;
+    OpCode->DestinationRegister = 0;
 }
 
 static void
@@ -599,7 +627,7 @@ COP0(MIPS_R3000 *Cpu, opcode *OpCode)
     {
         if (OpCode->FunctionSelect < 0b01000)
         {
-            OpCode->Result = OpCode->LeftValue;
+            OpCode->Result = OpCode->RightValue;
         }
         else
         {
@@ -692,6 +720,7 @@ DecodeOpcode(MIPS_R3000 *Cpu, opcode *OpCode, const u32 Data)
     OpCode->CurrentAddress = Cpu->pc - 4;
     OpCode->Select0 = Select0;
     OpCode->Select1 = Select1;
+    OpCode->WriteBackMode = WRITE_BACK_CPU;
 
     OpCode->LeftValue = Cpu->registers[rs];
     OpCode->RightValue = Cpu->registers[rt];
@@ -734,18 +763,18 @@ DecodeOpcode(MIPS_R3000 *Cpu, opcode *OpCode, const u32 Data)
         //RADestinationRegister set within function
     }
     // coprocessor main instruction decoding
-    else if ((Select0 & 0b010000) == 0b010000)
+    else if ((Select0 & 0b111100) == 0b010000)
     {
         OpCode->FunctionSelect = rs;
         // mfc, cfc
         if (rs < 0b00100)
         {
-            OpCode->LeftValue = Cpu->CP0.registers[rd + (rs & 0b00010 ? 32 : 0)];
+            OpCode->RightValue = Cpu->CP0.registers[rd + (rs & 0b00010 ? 32 : 0)];
         }
         // mtc, ctc
         else if (rs < 0b01000)
         {
-            OpCode->WriteBackMode = OpCode->Select0 & 0b111;
+            OpCode->WriteBackMode = (OpCode->Select0 & 0b111) + 1;
             OpCode->DestinationRegister = rd + (rs & 0b00010 ? 32 : 0);
         }
         // BCnF, BCnT
@@ -797,6 +826,16 @@ ExecuteWriteRegisters(MIPS_R3000 *Cpu, opcode *OpCode)
         OpCode->DestinationRegister = 0;
         OpCode->RADestinationRegister = 0;
     }
+    else if (OpCode->WriteBackMode == WRITE_BACK_C0)
+    {
+        Cpu->CP0.registers[OpCode->DestinationRegister] = OpCode->Result;
+        OpCode->DestinationRegister = 0;
+        OpCode->RADestinationRegister = 0;
+    }
+    else if (OpCode->WriteBackMode == WRITE_BACK_C2)
+    {
+        // TODO GTE
+    }
 }
 
 inline void
@@ -831,14 +870,6 @@ WriteBack(MIPS_R3000 *Cpu, opcode *OpCode)
         {
             Cpu->registers[OpCode->RADestinationRegister] = OpCode->CurrentAddress + 8;
         }
-    }
-    else if (OpCode->WriteBackMode == WRITE_BACK_C0)
-    {
-        Cpu->CP0.registers[OpCode->DestinationRegister] = OpCode->Result;
-    }
-    else if (OpCode->WriteBackMode == WRITE_BACK_C2)
-    {
-        // TODO GTE
     }
 }
 
@@ -986,12 +1017,12 @@ InitJumpTables()
     SecondaryJumpTable[0x07] = SRAV;
     SecondaryJumpTable[0x08] = JR;
     SecondaryJumpTable[0x09] = JALR;
-    //    SecondaryJumpTable[0x0C] = SysCall;
-    //    SecondaryJumpTable[0x0D] = Break;
+    SecondaryJumpTable[0x0C] = SysCall;
+    SecondaryJumpTable[0x0D] = Break;
     SecondaryJumpTable[0x10] = MFHI;
-    //    SecondaryJumpTable[0x11] = MTHI;
+    SecondaryJumpTable[0x11] = MTHI;
     SecondaryJumpTable[0x12] = MFLO;
-    //    SecondaryJumpTable[0x13] = MTLO;
+    SecondaryJumpTable[0x13] = MTLO;
     SecondaryJumpTable[0x18] = Mult;
     SecondaryJumpTable[0x19] = MultU;
     SecondaryJumpTable[0x1A] = Div;

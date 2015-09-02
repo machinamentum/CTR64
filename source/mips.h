@@ -240,6 +240,7 @@ struct MIPS_R3000
 
 void MapRegister(MIPS_R3000 *Cpu, mmr MMR);
 void StepCpu(MIPS_R3000 *Cpu, u32 Steps);
+void C0GenerateException(MIPS_R3000 *, u8, u32);
 
 inline u32
 ReadMemWordRaw(MIPS_R3000 *Cpu, u32 Address)
