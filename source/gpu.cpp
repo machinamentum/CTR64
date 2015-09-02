@@ -66,12 +66,39 @@ GpuStat(void *Object, u32 Address)
     return Status;
 }
 
+static u32 *PacketStore = (u32 *)linearAlloc(4 * 1000);
+static u32 Packets = 0;
+
+static void
+Gp0Cpu2VRAM(GPU* Gpu, u32 Packet)
+{
+    u32 Width = (Gpu->Gp0Packets[0] & 0xFFFF) / 2;
+    u32 Height = (Gpu->Gp0Packets[0] >> 16) & 0xFF;
+    u32 Total = Width * Height;
+    if (Packets < Total)
+    {
+        PacketStore[Packets++] = Packet;
+        return;
+    }
+    u32 X = (Gpu->Gp0Packets[1] & 0xFFFF) / 2;
+    u32 Y = (Gpu->Gp0Packets[1] >> 16) & 0xFFFF;
+    u32 Base = (X + Y * 1024);
+    u32 *VRAM = Gpu->VRAM;
+    for (u32 j = 0; j < Width; j++)
+    {
+        for (u32 i = 0; i < Width; ++i)
+        {
+            VRAM[Base + i + j * 1024] = PacketStore[i + j * Width];
+        }
+    }
+    Gpu->Gp0Func = NULL;
+    printf("CPU2VRAM\n");
+}
+
 void
 GpuGp0(void *Object, u32 Value)
 {
     GPU *Gpu = (GPU *)Object;
-
-    printf("GP0 0x%08lX\n", Value);
 
     if (Gpu->Gp0PacketsLeft)
     {
@@ -83,11 +110,15 @@ GpuGp0(void *Object, u32 Value)
         }
         return;
     }
+
+    if (Gpu->Gp0Func)
+    {
+        Gpu->Gp0Func(Gpu, Value);
+        return;
+    }
     
 //    u32 Param = Value & 0x00FFFFFF;
     u32 Command = Value >> 24;
-
-//    printf("GP0 0x%08lX", Value);
 
     if (Command == GP0_COMMAND_FILL_RECT)
     {
@@ -95,11 +126,21 @@ GpuGp0(void *Object, u32 Value)
         Gpu->Gp0PacketsLeft = 2;
     }
 
+    if (Command == 0xA0)
+    {
+        Gpu->Gp0WaitingCmd = Value;
+        Gpu->Gp0Func = Gp0Cpu2VRAM;
+        Gpu->Gp0PacketsLeft = 2;
+        Packets = 0;
+    }
+
     if (Command == 0x28)
     {
         Gpu->Gp0WaitingCmd = Value;
         Gpu->Gp0PacketsLeft = 4;
     }
+
+    printf("GP0 0x%08lX\n", Value);
 }
 
 void

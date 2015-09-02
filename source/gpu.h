@@ -114,6 +114,8 @@
 #define GTE_REG_ZSF4           (62)
 #define GTE_REG_FLAG           (63)
 
+#define GPU_VRAM_LINES         (512)
+#define GPU_VRAM_LINE_SIZE     (2048)
 
 struct GPU : public Coprocessor
 {
@@ -124,6 +126,9 @@ struct GPU : public Coprocessor
     u32 Gp0PacketsLeft = 0;
     u32 Gp0WaitingCmd;
     u32 Gp0Packets[16];
+    u32 VRT = 0;
+    u32 *VRAM = (u32 *)linearAlloc(GPU_VRAM_LINES * GPU_VRAM_LINE_SIZE);
+    void (*Gp0Func)(GPU *, u32) = NULL;
 };
 
 void GpuGp0(void *, u32);
