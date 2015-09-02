@@ -135,6 +135,31 @@ DumpC0State(Coprocessor *C0)
     }
 }
 
+//Exceptions
+static void
+SysCall(opcode *OpCode)
+{
+    printf("syscall");
+    u32 Immediate = OpCode->Immediate;
+    if (Immediate)
+    {
+        printf(" 0x%08lX", Immediate);
+    }
+    printf("\n");
+}
+
+static void
+Break(opcode *OpCode)
+{
+    printf("break");
+    u32 Immediate = OpCode->Immediate;
+    if (Immediate)
+    {
+        printf(" 0x%08lX", Immediate);
+    }
+    printf("\n");
+}
+
 //Arithmetic
 static void
 AddU(opcode *OpCode)
@@ -183,6 +208,18 @@ static void
 MFLO(opcode *OpCode)
 {
     printf("mflo %s", RNT[OpCode->DestinationRegister]);
+}
+
+static void
+MTHI(opcode *OpCode)
+{
+    printf("mthi %s", RNT[OpCode->LeftValue]);
+}
+
+static void
+MTLO(opcode *OpCode)
+{
+    printf("mtlo %s", RNT[OpCode->LeftValue]);
 }
 
 static void
@@ -884,12 +921,12 @@ InitJumpTables()
     SecondaryJumpTable[0x07] = SRAV;
     SecondaryJumpTable[0x08] = JR;
     SecondaryJumpTable[0x09] = JALR;
-    //    SecondaryJumpTable[0x0C] = SysCall;
-    //    SecondaryJumpTable[0x0D] = Break;
+    SecondaryJumpTable[0x0C] = SysCall;
+    SecondaryJumpTable[0x0D] = Break;
     SecondaryJumpTable[0x10] = MFHI;
-    //    SecondaryJumpTable[0x11] = MTHI;
+    SecondaryJumpTable[0x11] = MTHI;
     SecondaryJumpTable[0x12] = MFLO;
-    //    SecondaryJumpTable[0x13] = MTLO;
+    SecondaryJumpTable[0x13] = MTLO;
     SecondaryJumpTable[0x18] = Mult;
     SecondaryJumpTable[0x19] = MultU;
     SecondaryJumpTable[0x1A] = Div;
