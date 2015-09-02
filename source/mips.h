@@ -238,7 +238,6 @@ struct MIPS_R3000
     u32 NumMMR = 0;
 };
 
-void DumpState(MIPS_R3000 *Cpu);
 void MapRegister(MIPS_R3000 *Cpu, mmr MMR);
 void StepCpu(MIPS_R3000 *Cpu, u32 Steps);
 

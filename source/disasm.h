@@ -13,6 +13,7 @@
 #include "mips.h"
 
 void DisassemblerPrintRange(MIPS_R3000 *Cpu, u32 Base, u32 Count, u32 PC);
-
+void DumpState(MIPS_R3000 *Cpu);
+void DumpC0State(Coprocessor *C0);
 
 #endif

@@ -103,14 +103,14 @@ DumpState(MIPS_R3000 *Cpu)
     printf("PC : 0x%08lX\n", Cpu->pc);
 }
 
-static char ScratchString[4];
+static char ScratchString[5];
 
 inline const char *
 C0Name(u8 Reg)
 {
     if (Reg > C0_PRID)
     {
-        snprintf(ScratchString, 3, "r%d",  Reg);
+        snprintf(ScratchString, 4, "r%d",  Reg);
         return ScratchString;
     }
 
@@ -122,6 +122,17 @@ CNName(u8 Reg)
 {
     snprintf(ScratchString, 3, "r%d",  Reg);
     return ScratchString;
+}
+
+void
+DumpC0State(Coprocessor *C0)
+{
+    printf("\x1b[0;0H");
+    for (int i = 0; i < 32; ++i)
+    {
+        printf("%s: 0x%08lX  ", C0Name(i), C0->registers[i]);
+        if (i % 2 == 1) printf("\n");
+    }
 }
 
 //Arithmetic
