@@ -6,15 +6,13 @@
  * this stuff is worth it, you can buy me a beer in return.   Josh Huelsman
  * ----------------------------------------------------------------------------
  */
-#include <3ds.h>
+#include "platform.h"
 #include <cstdio>
 #include <stdlib.h>
-#include <unistd.h>
 #include "mips.h"
 #include "gpu.h"
 #include "disasm.h"
 #include "psxexe.h"
-#include <gfx_device.h>
 
 static void
 LoadPsxExe(MIPS_R3000 *Cpu, psxexe_hdr *Hdr)
@@ -32,6 +30,8 @@ LoadPsxExe(MIPS_R3000 *Cpu, psxexe_hdr *Hdr)
     Cpu->gp = GP;
     Cpu->sp = SP;
     Cpu->fp = SP;
+
+    printf("Loading PSX EXE to 0x%08lX\n", PC);
 }
 
 void
@@ -55,11 +55,7 @@ empty_ret(void *Obj, u32 Val)
 
 int main(int argc, char **argv)
 {
-    if (argc > 1) chdir(argv[1]);
-    gfxInitDefault();
-    hidInit(NULL);
-    PrintConsole BottomConsole;
-    consoleInit(GFX_BOTTOM, &BottomConsole);
+    InitPlatform(argc, argv);
 
     MIPS_R3000 Cpu;
     GPU Gpu;
@@ -97,62 +93,58 @@ int main(int argc, char **argv)
     ResetCpu(&Cpu);
 
     bool Step = false;
-
-//    PrintConsole TopConsole;
-//    consoleInit(GFX_TOP, &TopConsole);
-//    consoleSelect(&BottomConsole);
     int CyclesToRun = 1;
     bool EnableDisassembler = false;
     bool AutoStep = true;
     u32 IRQ0Steps = 0;
-    while (aptMainLoop())
+    while (MainLoopPlatform())
     {
-        hidScanInput();
-        u32 KeysDown = hidKeysDown();
-        u32 KeysHeld = hidKeysHeld();
-        u32 KeysUp = hidKeysUp();
-
-        if (KeysDown & KEY_START)
-            break;
-
-        if (KeysDown & KEY_DDOWN)
-        {
-            ResetCpu(&Cpu);
-        }
-
-        if (KeysHeld & KEY_DLEFT)
-        {
-            CyclesToRun -= 1000;
-            if (CyclesToRun < 1)
-                CyclesToRun = 1;
-        }
-
-        if (KeysHeld & KEY_DRIGHT)
-        {
-            CyclesToRun += 1000;
-        }
-
-        if (KeysDown & KEY_DUP)
-        {
-            EnableDisassembler = !EnableDisassembler;
-        }
-
-        Step = false;
-        if (KeysUp & KEY_A)
-        {
-            printf("\x1b[0;0H");
-            printf("\e[0;0H\e[2J");
-            Step = true;
-        }
-
-        if (KeysDown & KEY_Y)
-            AutoStep = !AutoStep;
+//        hidScanInput();
+//        u32 KeysDown = hidKeysDown();
+//        u32 KeysHeld = hidKeysHeld();
+//        u32 KeysUp = hidKeysUp();
+//
+//        if (KeysDown & KEY_START)
+//            break;
+//
+//        if (KeysDown & KEY_DDOWN)
+//        {
+//            ResetCpu(&Cpu);
+//        }
+//
+//        if (KeysHeld & KEY_DLEFT)
+//        {
+//            CyclesToRun -= 1000;
+//            if (CyclesToRun < 1)
+//                CyclesToRun = 1;
+//        }
+//
+//        if (KeysHeld & KEY_DRIGHT)
+//        {
+//            CyclesToRun += 1000;
+//        }
+//
+//        if (KeysDown & KEY_DUP)
+//        {
+//            EnableDisassembler = !EnableDisassembler;
+//        }
+//
+//        Step = false;
+//        if (KeysUp & KEY_A)
+//        {
+//            printf("\x1b[0;0H");
+//            printf("\e[0;0H\e[2J");
+//            Step = true;
+//        }
+//
+//        if (KeysDown & KEY_Y)
+//            AutoStep = !AutoStep;
 
         if (Step || AutoStep)
         {
             StepCpu(&Cpu, CyclesToRun);
             IRQ0Steps += CyclesToRun;
-            if (IRQ0Steps > 550000)
+            if (IRQ0Steps > 100000)
             {
                 C0GenerateException(&Cpu, 0, Cpu.pc - 4);
                 Cpu.CP0.cause |= (1 << 8);
@@ -166,15 +158,11 @@ int main(int argc, char **argv)
             DisassemblerPrintRange(&Cpu, Cpu.pc - (13 * 4), 29, Cpu.pc);
         }
 
-        gfxFlush(gfxGetFramebuffer(GFX_TOP, GFX_LEFT, NULL, NULL));
-        gfxFlushBuffers();
-        gfxSwapBuffersGpu();
-        gspWaitForVBlank();
+        SwapBuffersPlatform();
     }
 
-    // Exit services
-    gfxExit();
-    hidExit();
+    ExitPlatform();
+
     return 0;
 }
 

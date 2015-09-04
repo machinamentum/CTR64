@@ -7,8 +7,11 @@
  * ----------------------------------------------------------------------------
  */
 #include "gpu.h"
-#include <gfx_device.h>
+#ifdef _3DS
 #include <GL/gl.h>
+#else
+#include <GLFW/glfw3.h>
+#endif
 
 #include <cstdio>
 
@@ -23,16 +26,15 @@ GPU()
 {
     ExecuteOperation = GteExecuteOperation;
 
-    GfxHandle = gfxCreateDevice(240, 400);
-    gfxMakeCurrent(GfxHandle);
-
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     glOrtho(0.0, 1.0, 1.0, 0.0, -1.0, 1.0);
 
+#ifdef _3DS
     glTranslatef(0.5f, 0.5f, 0.0f);
     glRotatef(90.0f, 0.0f, 0.0f, 1.0f);
     glTranslatef(-0.5f, -0.5f, 0.0f);
+#endif
 
     glScalef(1.0 / 320.0, 1.0/240.0, 1.0);
 

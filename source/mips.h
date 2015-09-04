@@ -9,8 +9,7 @@
 #ifndef MIPS_H
 #define MIPS_H
 
-#include <3ds.h>
-#include <3ds/types.h>
+#include "platform.h"
 
 #define PRIMARY_OP_MASK \
 (0b111111 << 26)
@@ -159,7 +158,7 @@ struct Coprocessor
             u32 prid = C0_PRID_VALUE;
         };
     };
-
+    Coprocessor() {}
     void (*ExecuteOperation)(Coprocessor *Cp, u32 FunctionCode) = NULL;
 };
 
@@ -223,7 +222,7 @@ struct MIPS_R3000
         };
     };
 
-    opcode OpCodes[4];
+    opcode OpCodes[4] = {};
     u32 MachineCode = 0;
     u32 BaseState = 0;
 

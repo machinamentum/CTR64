@@ -2,12 +2,7 @@
 .SUFFIXES:
 #---------------------------------------------------------------------------------
 
-ifeq ($(strip $(DEVKITARM)),)
-$(error "Please set DEVKITARM in your environment. export DEVKITARM=<path to>devkitARM")
-endif
-
 TOPDIR ?= $(CURDIR)
-include $(DEVKITARM)/3ds_rules
 
 #---------------------------------------------------------------------------------
 # TARGET is the name of the output
@@ -29,32 +24,32 @@ include $(DEVKITARM)/3ds_rules
 TARGET		:=	$(notdir $(CURDIR))
 BUILD		:=	build
 SOURCES		:=	source
-DATA		:=	data
-INCLUDES	:=	include
+DATA		:=
+INCLUDES	:=	include raw_data
 
 #---------------------------------------------------------------------------------
 # options for code generation
 #---------------------------------------------------------------------------------
-ARCH	:=	-march=armv6k -mtune=mpcore -mfloat-abi=hard
+ARCH	:= -m32
 
-CFLAGS	:=	 -g -Wall -Wextra -Wno-unused-parameter -O2 -mword-relocations \
+CFLAGS	:=	 -g -Wall -O2  -Wno-format -m32 \
 			-fomit-frame-pointer -ffast-math \
-			$(ARCH) -fdiagnostics-color
+			$(ARCH)
 
-CFLAGS	+=	$(INCLUDE) -DARM11 -D_3DS
+CFLAGS	+=	$(INCLUDE) -D_DESKTOP $(shell pkg-config --cflags glfw3)
 
 CXXFLAGS	:= -std=c++11 $(CFLAGS) -fno-rtti -fno-exceptions
 
 ASFLAGS	:=	-g $(ARCH)
-LDFLAGS	=	-specs=3dsx.specs -g $(ARCH) -Wl,-Map,$(notdir $*.map)
+LDFLAGS	= -g $(ARCH) -Wl
 
-LIBS	:= -lcaelina -lctru -lm
+LIBS	:=  $(shell pkg-config glfw3 --static --libs) -lm
 
 #---------------------------------------------------------------------------------
 # list of directories containing libraries, this must be the top level containing
 # include and lib
 #---------------------------------------------------------------------------------
-LIBDIRS	:= $(CTRULIB)
+LIBDIRS	:=
 
 
 #---------------------------------------------------------------------------------
@@ -120,16 +115,14 @@ all: $(BUILD)
 
 $(BUILD):
 	@[ -d $@ ] || mkdir -p $@
-	@make --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile
+	@make --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile.desktop
 
 #---------------------------------------------------------------------------------
 clean:
 	@echo clean ...
-	@rm -fr $(BUILD) $(TARGET).3dsx $(OUTPUT).smdh $(TARGET).elf
+	@rm -fr $(BUILD) $(TARGET) $(TARGET).elf
 
 
-run: all
-	3dslink $(TARGET).3dsx -0sdmc:/3ds/CTRX
 
 
 #---------------------------------------------------------------------------------
@@ -142,15 +135,27 @@ DEPENDS	:=	$(OFILES:.o=.d)
 #---------------------------------------------------------------------------------
 ifeq ($(strip $(NO_SMDH)),)
 .PHONY: all
-all	:	$(OUTPUT).3dsx $(OUTPUT).smdh
+all	:	$(OUTPUT)
 endif
-$(OUTPUT).3dsx	:	$(OUTPUT).elf
-$(OUTPUT).elf	:	$(OFILES)
+
+%.o	:	%.c
+	$(CC) $(CFLAGS) -c -o $@ $^
+
+%.o	:	%.cpp
+	$(CXX) $(CXXFLAGS) -c -o $@ $^
+
+$(OUTPUT)	:	$(OFILES)
+	$(LD) $(LDFLAGS) -o $@ $^ $(LIBS)
 
 #---------------------------------------------------------------------------------
 # you need a rule like this for each extension you use as binary data
 #---------------------------------------------------------------------------------
 %.bin.o	:	%.bin
+#---------------------------------------------------------------------------------
+	@echo $(notdir $<)
+	@$(bin2o)
+
+%.png.o	:	%.png
 #---------------------------------------------------------------------------------
 	@echo $(notdir $<)
 	@$(bin2o)
@@ -167,7 +172,7 @@ $(OUTPUT).elf	:	$(OFILES)
 	@echo "extern const u32" `(echo $(notdir $<).shbin | sed -e 's/^\([0-9]\)/_\1/' | tr . _)`_size";" >> `(echo $(notdir $<).shbin | tr . _)`.h
 	@rm ../$(notdir $<).shbin
 
--include $(DEPENDS)
+
 
 #---------------------------------------------------------------------------------------
 endif

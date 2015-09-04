@@ -6,7 +6,6 @@
  * this stuff is worth it, you can buy me a beer in return.   Josh Huelsman
  * ----------------------------------------------------------------------------
  */
-#include <3ds.h>
 #include <cstdio>
 #include "mips.h"
 
@@ -160,6 +159,10 @@ C0GenerateException(MIPS_R3000 *Cpu, u8 Cause, u32 EPC)
         Cpu->CP0.sr &= ~C0_STATUS_KUc;
         Cpu->pc = GNRAL_VECTOR;
     }
+    else
+    {
+        printf("No Ex\n");
+    }
 }
 
 static void
@@ -180,6 +183,7 @@ C0ExecuteOperation(Coprocessor *Cp, u32 FunctionCode)
 static void
 ReservedInstructionException(MIPS_R3000 *Cpu, opcode *Op)
 {
+    printf("0x%08lX: Reserved Instruction: 0x%02lX:0x%02lX\n", Cpu->pc -4, Op->Select0, Op->Select1);
     C0GenerateException(Cpu, C0_CAUSE_RI, Op->CurrentAddress);
 }
 

@@ -9,7 +9,7 @@
 #ifndef GPU_H
 #define GPU_H
 
-#include <3ds/types.h>
+#include "platform.h"
 #include "mips.h"
 
 #define GPU_GP0  (0x1F801810)
