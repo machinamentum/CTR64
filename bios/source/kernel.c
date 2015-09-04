@@ -118,14 +118,7 @@ SetCustomExitFromException(FunctionHook *Hook)
     memcpy(&ExitFromExceptionHook, Hook, sizeof(FunctionHook));
 }
 
-int
-SystemError()
-{
-    return 0;
-}
-
-
-static void
+void
 std_out_puts(const char *Src)
 {
     if (!Src)
@@ -137,6 +130,40 @@ std_out_puts(const char *Src)
     uint32_t *const CTRX_PRINT_STR = (uint32_t *)0x1F802064;
     *CTRX_PRINT_STR = (uint32_t)Src;
 }
+
+void
+std_out_putchar(const char Src)
+{
+    if (!Src)
+    {
+        std_out_puts("<NULL>");
+        return;
+    }
+
+    uint32_t *const CTRX_PRINT_STR = (uint32_t *)0x1F802064;
+    char Str[2];
+    Str[0] = Src;
+    Str[1] = 0;
+    *CTRX_PRINT_STR = (uint32_t)&Str;
+}
+
+#include <stdarg.h>
+
+void printf(const char *fmt, ...)
+{
+    va_list vargs;
+    va_start(vargs, 0);
+
+    va_end(vargs);
+}
+
+int
+SystemError()
+{
+    std_out_puts("System Error\n");
+    return 0;
+}
+
 
 static uint32_t
 GetSystemInfo(uint32_t Index)
@@ -232,17 +259,48 @@ GetB0Table()
     return (void *)&_jump_table_B;
 }
 
+int
+EnterCriticalSection()
+{
+    int Result = 0;
+    int SR;
+    __asm__("mfc0 %0, $12" : "=r" (SR) ::);
+    if ((SR & (1 << 2)) && (SR & (1 << 10)))
+    {
+        Result = 1;
+    }
+    SR &= ~((1 << 2) | (1 << 10));
+    __asm__("mtc0 %0, $12" : "=r" (SR) ::);
+    return Result;
+}
+
 void
-KernelHandleException(uint32_t Cause, uint32_t EPC)
+ExitCriticalSection()
+{
+    int SR;
+    __asm__("mfc0 %0, $12" : "=r" (SR) ::);
+    SR |= ((1 << 2) | (1 << 10));
+    __asm__("mtc0 %0, $12" : "=r" (SR) ::);
+}
+
+void
+ExceptionHandler(uint32_t Cause, uint32_t EPC, uint32_t Selector)
 {
     Cause = (Cause >> 2) & 0x3F;
     if (Cause == 0x0A)
     {
         std_out_puts("Reserved Instruction exception\n");
     }
+
+    if (Cause == 0x8)
+    {
+        std_out_puts("Syscall\n");
+    }
+
+    ReturnFromException();
 }
 
-static void
+void
 InstallExceptionHandler()
 {
     uint32_t *GeneralVector = (uint32_t *)0x80000080;
@@ -260,11 +318,13 @@ InstallBIOSJumperCables()
 {
     extern const uint32_t _jump_redirect_A;
     extern const uint32_t _jump_redirect_B;
+    extern const uint32_t _jump_redirect_C;
     uint32_t *const ACable = (uint32_t *)0x000000A0;
     uint32_t *const BCable = (uint32_t *)0x000000B0;
-//    uint32_t *const CCable = (uint32_t *)0x000000C0;
+    uint32_t *const CCable = (uint32_t *)0x000000C0;
     *ACable = _jump_redirect_A;
     *BCable = _jump_redirect_B;
+    *CCable = _jump_redirect_C;
 }
 
 void kmain(void)

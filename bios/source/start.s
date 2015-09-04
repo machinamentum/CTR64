@@ -49,9 +49,10 @@ _exception_handler_size:
 
 _exception_handler_entry_main:
     pushall
+    addiu a2, a0, 0
     mfc0 a0, cause
     mfc0 a1, epc
-    jal KernelHandleException
+    jal ExceptionHandler
     nop
     popall
     mfc0 k0, epc
@@ -71,6 +72,11 @@ _jump_redirect_B:
     j _jump_func_B
     nop
 
+    .global _jump_redirect_C
+_jump_redirect_C:
+    j _jump_func_C
+    nop
+
 
 _jump_func_A:
     ori t7, zr, 8
@@ -88,6 +94,13 @@ _jump_func_B:
     jr t8
     nop
 
+_jump_func_C:
+    ori t7, zr, 8
+    mul t7, $9, t7
+    la t8, _jump_table_C
+    addu t8, t8, t7
+    jr t8
+    nop
 
 _jump_table_A:
     j SystemError
@@ -174,6 +187,114 @@ _jump_table_A:
     nop
     j memcpy
     nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
 
     .global _jump_table_B
 _jump_table_B:
@@ -257,3 +378,167 @@ _jump_table_B:
     nop
     j SystemError
     nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+
+    .global _jump_table_C
+_jump_table_C:
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j ExceptionHandler
+    nop
+    j InstallExceptionHandler
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+    j SystemError
+    nop
+
