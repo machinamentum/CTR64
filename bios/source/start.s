@@ -103,29 +103,29 @@ _jump_func_C:
     nop
 
 _jump_table_A:
-    j SystemError
+    j FileOpen
+    nop
+    j FileSeek
+    nop
+    j FileRead
+    nop
+    j FileWrite
+    nop
+    j FileClose
+    nop
+    j FileIoctl
+    nop
+    j exit
     nop
     j SystemError
     nop
-    j SystemError
+    j FileGetc
     nop
-    j SystemError
-    nop
-    j SystemError
-    nop
-    j SystemError
-    nop
-    j SystemError
-    nop
-    j SystemError
-    nop
-    j SystemError
-    nop
-    j SystemError
+    j FilePutc
     nop
     j todigit
     nop
-    j SystemError
+    j atof
     nop
     j SystemError
     nop

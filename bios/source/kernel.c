@@ -313,6 +313,95 @@ InstallExceptionHandler()
     }
 }
 
+int
+FileOpen(const char *FileName, int AccessMode)
+{
+    return -1;
+}
+
+int
+FileSeek(int Fd, int Offset, int SeekType)
+{
+    return -1;
+}
+
+int
+FileRead(int Fd, void *Dst, int Length)
+{
+    return -1;
+}
+
+int
+FileWrite(int Fd, void *Src, int Length)
+{
+    return 0;
+}
+
+int
+FileClose(int Fd)
+{
+    return -1;
+}
+
+int
+FileGetc(int Fd)
+{
+    int Result;
+    char Temp;
+    Result = FileRead(Fd, &Temp, 1);
+    if (Result == -1) return Result;
+    return Temp;
+}
+
+int
+FilePutc(char Char, int Fd)
+{
+    char Temp = Char;
+    return FileWrite(Fd, &Temp, 1);
+}
+
+int
+chdir(const char *Name)
+{
+    return 0;
+}
+
+void
+SystemErrorExit(int ExitCode)
+{
+    while (1);
+}
+
+void
+SystemErrorUnresolvedException()
+{
+    while (1);
+}
+
+void
+SystemErrorBootOrDiskFailure(int Type, int ErrorCode)
+{
+    while (1);
+}
+
+void
+exit(int ExitCode)
+{
+    SystemErrorExit(ExitCode);
+}
+
+int
+FileIoctl(int Fd, int Cmd, ...)
+{
+    return -1;
+}
+
+float
+atof(const char *Str)
+{
+    return 0.0; // NOTE PSX does not contain COP1 so this would throw exception normally
+}
+
 static void
 InstallBIOSJumperCables()
 {
