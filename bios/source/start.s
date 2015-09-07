@@ -49,6 +49,7 @@ _exception_handler_size:
 
 _exception_handler_entry_main:
     pushall
+    addiu a3, a1, 0
     addiu a2, a0, 0
     mfc0 a0, cause
     mfc0 a1, epc
@@ -117,7 +118,7 @@ _jump_table_A:
     nop
     j exit
     nop
-    j SystemError
+    j FileGetDeviceFlag
     nop
     j FileGetc
     nop
@@ -127,220 +128,414 @@ _jump_table_A:
     nop
     j atof
     nop
-    j SystemError
+    j strtoul
     nop
-    j SystemError
+    j strtol
     nop
     j abs
     nop
     j labs
     nop
-    j SystemError
+    j atoi
     nop
-    j SystemError
+    j atol
     nop
-    j SystemError
+    j atob
     nop
-    j SystemError
+    j SaveState
     nop
-    j SystemError
+    j RestoreState
     nop
-    j SystemError
+    j strcat
     nop
-    j SystemError
+    j strncat
     nop
-    j SystemError
+    j strcmp
     nop
-    j SystemError
+    j strncmp
     nop
-    j SystemError
+    j strcpy
     nop
-    j SystemError
+    j strncpy
     nop
     j strlen
     nop
-    j SystemError
+    j index
     nop
-    j SystemError
+    j rindex
     nop
-    j SystemError
+    j strchr
     nop
-    j SystemError
+    j strrchr
     nop
-    j SystemError
+    j strpbrk
     nop
-    j SystemError
+    j strspn
     nop
-    j SystemError
+    j strcspn
     nop
-    j SystemError
+    j strtok
     nop
-    j SystemError
+    j strstr
     nop
-    j SystemError
+    j toupper
     nop
-    j SystemError
+    j tolower
     nop
-    j SystemError
+    j bcopy
     nop
-    j SystemError
+    j bzero
+    nop
+    j bcmp
     nop
     j memcpy
     nop
-    j SystemError
+    j memset
+    nop
+    j memmove
+    nop
+    j memcmp
+    nop
+    j memchr
+    nop
+    j rand
+    nop
+    j srand
+    nop
+    j qsort
+    nop
+    j strtod
+    nop
+    j malloc
+    nop
+    j free
+    nop
+    j lsearch
+    nop
+    j bsearch
+    nop
+    j calloc
+    nop
+    j realloc
+    nop
+    j InitHeap
+    nop
+    j SystemErrorExit
+    nop
+    j std_in_getchar
+    nop
+    j std_out_putchar
+    nop
+    j std_in_gets
+    nop
+    j std_out_puts
+    nop
+    j printf
+    nop
+    j SystemErrorUnresolvedException
+    nop
+    j LoadExeHeader
+    nop
+    j LoadExeFile
+    nop
+    j DoExecute
+    nop
+    j FlushCache
+    nop
+    j init_a0_b0_c0_vectors
+    nop
+    j GPU_dw
+    nop
+    j gpu_send_dma
+    nop
+    j SendGP1Command
+    nop
+    j GPU_cw
+    nop
+    j GPU_cwp
+    nop
+    j send_gpu_linked_list
+    nop
+    j gpu_abort_dma
+    nop
+    j GetGPUStatus
+    nop
+    j gpu_sync
     nop
     j SystemError
     nop
     j SystemError
     nop
-    j SystemError
+    j LoadAndExecute
     nop
     j SystemError
     nop
     j SystemError
     nop
-    j SystemError
+    j CdInit
+    nop
+    j _bu_init
+    nop
+    j CdRemove
+    nop
+    j EmptyReturn
+    nop
+    j EmptyReturn
+    nop
+    j EmptyReturn
+    nop
+    j EmptyReturn
+    nop
+    j dev_tty_init
+    nop
+    j dev_tty_open
+    nop
+    j dev_tty_in_out
+    nop
+    j dev_tty_ioctl
+    nop
+    j dev_cd_open
+    nop
+    j dev_cd_read
+    nop
+    j dev_cd_close
+    nop
+    j dev_cd_firstfile
+    nop
+    j dev_cd_nextfile
+    nop
+    j dev_cd_chdir
+    nop
+    j dev_card_open
+    nop
+    j dev_card_read
+    nop
+    j dev_card_write
+    nop
+    j dev_card_close
+    nop
+    j dev_card_firstfile
+    nop
+    j dev_card_nextfile
+    nop
+    j dev_card_erase
+    nop
+    j dev_card_undelete
+    nop
+    j dev_card_format
+    nop
+    j dev_card_rename
+    nop
+    j SystemError /* card_clear_error ? */
+    nop
+    j _bu_init
+    nop
+    j CdInit
+    nop
+    j CdRemove
+    nop
+    j EmptyReturn
+    nop
+    j EmptyReturn
+    nop
+    j EmptyReturn
+    nop
+    j EmptyReturn
+    nop
+    j EmptyReturn
+    nop
+    j CdAsyncSeekL
+    nop
+    j EmptyReturn
+    nop
+    j EmptyReturn
+    nop
+    j EmptyReturn
+    nop
+    j CdAsyncGetStatus
+    nop
+    j EmptyReturn
+    nop
+    j CdAsyncReadSector
+    nop
+    j EmptyReturn
+    nop
+    j EmptyReturn
+    nop
+    j CdAsyncSetMode
+    nop
+    j EmptyReturn
+    nop
+    j EmptyReturn
+    nop
+    j EmptyReturn
+    nop
+    j EmptyReturn
+    nop
+    j EmptyReturn
+    nop
+    j EmptyReturn
+    nop
+    j EmptyReturn
+    nop
+    j EmptyReturn
+    nop
+    j EmptyReturn
+    nop
+    j EmptyReturn
+    nop
+    j EmptyReturn
+    nop
+    j EmptyReturn
+    nop
+    j EmptyReturn
+    nop
+    j EmptyReturn
+    nop
+    j CdromIoIrqFunc1
+    nop
+    j CdromDmaIrqFunc1
+    nop
+    j CdromIoIrqFunc2
+    nop
+    j CdromDmaIrqFunc2
+    nop
+    j CdromGetInt5errCode
+    nop
+    j CdInitSubFunc
+    nop
+    j AddCDROMDevice
+    nop
+    j AddMemCardDevice
+    nop
+    j AddDuartTtyDevice
+    nop
+    j AddDummyTtyDevice
     nop
     j SystemError
     nop
     j SystemError
     nop
-    j SystemError
+    j SetConf
     nop
-    j SystemError
+    j GetConf
     nop
-    j SystemError
+    j SetCdromIrqAutoAbort
     nop
-    j SystemError
+    j SetMemSize
     nop
-    j SystemError
+    j WarmBoot
     nop
-    j SystemError
+    j SystemErrorBootOrDiskFailure
     nop
-    j SystemError
+    j EnqueueCdIntr
     nop
-    j SystemError
+    j DequeueCdIntr
     nop
-    j SystemError
+    j CdGetLbn
     nop
-    j SystemError
+    j CdReadSector
     nop
-    j SystemError
+    j CdGetStatus
     nop
-    j SystemError
+    j bu_callback_okay
     nop
-    j SystemError
+    j bu_callback_err_write
     nop
-    j SystemError
+    j bu_callback_err_busy
     nop
-    j SystemError
+    j bu_callback_err_eject
     nop
-    j SystemError
+    j _card_info
     nop
-    j SystemError
+    j _card_async_load_directory
     nop
-    j SystemError
+    j set_card_auto_format
     nop
-    j SystemError
+    j bu_callback_err_prev_write
     nop
-    j SystemError
+    j card_write_test
     nop
-    j SystemError
+    j EmptyReturn
     nop
-    j SystemError
+    j EmptyReturn
     nop
-    j SystemError
+    j ioabort_raw
     nop
-    j SystemError
+    j EmptyReturn
     nop
-    j SystemError
+    j GetSystemInfo
     nop
-    j SystemError
+    j 0
     nop
-    j SystemError
+    j 0
     nop
-    j SystemError
+    j 0
     nop
-    j SystemError
+    j 0
     nop
-    j SystemError
+    j 0
     nop
-    j SystemError
+    j 0
     nop
-    j SystemError
+    j 0
     nop
-    j SystemError
+    j 0
     nop
-    j SystemError
+    j 0
     nop
-    j SystemError
+    j 0
     nop
-    j SystemError
-    nop
-    j SystemError
-    nop
-    j SystemError
-    nop
-    j SystemError
-    nop
-    j SystemError
-    nop
-    j SystemError
-    nop
-    j SystemError
-    nop
-    j SystemError
-    nop
-    j SystemError
-    nop
-    j SystemError
+    j 0
     nop
 
     .global _jump_table_B
 _jump_table_B:
-    j SystemError
+    j alloc_kernel_memory
     nop
-    j SystemError
+    j free_kernel_memory
     nop
-    j SystemError
+    j init_timer
     nop
-    j SystemError
+    j get_timer
     nop
-    j SystemError
+    j enable_timer_irq
     nop
-    j SystemError
+    j disable_timer_irq
     nop
-    j SystemError
+    j restart_timer
     nop
-    j SystemError
+    j DeliverEvent
     nop
-    j SystemError
+    j OpenEvent
     nop
-    j SystemError
+    j CloseEvent
     nop
-    j SystemError
+    j WaitEvent
     nop
-    j SystemError
+    j TestEvent
     nop
-    j SystemError
+    j EnableEvent
     nop
-    j SystemError
+    j DisableEvent
     nop
-    j SystemError
+    j OpenThread
     nop
-    j SystemError
+    j CloseThread
     nop
-    j SystemError
+    j ChangeThread
     nop
-    j SystemError
+    j 0
     nop
-    j SystemError
+    j InitPad
     nop
-    j SystemError
+    j StartPad
     nop
-    j SystemError
+    j StopPad
     nop
-    j SystemError
+    j OutdatedPadInitAndStart
+    nop
+    j OutdatedPadGetButtons
     nop
     j ReturnFromException
     nop
@@ -360,7 +555,7 @@ _jump_table_B:
     nop
     j SystemError
     nop
-    j SystemError
+    j UnDeliverEvent
     nop
     j SystemError
     nop
@@ -368,177 +563,521 @@ _jump_table_B:
     nop
     j SystemError
     nop
-    j SystemError
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
     nop
     j SystemError
     nop
     j SystemError
     nop
-    j SystemError
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j FileOpen
+    nop
+    j FileSeek
+    nop
+    j FileRead
+    nop
+    j FileWrite
+    nop
+    j FileClose
+    nop
+    j FileIoctl
+    nop
+    j exit
+    nop
+    j FileGetDeviceFlag
+    nop
+    j FileGetc
+    nop
+    j FilePutc
+    nop
+    j std_in_getchar
+    nop
+    j std_out_putchar
+    nop
+    j std_in_gets
+    nop
+    j std_out_puts
+    nop
+    j chdir
+    nop
+    j FormatDevice
+    nop
+    j firstfile
+    nop
+    j nextfile
+    nop
+    j FileRename
+    nop
+    j FileDelete
+    nop
+    j FileUndelete
+    nop
+    j AddDevice
+    nop
+    j RemoveDevice
+    nop
+    j PrintInstalledDevices
+    nop
+    j InitCard
+    nop
+    j StartCard
+    nop
+    j StopCard
+    nop
+    j _card_info_subfunc
+    nop
+    j write_card_sector
+    nop
+    j read_card_sector
+    nop
+    j allow_new_card
+    nop
+    j Krom2RawAdd
     nop
     j SystemError
     nop
-    j SystemError
+    j Krom2Offset
+    nop
+    j GetLastError
+    nop
+    j GetLastFileError
+    nop
+    j GetC0Table
+    nop
+    j GetB0Table
+    nop
+    j get_bu_callback_port
+    nop
+    j testdevice
     nop
     j SystemError
     nop
-    j SystemError
+    j ChangeClearPad
     nop
-    j SystemError
+    j get_card_status
     nop
-    j SystemError
+    j wait_card_status
     nop
-    j SystemError
+    j 0
     nop
-    j SystemError
+    j 0
     nop
-    j SystemError
+
+    j 0
     nop
-    j SystemError
+    j 0
     nop
-    j SystemError
+    j 0
     nop
-    j SystemError
+    j 0
     nop
-    j SystemError
+    j 0
     nop
-    j SystemError
+    j 0
     nop
-    j SystemError
+    j 0
     nop
-    j SystemError
+    j 0
     nop
-    j SystemError
+    j 0
     nop
-    j SystemError
+    j 0
     nop
-    j SystemError
+    j 0
     nop
-    j SystemError
+    j 0
     nop
-    j SystemError
+    j 0
     nop
-    j SystemError
+    j 0
     nop
-    j SystemError
+    j 0
     nop
-    j SystemError
+    j 0
     nop
-    j SystemError
+
+    j 0
     nop
-    j SystemError
+    j 0
     nop
-    j SystemError
+    j 0
     nop
-    j SystemError
+    j 0
     nop
-    j SystemError
+    j 0
     nop
-    j SystemError
+    j 0
     nop
-    j SystemError
+    j 0
     nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+    j 0
+    nop
+
 
     .global _jump_table_C
 _jump_table_C:
-    j SystemError
+    j EnqueueTimerAndVblankIrqs
     nop
-    j SystemError
+    j EnqueueSyscallHandler
     nop
-    j SystemError
+    j SysEnqIntRP
     nop
-    j SystemError
+    j SysDeqIntRP
     nop
-    j SystemError
+    j get_free_EvCB_slot
     nop
-    j SystemError
+    j get_free_TCB_slot
     nop
     j ExceptionHandler
     nop
-    j InstallExceptionHandler
+    j InstallExceptionHandlers
+    nop
+    j SysInitMemory
+    nop
+    j SysInitKernelVariables
+    nop
+    j ChangeClearRCnt
     nop
     j SystemError
     nop
-    j SystemError
+    j InitDefInt
     nop
-    j SystemError
+    j SetIrqAutoAck
     nop
-    j SystemError
+    j EmptyReturn
     nop
-    j SystemError
+    j EmptyReturn
     nop
-    j SystemError
+    j EmptyReturn
     nop
-    j SystemError
+    j EmptyReturn
     nop
-    j SystemError
+    j InstallDevices
     nop
-    j SystemError
+    j FlushStdInOutPut
     nop
-    j SystemError
+    j EmptyReturn
     nop
-    j SystemError
+    j tty_cdevinput
     nop
-    j SystemError
+    j tty_cdevscan
     nop
-    j SystemError
+    j tty_circgetc
     nop
-    j SystemError
+    j tty_circputc
     nop
-    j SystemError
+    j ioabort
     nop
-    j SystemError
+    j set_card_find_mode
     nop
-    j SystemError
+    j KernelRedirect
     nop
-    j SystemError
+    j AdjustA0Table
     nop
-    j SystemError
+    j get_card_find_mode
     nop
-    j SystemError
+    j 0
     nop
-    j SystemError
-    nop
-    j SystemError
-    nop
-    j SystemError
-    nop
-    j SystemError
-    nop
-    j SystemError
-    nop
-    j SystemError
-    nop
-    j SystemError
-    nop
-    j SystemError
-    nop
-    j SystemError
-    nop
-    j SystemError
-    nop
-    j SystemError
-    nop
-    j SystemError
-    nop
-    j SystemError
-    nop
-    j SystemError
-    nop
-    j SystemError
-    nop
-    j SystemError
-    nop
-    j SystemError
-    nop
-    j SystemError
-    nop
-    j SystemError
-    nop
-    j SystemError
-    nop
-    j SystemError
-    nop
-    j SystemError
-    nop
+
 
