@@ -966,7 +966,7 @@ StepCpu(MIPS_R3000 *Cpu, u32 Steps)
 static void __attribute__((constructor))
 InitJumpTables()
 {
-    for (int i = 0; i < 0x3F; ++i)
+    for (int i = 0; i <= 0x3F; ++i)
     {
         PrimaryJumpTable[i] = ReservedInstructionException;
         SecondaryJumpTable[i] = ReservedInstructionException;
