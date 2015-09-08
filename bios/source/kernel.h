@@ -67,15 +67,12 @@ void InstallExceptionHandler();
 
 void DeliverEvent(int Class, int Spec);
 
-const static unsigned int FILE_READ          = (1 << 0);
-const static unsigned int FILE_WRITE         = (1 << 1);
-const static unsigned int FILE_NON_BLOCKING  = (1 << 2);
-const static unsigned int FILE_CREATE        = (1 << 9);
-const static unsigned int FILE_ASYNC         = (1 << 15);
-inline static unsigned int FILE_CARD_BLOCKS(unsigned int x)
-{
-    return (x << 16);
-}
+#define FILE_READ         (1 << 0)
+#define FILE_WRITE        (1 << 1);
+#define FILE_NON_BLOCKING (1 << 2);
+#define FILE_CREATE       (1 << 9);
+#define FILE_ASYNC        (1 << 15);
+#define FILE_CARD_BLOCKS(x) (x << 16)
 
 int FileOpen(const char *FileName, int AccessMode);
 
