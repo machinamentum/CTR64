@@ -3,7 +3,7 @@ ENTRY(_start)
 
 SECTIONS
 {
-    . = 0x1FC00000;
+    . = 0xBFC00000;
     _start = .;
 
     .text.boot :
@@ -11,7 +11,7 @@ SECTIONS
         *(.text.boot)
     }
 
-    . = 0x1FC00100;
+    . = 0xBFC00100;
     .rodata.rom_header :
     {
         *(.rodata.rom_header)
@@ -27,6 +27,7 @@ SECTIONS
     .rodata :
     {
         *(.rodata)
+        *(.rodata.*)
     }
 
     .data :

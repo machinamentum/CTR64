@@ -50,90 +50,99 @@ DrawQuad(const unsigned short *Data)
 int
 init_timer(int Timer, int Reload, int Flags)
 {
+    printf(__FUNCTION__);
     return 0;
 }
 
 int
 get_timer(int Timer)
 {
+    printf(__FUNCTION__);
     return 0;
 }
 
 int
 enable_timer_irq(int Timer)
 {
+    printf(__FUNCTION__);
     return 0;
 }
 
 int
 disable_timer_irq(int Timer)
 {
+    printf(__FUNCTION__);
     return 1;
 }
 
 int
 restart_timer(int Timer)
 {
+    printf(__FUNCTION__);
     return 0;
 }
 
 int
 ChangeClearRCnt(int Timer, int Flag)
 {
+    printf(__FUNCTION__);
     return 0;
 }
 
 int
 Krom2Offset(int JIS)
 {
+    printf(__FUNCTION__);
     return -1;
 }
 
 int
 Krom2RawAdd(int JIS)
 {
+    printf(__FUNCTION__);
     return -1;
 }
 
 void
 InitDefInt(int Priority)
 {
-
+    printf(__FUNCTION__);
 }
 
 void
 EnqueueSyscallHandler(int Priority)
 {
-
+    printf(__FUNCTION__);
 }
 
 void
 EnqueueTimerAndVblankIrqs(int Priority)
 {
-
+    printf(__FUNCTION__);
 }
 
 void
 SysEnqIntRP(int Priority, void *Struc)
 {
-
+    printf(__FUNCTION__);
 }
 
 void
 SysDeqIntRP(int Priority, void *Struc)
 {
-
+    printf(__FUNCTION__);
 }
 
 void
 SetIrqAutoAck(int IRQ, int Flag)
 {
-    
+    printf(__FUNCTION__);
 }
 
 void
 ReturnFromException()
 {
+    printf(__FUNCTION__);
     // TODO
 }
 
@@ -150,6 +159,7 @@ static const FunctionHook DefaultExitFromExceptionHook =
 FunctionHook *
 SetDefaultExitFromException()
 {
+    printf(__FUNCTION__);
     memcpy(&ExitFromExceptionHook, &DefaultExitFromExceptionHook, sizeof(FunctionHook));
     return &ExitFromExceptionHook;
 }
@@ -157,12 +167,14 @@ SetDefaultExitFromException()
 void
 SetCustomExitFromException(FunctionHook *Hook)
 {
+    printf(__FUNCTION__);
     memcpy(&ExitFromExceptionHook, Hook, sizeof(FunctionHook));
 }
 
 int
 std_in_getchar()
 {
+    printf(__FUNCTION__);
     char Temp;
     FileRead(0, &Temp, 1);
     return Temp & 0x7F;
@@ -171,6 +183,7 @@ std_in_getchar()
 void *
 std_in_gets(void *Dst)
 {
+    printf(__FUNCTION__);
     // TODO
     return Dst;
 }
@@ -207,7 +220,7 @@ std_out_putchar(const char Src)
 int
 SystemError()
 {
-    std_out_puts("System Error\n");
+    printf(__FUNCTION__);
     return 0;
 }
 
@@ -215,6 +228,7 @@ SystemError()
 unsigned int
 GetSystemInfo(unsigned int Index)
 {
+    printf(__FUNCTION__);
     extern const unsigned int _kernel_build_date;
     extern const unsigned int _kernel_flags;
     extern const unsigned int _kernel_ascii_id;
@@ -240,6 +254,7 @@ GetSystemInfo(unsigned int Index)
 void *
 GetB0Table()
 {
+    printf(__FUNCTION__);
     extern const unsigned int _jump_table_B;
     return (void *)&_jump_table_B;
 }
@@ -247,6 +262,7 @@ GetB0Table()
 void *
 GetC0Table()
 {
+    printf(__FUNCTION__);
     extern const unsigned int _jump_table_C;
     return (void *)&_jump_table_C;
 }
@@ -254,12 +270,13 @@ GetC0Table()
 void
 AdjustA0Table()
 {
-
+    printf(__FUNCTION__);
 }
 
 int
 EnterCriticalSection()
 {
+    printf(__FUNCTION__);
     int Result = 0;
     int SR;
     __asm__("mfc0 %0, $12" : "=r" (SR) ::);
@@ -275,6 +292,7 @@ EnterCriticalSection()
 void
 ExitCriticalSection()
 {
+    printf(__FUNCTION__);
     int SR;
     __asm__("mfc0 %0, $12" : "=r" (SR) ::);
     SR |= ((1 << 2) | (1 << 10));
@@ -284,30 +302,34 @@ ExitCriticalSection()
 void *
 get_free_TCB_slot()
 {
+    printf(__FUNCTION__);
     return 0;
 }
 
 void
 ChangeThreadSubFunction(void *Addr)
 {
-
+    printf(__FUNCTION__);
 }
 
 void *
 OpenThread(int reg_PC, int reg_SP_FP, int reg_GP)
 {
+    printf(__FUNCTION__);
     return (void *)0xFFFFFFFF;
 }
 
 void *
 CloseThread(void *Handle)
 {
+    printf(__FUNCTION__);
     return (void *)1;
 }
 
 void *
 ChangeThread(void *Handle)
 {
+    printf(__FUNCTION__);
     return (void *)1;
 }
 
@@ -341,6 +363,14 @@ ExceptionHandler(unsigned int Cause, unsigned int EPC, unsigned int Selector, vo
         }
 
     }
+    if (Cause == 0x9)
+    {
+        std_out_puts("BRKPT\n");
+    }
+    if (Cause == 0)
+    {
+        std_out_puts("Interrupt\n");
+    }
 
     ReturnFromException();
 }
@@ -348,24 +378,25 @@ ExceptionHandler(unsigned int Cause, unsigned int EPC, unsigned int Selector, vo
 void
 SetConf(int NumEvCB, int NumTCB, void *StackTop)
 {
-
+    printf(__FUNCTION__);
 }
 
 void
 GetConf(int *NumEvCB, int *NumTCB, void **StackTop)
 {
-
+    printf(__FUNCTION__);
 }
 
 void
 FlushCache()
 {
-    
+    printf(__FUNCTION__);
 }
 
 void
 FlushStdInOutPut()
 {
+    printf(__FUNCTION__);
     FileClose(0);
     FileClose(1);
 //    FileOpen(0, FILE_READ);
@@ -375,6 +406,7 @@ FlushStdInOutPut()
 void
 InstallExceptionHandlers()
 {
+    printf(__FUNCTION__);
     unsigned int *GeneralVector = (unsigned int *)0x80000080;
     extern const unsigned int _exception_handler_size;
     extern unsigned int _exception_handler_entry;
@@ -388,18 +420,21 @@ InstallExceptionHandlers()
 void
 SystemErrorExit(int ExitCode)
 {
+    printf(__FUNCTION__);
     while (1);
 }
 
 void
 SystemErrorUnresolvedException()
 {
+    printf(__FUNCTION__);
     while (1);
 }
 
 void
 SystemErrorBootOrDiskFailure(int Type, int ErrorCode)
 {
+    printf(__FUNCTION__);
     while (1);
 }
 
@@ -413,19 +448,20 @@ EmptyReturn()
 void
 WarmBoot()
 {
-    
+    printf(__FUNCTION__);
 }
 
 int
 SaveState(void *Buf)
 {
+    printf(__FUNCTION__);
     return 0;
 }
 
 void
 RestoreState(void *Buf, int Param)
 {
-    
+    printf(__FUNCTION__);
 }
 
 char ioabortbuffer[0x40];
@@ -433,12 +469,14 @@ char ioabortbuffer[0x40];
 void
 ioabort_raw(int Param)
 {
+    printf(__FUNCTION__);
     RestoreState(ioabortbuffer, Param);
 }
 
 void
 ioabort(const char *Txt1, const char *Txt2)
 {
+    printf(__FUNCTION__);
     std_out_puts(Txt1);
     std_out_puts(Txt2);
     ioabort_raw(1);
@@ -447,13 +485,13 @@ ioabort(const char *Txt1, const char *Txt2)
 void
 KernelRedirect(int TtyFlag)
 {
-
+    printf(__FUNCTION__);
 }
 
 void
 SetMemSize(int Size)
 {
-
+    printf(__FUNCTION__);
 }
 
 void *KernelMemStart;
@@ -463,6 +501,7 @@ int KernelMemSize;
 void *
 alloc_kernel_memory(int Size)
 {
+    printf(__FUNCTION__);
     if (Size % 4) Size += (4 - (Size % 4));
     if (KernelMemStart + KernelMemSize < KernelMemPtr + Size) return 0;
     void *Temp = KernelMemPtr;
@@ -473,6 +512,7 @@ alloc_kernel_memory(int Size)
 void
 free_kernel_memory(void *Ptr)
 {
+    printf(__FUNCTION__);
     unsigned int *Buf = (unsigned int *)(((char *)Ptr) - 4);
     Buf[0] |= 1;
 }
@@ -480,6 +520,7 @@ free_kernel_memory(void *Ptr)
 void
 SysInitMemory(void *Address, int Size)
 {
+    printf(__FUNCTION__);
     KernelMemStart = KernelMemPtr = Address;
     KernelMemSize = Size;
 }
@@ -487,7 +528,7 @@ SysInitMemory(void *Address, int Size)
 void
 SysInitKernelVariables()
 {
-
+    printf(__FUNCTION__);
 }
 
 static void
@@ -507,6 +548,7 @@ InstallBIOSJumperCables()
 void
 init_a0_b0_c0_vectors()
 {
+    printf(__FUNCTION__);
     InstallBIOSJumperCables();
 }
 
