@@ -523,7 +523,7 @@ BGTZ(MIPS_R3000 *Cpu, opcode *OpCode)
 static void
 AndI(MIPS_R3000 *Cpu, opcode *OpCode)
 {
-    OpCode->Result = OpCode->LeftValue & OpCode->Immediate;
+    OpCode->Result = OpCode->LeftValue & (OpCode->Immediate & 0xFFFF);
 }
 
 static void
