@@ -183,7 +183,7 @@ C0ExecuteOperation(Coprocessor *Cp, u32 FunctionCode)
 static void
 ReservedInstructionException(MIPS_R3000 *Cpu, opcode *Op)
 {
-    printf("0x%08lX: Reserved Instruction: 0x%02lX:0x%02lX\n", Cpu->pc -4, Op->Select0, Op->Select1);
+    printf("0x%08lX: Reserved Instruction: 0x%08lX\n", Op->CurrentAddress, Op->MachineCode);
     C0GenerateException(Cpu, C0_CAUSE_RI, Op->CurrentAddress);
 }
 
@@ -602,25 +602,25 @@ SRA(MIPS_R3000 *Cpu, opcode *OpCode)
 static void
 SLT(MIPS_R3000 *Cpu, opcode *OpCode)
 {
-    OpCode->Result = ((s32)OpCode->LeftValue < (s32)OpCode->RightValue ? 1 : 0);
+    OpCode->Result = ( ((s32)OpCode->LeftValue < (s32)OpCode->RightValue) ? 1 : 0);
 }
 
 static void
 SLTU(MIPS_R3000 *Cpu, opcode *OpCode)
 {
-    OpCode->Result = (OpCode->LeftValue < OpCode->RightValue ? 1 : 0);
+    OpCode->Result = ( (OpCode->LeftValue < OpCode->RightValue) ? 1 : 0);
 }
 
 static void
 SLTI(MIPS_R3000 *Cpu, opcode *OpCode)
 {
-    OpCode->Result = ((s32)OpCode->LeftValue < (s32)OpCode->Immediate ? 1 : 0);
+    OpCode->Result = ( ((s32)OpCode->LeftValue < (s32)OpCode->Immediate) ? 1 : 0);
 }
 
 static void
 SLTIU(MIPS_R3000 *Cpu, opcode *OpCode)
 {
-    OpCode->Result = (OpCode->LeftValue < OpCode->Immediate ? 1 : 0);
+    OpCode->Result = ( (OpCode->LeftValue < OpCode->Immediate) ? 1 : 0);
 }
 
 // coprocessor ops
@@ -713,78 +713,170 @@ COP3(MIPS_R3000 *Cpu, opcode *OpCode)
 
 
 void
-DecodeOpcode(MIPS_R3000 *Cpu, opcode *OpCode, const u32 Data)
+DecodeOpcode(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
 {
-    const u8 rs = (Data & REG_RS_MASK) >> 21;
-    const u8 rt = (Data & REG_RT_MASK) >> 16;
-    const u8 rd = (Data & REG_RD_MASK) >> 11;
-    const u8 Select0 = (Data & PRIMARY_OP_MASK) >> 26;
-    const u8 Select1 = (Data & SECONDARY_OP_MASK);
-
-    OpCode->CurrentAddress = Cpu->pc - 4;
-    OpCode->Select0 = Select0;
-    OpCode->Select1 = Select1;
+    OpCode->CurrentAddress = Cpu->IAddress;
+    OpCode->Select0 = (Data & PRIMARY_OP_MASK) >> 26;
+    OpCode->Select1 = (Data & SECONDARY_OP_MASK) >> 0;
+    OpCode->MemAccessType = MEM_ACCESS_NONE;
+    OpCode->MemAccessMode = MEM_ACCESS_WORD;
     OpCode->WriteBackMode = WRITE_BACK_CPU;
+    OpCode->LeftValue = 0;
+    OpCode->RightValue = 0;
+    OpCode->Immediate = 0;
+    OpCode->Result = 0;
+    OpCode->DestinationRegister = 0;
+    OpCode->RADestinationRegister = 0;
+    OpCode->FunctionSelect = 0;
+    u8 rs = (Data & REG_RS_MASK) >> 21;
+    u8 rt = (Data & REG_RT_MASK) >> 16;
+    u8 rd = (Data & REG_RD_MASK) >> 11;
 
-    OpCode->LeftValue = Cpu->registers[rs];
-    OpCode->RightValue = Cpu->registers[rt];
-
-    if (Select0 == 0)
+    if (OpCode->Select0 == 0)
     {
-        OpCode->DestinationRegister = rd;
         //shift-imm
-        if ((Select1 & 0b111100) == 0)
+        if ((OpCode->Select1 & 0b111100) == 0)
         {
             OpCode->Immediate = (Data & IMM5_MASK) >> 6;
-
+            OpCode->RightValue = Cpu->registers[rt];
+            OpCode->DestinationRegister = rd;
+        }
+        //shift-reg
+        else if ((OpCode->Select1 & 0b111000) == 0)
+        {
+            OpCode->LeftValue = Cpu->registers[rs];
+            OpCode->RightValue = Cpu->registers[rt];
+            OpCode->DestinationRegister = rd;
+        }
+        //jr
+        else if (OpCode->Select1 == 0b001000)
+        {
+            OpCode->LeftValue = Cpu->registers[rs];
+            OpCode->DestinationRegister = REG_INDEX_PC;
+            OpCode->MemAccessType = MEM_ACCESS_BRANCH;
         }
         //jalr
-        else if (Select1 == 0b001001)
+        else if (OpCode->Select1 == 0b001001)
         {
+            OpCode->LeftValue = Cpu->registers[rs];
+            OpCode->DestinationRegister = REG_INDEX_PC;
             OpCode->RADestinationRegister = rd;
+            OpCode->MemAccessType = MEM_ACCESS_BRANCH;
         }
         //sys/brk
-        else if ((Select1 & 0b111110) == 0b001100)
+        else if ((OpCode->Select1 & 0b111110) == 0b001100)
         {
             OpCode->Immediate = (Data & COMMENT20_MASK) >> 6;
         }
-        //mthi/mtlo: these can set destination register in function
-        return;
-    }
+        //mfhi/mflo
+        else if ((OpCode->Select1 & 0b111101) == 0b010000)
+        {
+            OpCode->DestinationRegister = rd;
+        }
+        //mthi/mtlo
+        else if ((OpCode->Select1 & 0b111101) == 0b010001)
+        {
+            OpCode->DestinationRegister = REG_INDEX_HL;
+            OpCode->LeftValue = Cpu->registers[rs];
+        }
+        //mul/div
+        else if ((OpCode->Select1 & 0b111100) == 0b011000)
+        {
+            OpCode->LeftValue = Cpu->registers[rs];
+            OpCode->RightValue = Cpu->registers[rt];
+            OpCode->DestinationRegister = REG_INDEX_HL;
+        }
+        //alu-reg
+        else if (OpCode->Select1 & 0b100000)
+        {
+            OpCode->LeftValue = Cpu->registers[rs];
+            OpCode->RightValue = Cpu->registers[rt];
+            OpCode->DestinationRegister = rd;
+        }
 
-    OpCode->Immediate = SignExtend16((Data & IMM16_MASK) >> 0);
-    OpCode->DestinationRegister = rt;
+    }
     //bltz, bgez, bltzal bgezal
-    if (Select0 == 0b000001)
+    else if (OpCode->Select0 == 0b000001)
     {
-        OpCode->FunctionSelect = rt;
+        OpCode->LeftValue = Cpu->registers[rs];
+        OpCode->RightValue = rt; //rt is used as a function selector here
+        OpCode->Immediate = SignExtend16((Data & IMM16_MASK) >> 0);
         //destination registers set within function
     }
     //j/jal
-    else if ((Select0 & 0b111110) == 0b000010)
+    else if ((OpCode->Select0 & 0b111110) == 0b000010)
     {
         OpCode->Immediate = (Data & IMM26_MASK) >> 0;
+        OpCode->DestinationRegister = REG_INDEX_PC;
+        OpCode->MemAccessType = MEM_ACCESS_BRANCH;
         //RADestinationRegister set within function
     }
+    //beq/bne
+    else if ((OpCode->Select0 & 0b111110) == 0b000100)
+    {
+        OpCode->LeftValue = Cpu->registers[rs];
+        OpCode->RightValue = Cpu->registers[rt];
+        OpCode->Immediate = SignExtend16((Data & IMM16_MASK) >> 0);
+        //destination registers set within function
+    }
+    //blez/bgtz
+    else if ((OpCode->Select0 & 0b111110) == 0b000110)
+    {
+        OpCode->LeftValue = Cpu->registers[rs];
+        OpCode->Immediate = SignExtend16((Data & IMM16_MASK) >> 0);
+        //destination registers set within function
+    }
+    //alu-imm
+    else if ((OpCode->Select0 & 0b111000) == 0b001000)
+    {
+        OpCode->LeftValue = Cpu->registers[rs];
+        OpCode->Immediate = SignExtend16((Data & IMM16_MASK) >> 0);
+        OpCode->DestinationRegister = rt;
+    }
+    //lui-imm
+    else if (OpCode->Select0 == 0b001111)
+    {
+        OpCode->Immediate = (Data & IMM16_MASK) >> 0;
+        OpCode->DestinationRegister = rt;
+    }
+    //load
+    else if ((OpCode->Select0 & 0b111000) == 0b100000)
+    {
+        OpCode->LeftValue = Cpu->registers[rs];
+        OpCode->Immediate = (Data & IMM16_MASK) >> 0;
+        OpCode->DestinationRegister = rt;
+        OpCode->MemAccessType = MEM_ACCESS_READ;
+    }
+    //store
+    else if ((OpCode->Select0 & 0b111000) == 0b101000)
+    {
+        OpCode->LeftValue = Cpu->registers[rs];
+        OpCode->RightValue = Cpu->registers[rt];
+        OpCode->Immediate = (Data & IMM16_MASK) >> 0;
+        OpCode->MemAccessType = MEM_ACCESS_WRITE;
+    }
     // coprocessor main instruction decoding
-    else if ((Select0 & 0b111100) == 0b010000)
+    else if ((OpCode->Select0 & 0b010000) == 0b010000)
     {
         OpCode->FunctionSelect = rs;
         // mfc, cfc
         if (rs < 0b00100)
         {
-            OpCode->RightValue = Cpu->CP0.registers[rd + (rs & 0b00010 ? 32 : 0)];
+            OpCode->DestinationRegister = rt;
+            OpCode->LeftValue = Cpu->CP0.registers[rd + (rs & 0b00010 ? 32 : 0)];
         }
         // mtc, ctc
         else if (rs < 0b01000)
         {
-            OpCode->WriteBackMode = (OpCode->Select0 & 0b111) + 1;
+            OpCode->WriteBackMode = OpCode->Select0 & 0b111;
             OpCode->DestinationRegister = rd + (rs & 0b00010 ? 32 : 0);
+            OpCode->LeftValue = Cpu->registers[rt];
         }
         // BCnF, BCnT
         else if (rs == 0b01000)
         {
             OpCode->RightValue = rt; // used as secondary function select
+            OpCode->Immediate = SignExtend16((Data & IMM16_MASK) >> 0);
         }
         else if (rs & 0b10000)
         {
@@ -792,15 +884,20 @@ DecodeOpcode(MIPS_R3000 *Cpu, opcode *OpCode, const u32 Data)
         }
     }
     //lwc
-    else if ((Select0 & 0b111000) == 0b110000)
+    else if ((OpCode->Select0 & 0b111000) == 0b110000)
     {
-        OpCode->WriteBackMode = Select0 & 0b111;
+        OpCode->WriteBackMode = OpCode->Select0 & 0b111;
+        OpCode->LeftValue = Cpu->registers[rs];
+        OpCode->DestinationRegister = rt;
+        OpCode->Immediate = (Data & IMM16_MASK) >> 0;
         OpCode->MemAccessType = MEM_ACCESS_READ;
     }
     //swc
-    else if ((Select0 & 0b111000) == 0b111000)
+    else if ((OpCode->Select0 & 0b111000) == 0b111000)
     {
+        OpCode->LeftValue = Cpu->registers[rs];
         OpCode->RightValue = Cpu->CP0.registers[rt];
+        OpCode->Immediate = (Data & IMM16_MASK) >> 0;
         OpCode->MemAccessType = MEM_ACCESS_WRITE;
     }
 }
@@ -958,6 +1055,7 @@ StepCpu(MIPS_R3000 *Cpu, u32 Steps)
         *OpCode = {};
         DecodeOpcode(Cpu, OpCode, Cpu->MachineCode);
         Cpu->MachineCode = InstructionFetch(Cpu);
+        Cpu->IAddress = Cpu->pc - 4;
         ++BS;
     }
     Cpu->BaseState = BS;

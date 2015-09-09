@@ -131,6 +131,8 @@ struct opcode
     u32 DestinationRegister;
     u32 RADestinationRegister; // Used for return address writing
     u32 CurrentAddress;
+
+    u32 MachineCode;
 };
 
 struct Coprocessor
@@ -224,6 +226,7 @@ struct MIPS_R3000
 
     opcode OpCodes[4] = {};
     u32 MachineCode = 0;
+    u32 IAddress = 0;
     u32 BaseState = 0;
 
     MIPS_R3000();
