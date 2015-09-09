@@ -625,7 +625,7 @@ COP3(opcode *OpCode)
 
 
 void
-DisasseblerDecodeOpcode(opcode *OpCode, u32 Data, u32 IAddress)
+DisassemblerDecodeOpcode(opcode *OpCode, u32 Data, u32 IAddress)
 {
     OpCode->CurrentAddress = IAddress;
     OpCode->Select0 = (Data & PRIMARY_OP_MASK) >> 26;
@@ -857,7 +857,7 @@ DisassemblerPrintRange(MIPS_R3000 *Cpu, u32 Base, u32 Count, u32 PC)
         {
             printf("\x1b[36m"); // WB
         }
-        DisasseblerDecodeOpcode(&OpCode, MachineCode, Base + i * 4);
+        DisassemblerDecodeOpcode(&OpCode, MachineCode, Base + i * 4);
         DisassemblerPrintOpCode(&OpCode);
     }
 }
