@@ -248,6 +248,12 @@ GP0MonochromeOpaqueQuad(GPU* Gpu, u32 Param)
     glColor4f(1, 1, 1, 1);
 }
 
+inline u16
+swap16(u16 in)
+{
+    return (in << 8) | ((in >> 8) & 0xFF);
+}
+
 static void
 GP0TexturedRect(GPU *Gpu, u32 Param)
 {
@@ -295,8 +301,8 @@ GP0TexturedRect(GPU *Gpu, u32 Param)
     {
         for (u32 i = 0; i < 128; ++i)
         {
-            Buffer[(i * 2) + j * 256] = CLUTStart[(VRAM[(Base + i + j * 1024 * 2)] & 0b1111)];
-            Buffer[(i * 2) + 1 + j * 256] = CLUTStart[ ((VRAM[(Base + i + j * 1024 * 2)] >> 4) & 0b1111) ];
+            Buffer[(i * 2) + j * 256] = swap16(CLUTStart[(VRAM[(Base + i + j * 1024 * 2)] & 0b1111)]);
+            Buffer[(i * 2) + 1 + j * 256] = swap16(CLUTStart[ ((VRAM[(Base + i + j * 1024 * 2)] >> 4) & 0b1111) ]);
         }
     }
 
