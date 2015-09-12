@@ -20,6 +20,7 @@ typedef int8_t  s8;
 
 #include <cstdlib>
 #define linearAlloc malloc
+#define linearFree free
 #endif
 
 void InitPlatform(int, char **);

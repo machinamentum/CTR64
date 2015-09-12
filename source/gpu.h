@@ -12,6 +12,12 @@
 #include "platform.h"
 #include "mips.h"
 
+#ifdef _3DS
+#include <GL/gl.h>
+#else
+#include <GLFW/glfw3.h>
+#endif
+
 #define GPU_GP0  (0x1F801810)
 #define GPU_GP1  (0x1F801814)
 #define GPU_READ (0x1F801810)
@@ -115,7 +121,7 @@
 #define GTE_REG_FLAG           (63)
 
 #define GPU_VRAM_LINES         (512)
-#define GPU_VRAM_LINE_SIZE     (2048)
+#define GPU_VRAM_LINE_SIZE     (1024)
 
 struct GPU : public Coprocessor
 {
@@ -126,14 +132,24 @@ struct GPU : public Coprocessor
     u32 Gp0PacketsLeft = 0;
     u32 Gp0WaitingCmd;
     u32 Gp0Packets[16];
+    GLuint TempTex;
     u32 VRT = 0;
-    u32 *VRAM = (u32 *)linearAlloc(GPU_VRAM_LINES * GPU_VRAM_LINE_SIZE);
+    u32 *VRAM = (u32 *)linearAlloc(GPU_VRAM_LINES * GPU_VRAM_LINE_SIZE * 2);
     void (*Gp0Func)(GPU *, u32) = NULL;
+
+    u32 DrawMode;
+    struct
+    {
+        u32 X1;
+        u32 Y1;
+        u32 X2;
+        u32 Y2;
+    } DrawAreaBounds;
 };
 
 void GpuGp0(void *, u32);
 void GpuGp1(void *, u32);
-void DMA2Write(void *, u32);
+void DMA2Trigger(void *, u32);
 u32  GpuStat(void *, u32);
 
 #endif

@@ -159,10 +159,6 @@ C0GenerateException(MIPS_R3000 *Cpu, u8 Cause, u32 EPC)
         Cpu->CP0.sr &= ~C0_STATUS_KUc;
         Cpu->pc = GNRAL_VECTOR;
     }
-    else
-    {
-        printf("No Ex\n");
-    }
 }
 
 static void

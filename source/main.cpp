@@ -63,7 +63,7 @@ int main(int argc, char **argv)
     MapRegister(&Cpu, (mmr) {GPU_GP0, &Gpu, GpuGp0, empty_ret});
     MapRegister(&Cpu, (mmr) {GPU_GP1, &Gpu, GpuGp1, GpuStat});
     MapRegister(&Cpu, (mmr) {0x1F802064, &Cpu, std_out_puts, empty_ret});
-    MapRegister(&Cpu, (mmr) {0x1F8010A0, &Cpu, DMA2Write, empty_ret});
+    MapRegister(&Cpu, (mmr) {0x1F8010A8, &Cpu, DMA2Trigger, empty_ret});
 
     FILE *f = fopen("boot.exe", "rb");
     fseek(f, 0, SEEK_END);
@@ -93,19 +93,21 @@ int main(int argc, char **argv)
     ResetCpu(&Cpu);
 
     bool Step = false;
-    int CyclesToRun = 1;
+    int CyclesToRun = 5000;
     bool EnableDisassembler = false;
     bool AutoStep = true;
     u32 IRQ0Steps = 0;
     while (MainLoopPlatform())
     {
-//        hidScanInput();
-//        u32 KeysDown = hidKeysDown();
-//        u32 KeysHeld = hidKeysHeld();
-//        u32 KeysUp = hidKeysUp();
-//
-//        if (KeysDown & KEY_START)
-//            break;
+#ifdef _3DS
+        hidScanInput();
+        u32 KeysDown = hidKeysDown();
+        u32 KeysHeld = hidKeysHeld();
+        u32 KeysUp = hidKeysUp();
+
+        if (KeysDown & KEY_START)
+            break;
+#endif
 //
 //        if (KeysDown & KEY_DDOWN)
 //        {
@@ -144,7 +146,7 @@ int main(int argc, char **argv)
         {
             StepCpu(&Cpu, CyclesToRun);
             IRQ0Steps += CyclesToRun;
-            if (IRQ0Steps > 100000)
+            if (IRQ0Steps > 550000)
             {
                 C0GenerateException(&Cpu, 0, Cpu.pc - 4);
                 Cpu.CP0.cause |= (1 << 8);

@@ -32,6 +32,10 @@ SOURCES		:=	source
 DATA		:=	data
 INCLUDES	:=	include
 
+APP_TITLE	:= CTRX
+APP_DESCRIPTION	:= PS1 emulator
+APP_AUTHOR	:= machinamentum
+
 #---------------------------------------------------------------------------------
 # options for code generation
 #---------------------------------------------------------------------------------

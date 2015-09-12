@@ -172,6 +172,13 @@ struct mmr
     u32  (*RegisterReadFunc)(void *, u32 Address);
 };
 
+struct DMA
+{
+    u32 MADR;
+    u32 BCR;
+    u32 CHCR;
+};
+
 struct MIPS_R3000
 {
     union
@@ -234,12 +241,17 @@ struct MIPS_R3000
     void *RAM = linearAlloc(2048 * 1000);
     void *BIOS = linearAlloc(512 * 1000);
     void *Dummy = linearAlloc(512);
+
+    u32 DPCR;
+    u32 DICR;
     Coprocessor CP0;
     Coprocessor *CP1 = NULL;
     Coprocessor *CP2 = NULL;
     Coprocessor *CP3 = NULL;
     mmr MemMappedRegisters[64];
     u32 NumMMR = 0;
+
+    DMA DMAChannels[7];
 };
 
 void MapRegister(MIPS_R3000 *Cpu, mmr MMR);
@@ -260,7 +272,10 @@ MapVirtualAddress(MIPS_R3000 *Cpu, u32 Address)
     {
         return ((u8 *)Cpu->RAM) + (Base % RAM_SIZE);
     }
-
+    if (Base >= 0x801080 && (Base - 0x801080) < 0x78)
+    {
+        return ((u8 *)&Cpu->DMAChannels) + (Base - 0x801080);
+    }
     return Cpu->Dummy;
 }
 

@@ -11,11 +11,11 @@ static void *GfxHandle;
 void
 InitPlatform(int argc, char **argv)
 {
+    sdmcInit();
     if (argc > 1) chdir(argv[1]);
     gfxInitDefault();
     hidInit(NULL);
-    PrintConsole BottomConsole;
-    consoleInit(GFX_BOTTOM, &BottomConsole);
+    consoleInit(GFX_BOTTOM, NULL);
 
     GfxHandle = gfxCreateDevice(240, 400);
     gfxMakeCurrent(GfxHandle);
@@ -26,6 +26,7 @@ ExitPlatform()
 {
     gfxExit();
     hidExit();
+    sdmcExit();
 }
 
 void
