@@ -11,113 +11,113 @@
 int
 CdGetLbn(const char *FileName)
 {
-    printf(__FUNCTION__);
+    printf("%s\n", __FUNCTION__);
     return -1;
 }
 
 int
 CdReadSector()
 {
-    printf(__FUNCTION__);
+    printf("%s\n", __FUNCTION__);
     return -1;
 }
 
 int
 CdGetStatus()
 {
-    printf(__FUNCTION__);
+    printf("%s\n", __FUNCTION__);
     return -1;
 }
 
 int
 CdAsyncSeekL(void *Src)
 {
-    printf(__FUNCTION__);
+    printf("%s\n", __FUNCTION__);
     return 0;
 }
 
 int
 CdAsyncGetStatus(char *Dst)
 {
-    printf(__FUNCTION__);
+    printf("%s\n", __FUNCTION__);
     return 0;
 }
 
 int
 CdAsyncReadSector(int Count, void *Dst, int Mode)
 {
-    printf(__FUNCTION__);
+    printf("%s\n", __FUNCTION__);
     return 0;
 }
 
 void
 CdAsyncSetMode(int Mode)
 {
-    printf(__FUNCTION__);
+    printf("%s\n", __FUNCTION__);
 }
 
 void
 CdromGetInt5errCode(void *Dst1, void *Dst2)
 {
-    printf(__FUNCTION__);
+    printf("%s\n", __FUNCTION__);
 }
 
 void
 CdInitSubFunc()
 {
-    printf(__FUNCTION__);
+    printf("%s\n", __FUNCTION__);
 }
 
 void
 CdInit()
 {
-    printf(__FUNCTION__);
+    printf("%s\n", __FUNCTION__);
 }
 
 void
 CdRemove()
 {
-    printf(__FUNCTION__);
+    printf("%s\n", __FUNCTION__);
 }
 
 void
 CdromIoIrqFunc1()
 {
-    printf(__FUNCTION__);
+    printf("%s\n", __FUNCTION__);
 }
 
 void
 CdromDmaIrqFunc1()
 {
-    printf(__FUNCTION__);
+    printf("%s\n", __FUNCTION__);
 }
 
 void
 CdromIoIrqFunc2()
 {
-    printf(__FUNCTION__);
+    printf("%s\n", __FUNCTION__);
 }
 
 void
 CdromDmaIrqFunc2()
 {
-    printf(__FUNCTION__);
+    printf("%s\n", __FUNCTION__);
 }
 
 void
 SetCdromIrqAutoAbort(int Type, int Flag)
 {
-    printf(__FUNCTION__);
+    printf("%s\n", __FUNCTION__);
 }
 
 void
 EnqueueCdIntr()
 {
-    printf(__FUNCTION__);
+    printf("%s\n", __FUNCTION__);
 }
 
 void
 DequeueCdIntr()
 {
-    printf(__FUNCTION__);
+    printf("%s\n", __FUNCTION__);
 }

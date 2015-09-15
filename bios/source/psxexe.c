@@ -11,7 +11,7 @@
 void
 LoadExeHeader(const char *FileName, void *HdrBuf)
 {
-    printf(__FUNCTION__);
+    printf("%s\n", __FUNCTION__);
     int File = FileOpen(FileName, FILE_READ);
     if (File == -1)
     {
@@ -31,17 +31,17 @@ LoadExeHeader(const char *FileName, void *HdrBuf)
 void
 LoadExeFile(const char *FileName, void *HdrBuf)
 {
-    printf(__FUNCTION__);
+    printf("%s\n", __FUNCTION__);
 }
 
 void
 DoExecute(void *HdrBuf, unsigned int unk1, unsigned int unk2)
 {
-    printf(__FUNCTION__);
+    printf("%s\n", __FUNCTION__);
 }
 
 void
 LoadAndExecute(const char *FileName, unsigned int StackBase, unsigned int StackOffset)
 {
-    printf(__FUNCTION__);
+    printf("%s\n", __FUNCTION__);
 }
