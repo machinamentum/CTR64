@@ -438,11 +438,78 @@ exit(int ExitCode)
 
 #include <stdarg.h>
 
-void printf(const char *fmt, ...)
+void
+printf(const char *fmt, ...)
 {
+
+//    int NumArgs = 0;
+//    {
+//        char *Str = fmt;
+//        while (*Str != 0)
+//        {
+//            if ( (*Str == '%') && (*(Str + 1) != '%') )
+//            {
+//                ++NumArgs;
+//            }
+//            ++Str;
+//        }
+//    }
+
     va_list vargs;
-    va_start(vargs, 0);
+    va_start(vargs, fmt);
+
+    char *Str = (char *)fmt;
+    char *HexStr;
+
+    while (*Str != 0)
+    {
+        char Char = *Str;
+        if (Char != '%')
+        {
+            std_out_putchar(Char);
+        }
+        else
+        {
+            ++Str;
+            Char = *Str;
+            switch (Char) {
+                case '%':
+                    std_out_putchar(Char);
+                    break;
+
+                case 'x':
+                {
+                    HexStr = "0123456789abcdef";
+                    unsigned int HexInt = va_arg(vargs, unsigned int);
+                    for (int i = 7; i >= 0; --i)
+                    {
+                        std_out_putchar(HexStr[(HexInt >> (i * 4)) & 0xF]);
+                    }
+                    break;
+                }
+                case 'X':
+                {
+                    HexStr = "0123456789ABCDEF";
+                    unsigned int HexInt = va_arg(vargs, unsigned int);
+                    for (int i = 7; i >= 0; --i)
+                    {
+                        std_out_putchar(HexStr[(HexInt >> (i * 4)) & 0xF]);
+                    }
+                    break;
+                }
+                case 's':
+                {
+                    char *PStr = va_arg(vargs, char *);
+                    std_out_puts(PStr);
+                }
+            }
+        }
+
+
+        ++Str;
+    }
 
     va_end(vargs);
-    std_out_puts(fmt);
+
 }
+
