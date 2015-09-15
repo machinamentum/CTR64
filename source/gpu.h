@@ -123,6 +123,11 @@
 #define GPU_VRAM_LINES         (512)
 #define GPU_VRAM_LINE_SIZE     (1024)
 
+#define GPU_TEXTURE_COLOR_4BIT     (0)
+#define GPU_TEXTURE_COLOR_8BIT     (1)
+#define GPU_TEXTURE_COLOR_15BIT    (2)
+#define GPU_TEXTURE_COLOR_RESERVED (3)
+
 struct GPU : public Coprocessor
 {
 

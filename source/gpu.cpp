@@ -67,7 +67,7 @@ GpuStat(void *Object, u32 Address)
     return Status;
 }
 
-static u32 *PacketStore = (u32 *)linearAlloc(4 * 1000);
+static u32 *PacketStore = (u32 *)linearAlloc(1000 * 1000);
 static u32 Packets = 0;
 
 static void
@@ -150,7 +150,9 @@ GpuGp0(void *Object, u32 Value)
             Gpu->DrawMode = Param;
             break;
 
-//        case 0xE2:
+        case 0xE2:
+            // TODO texture window setting
+            break;
         case 0xE3:
             Gpu->DrawAreaBounds.X1 = Param & 0b1111111111;
             Gpu->DrawAreaBounds.Y1 = (Param >> 10) & 0b1111111111;
@@ -161,8 +163,20 @@ GpuGp0(void *Object, u32 Value)
             Gpu->DrawAreaBounds.Y2 = (Param >> 10) & 0b1111111111;
             break;
 
-//        case 0xE5:
-//        case 0xE6:
+        case 0xE5:
+            // TODO drawing area
+        case 0xE6:
+            // TODO mask bit setting
+            break;
+
+        case 0x2C:
+            Gpu->Gp0WaitingCmd = Value;
+            Gpu->Gp0PacketsLeft = 8;
+            break;
+
+        case 0x60:
+            Gpu->Gp0WaitingCmd = Value;
+            Gpu->Gp0PacketsLeft = 2;
             break;
 
         case 0x64:
@@ -198,6 +212,10 @@ GpuGp1(void *Object, u32 Value)
         case GP1_COMMAND_DMA_DIR:
             Gpu->Status ^= (-(Param & 3) ^ Gpu->Status) & (3 << 29);
             break;
+
+        case 0x05:
+            break;
+
         default:
             printf("GP1 0x%08lX\n", Value);
             break;
@@ -248,6 +266,28 @@ GP0MonochromeOpaqueQuad(GPU* Gpu, u32 Param)
     glColor4f(1, 1, 1, 1);
 }
 
+static void
+GP0MonochromeRect(GPU *Gpu, u32 Param)
+{
+    float R = (float)(Param & 0xFF) / 255.0f;
+    float G = (float)((Param >> 8) & 0xFF) / 255.0f;
+    float B = (float)((Param >> 16) & 0xFF) / 255.0f;
+
+    s32 X = Gpu->Gp0Packets[1] & 0xFFFF;
+    s32 Y = (Gpu->Gp0Packets[1] >> 16) & 0xFFFF;
+    u32 Width = Gpu->Gp0Packets[0] & 0xFFFF;
+    u32 Height = (Gpu->Gp0Packets[0] >> 16) & 0xFFFF;
+
+    glColor3f(R, G, B);
+    glBegin(GL_QUADS);
+    glVertex2i(X, Y);
+    glVertex2i(X + Width, Y);
+    glVertex2i(X + Width, Y + Height);
+    glVertex2i(X, Y + Height);
+    glEnd();
+    glColor4f(1, 1, 1, 1);
+}
+
 inline u16
 swap16(u16 in)
 {
@@ -270,7 +310,7 @@ GP0TexturedRect(GPU *Gpu, u32 Param)
 
     u32 CLUT = (Gpu->Gp0Packets[1] >> 16) & 0xFFFF;
     u32 HalfWordsXCLUT = (CLUT & 0b111111) * 16;
-    u32 YCLUT = (CLUT >> 6) & 0b11111111;
+    u32 YCLUT = (CLUT >> 6) & 0b111111111;
 
     u32 TexIndexX = (Gpu->Gp0Packets[1] & 0xFF);
     u32 TexIndexY = (Gpu->Gp0Packets[1] >> 8) & 0xFF;
@@ -297,21 +337,42 @@ GP0TexturedRect(GPU *Gpu, u32 Param)
     u16 *Buffer = (u16 *)linearAlloc(256 * 256 * 2);
     u32 Base = (TexPageX + TexPageY * 1024) * 2;
     u8 *VRAM = (u8 *)Gpu->VRAM;
-    for (u32 j = 0; j < 256; j++)
+
+    u32 TexPageColorMode = (Gpu->DrawMode >> 7) & 3;
+
+    if (TexPageColorMode == GPU_TEXTURE_COLOR_4BIT)
     {
-        for (u32 i = 0; i < 128; ++i)
+        for (u32 j = 0; j < 256; j++)
         {
-            Buffer[(i * 2) + j * 256] = swap16(CLUTStart[(VRAM[(Base + i + j * 1024 * 2)] & 0b1111)]);
-            Buffer[(i * 2) + 1 + j * 256] = swap16(CLUTStart[ ((VRAM[(Base + i + j * 1024 * 2)] >> 4) & 0b1111) ]);
+            for (u32 i = 0; i < 128; ++i)
+            {
+                Buffer[(i * 2) + j * 256] = swap16(CLUTStart[(VRAM[(Base + i + j * 1024 * 2)] & 0b1111)]);
+                Buffer[(i * 2) + 1 + j * 256] = swap16(CLUTStart[ ((VRAM[(Base + i + j * 1024 * 2)] >> 4) & 0b1111) ]);
+            }
         }
     }
-
-//    printf("CLUT: ");
-//    for (int i = 0; i < 16; ++i)
-//    {
-//        printf("0x%04X ", CLUTStart[i]);
-//    }
-//    printf("\n");
+    else if (TexPageColorMode == GPU_TEXTURE_COLOR_8BIT)
+    {
+        for (u32 j = 0; j < 256; ++j)
+        {
+            for (u32 i = 0; i < 128; ++i)
+            {
+                Buffer[(i * 2) + j * 256] = swap16(CLUTStart[(VRAM[(Base + i + 1 + j * 1024 * 2)])]);
+                Buffer[(i * 2) + 1 + j * 256] = swap16(CLUTStart[ ((VRAM[(Base + i + j * 1024 * 2)])) ]);
+            }
+        }
+    }
+    else if (TexPageColorMode == GPU_TEXTURE_COLOR_15BIT)
+    {
+        u16 *VRAM16 = (u16 *)VRAM;
+        for (u32 j = 0; j < 256; j++)
+        {
+            for (u32 i = 0; i < 256; ++i)
+            {
+                Buffer[i + j * 256] = swap16(VRAM16[(Base + i + j * 1024)]);
+            }
+        }
+    }
 
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 256, 256, GL_RGBA, GL_UNSIGNED_SHORT_5_5_5_1, Buffer);
     linearFree(Buffer);
@@ -341,6 +402,98 @@ GP0TexturedRect(GPU *Gpu, u32 Param)
     glTexCoord2f(TX, TY + TH);
     glVertex2i(X, Y + Height);
 
+    glEnd();
+    glColor4f(1, 1, 1, 1);
+    glDisable(GL_TEXTURE_2D);
+}
+
+inline float
+ToTexCoord(const u32 Coord)
+{
+    return ((float)Coord / 256.0f);
+}
+
+static void
+GP0TexturedQuad(GPU *Gpu, u32 Param)
+{
+    printf("%s\n", __FUNCTION__);
+    u32 CLUT = (Gpu->Gp0Packets[6] >> 16) & 0xFFFF;
+    u32 HalfWordsXCLUT = (CLUT & 0b111111) * 16;
+    u32 YCLUT = (CLUT >> 6) & 0b111111111;
+
+    u16 *CLUTStart = ((u16 *)Gpu->VRAM) + HalfWordsXCLUT + YCLUT * GPU_VRAM_LINE_SIZE;
+
+    u32 TexPageData = (Gpu->Gp0Packets[4] >> 16) & 0xFFFF;
+    u32 TexPageX = (TexPageData & 0b1111) * 64;
+    u32 TexPageY = ((TexPageData >> 4) & 1) * 256;
+
+    u32 TexPageColorMode = (TexPageData >> 7) & 3;
+
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, Gpu->TempTex);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    u16 *Buffer = (u16 *)linearAlloc(256 * 256 * 2);
+    u32 Base = (TexPageX + TexPageY * 1024) * 2;
+    u8 *VRAM = (u8 *)Gpu->VRAM;
+
+    if (TexPageColorMode == GPU_TEXTURE_COLOR_4BIT)
+    {
+        for (u32 j = 0; j < 256; j++)
+        {
+            for (u32 i = 0; i < 128; ++i)
+            {
+                Buffer[(i * 2) + j * 256] = swap16(CLUTStart[(VRAM[(Base + i + j * 1024 * 2)] & 0b1111)]);
+                Buffer[(i * 2) + 1 + j * 256] = swap16(CLUTStart[ ((VRAM[(Base + i + j * 1024 * 2)] >> 4) & 0b1111) ]);
+            }
+        }
+    }
+    else if (TexPageColorMode == GPU_TEXTURE_COLOR_8BIT)
+    {
+        printf("I'm 8bit color mode! Look at meee!\n");
+        for (u32 j = 0; j < 256; j++)
+        {
+            for (u32 i = 0; i < 128; ++i)
+            {
+                Buffer[(i * 2) + j * 256] = swap16(CLUTStart[(VRAM[(Base + i + 1 + j * 1024 * 2)])]);
+                Buffer[(i * 2) + 1 + j * 256] = swap16(CLUTStart[ ((VRAM[(Base + i + j * 1024 * 2)])) ]);
+            }
+        }
+    }
+    else if (TexPageColorMode == GPU_TEXTURE_COLOR_15BIT)
+    {
+        u16 *VRAM16 = (u16 *)VRAM;
+        for (u32 j = 0; j < 256; j++)
+        {
+            for (u32 i = 0; i < 256; ++i)
+            {
+                Buffer[i + j * 256] = swap16(VRAM16[(Base + i + j * 1024)]);
+            }
+        }
+    }
+
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 256, 256, GL_RGBA, GL_UNSIGNED_SHORT_5_5_5_1, Buffer);
+    linearFree(Buffer);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+    glColor3f(1, 1, 1);
+    glBegin(GL_QUADS);
+
+    glTexCoord2f(ToTexCoord(Gpu->Gp0Packets[6] & 0xFF), ToTexCoord((Gpu->Gp0Packets[6] >> 8) & 0xFF));
+    glVertex2i(Gpu->Gp0Packets[7] & 0xFFFF, (Gpu->Gp0Packets[7] >> 16) & 0xFFFF);
+
+    glTexCoord2f(ToTexCoord(Gpu->Gp0Packets[4] & 0xFF), ToTexCoord((Gpu->Gp0Packets[4] >> 8) & 0xFF));
+    glVertex2i(Gpu->Gp0Packets[5] & 0xFFFF, (Gpu->Gp0Packets[5] >> 16) & 0xFFFF);
+
+    glTexCoord2f(ToTexCoord(Gpu->Gp0Packets[0] & 0xFF), ToTexCoord((Gpu->Gp0Packets[0] >> 8) & 0xFF));
+    glVertex2i(Gpu->Gp0Packets[1] & 0xFFFF, (Gpu->Gp0Packets[1] >> 16) & 0xFFFF);
+
+    glTexCoord2f(ToTexCoord(Gpu->Gp0Packets[2] & 0xFF), ToTexCoord((Gpu->Gp0Packets[2] >> 8) & 0xFF));
+    glVertex2i(Gpu->Gp0Packets[3] & 0xFFFF, (Gpu->Gp0Packets[3] >> 16) & 0xFFFF);
+    
     glEnd();
     glColor4f(1, 1, 1, 1);
     glDisable(GL_TEXTURE_2D);
@@ -383,5 +536,7 @@ InitFuncTables()
 
     GP0FuncTable[GP0_COMMAND_FILL_RECT] = GP0FillRect;
     GP0FuncTable[0x28] = GP0MonochromeOpaqueQuad;
+    GP0FuncTable[0x60] = GP0MonochromeRect;
     GP0FuncTable[0x64] = GP0TexturedRect;
+    GP0FuncTable[0x2C] = GP0TexturedQuad;
 }
