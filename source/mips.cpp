@@ -791,7 +791,7 @@ DecodeOpcode(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
     else if (OpCode->Select0 == 0b000001)
     {
         OpCode->LeftValue = Cpu->registers[rs];
-        OpCode->RightValue = rt; //rt is used as a function selector here
+        OpCode->FunctionSelect = rt;
         OpCode->Immediate = SignExtend16((Data & IMM16_MASK) >> 0);
         //destination registers set within function
     }
