@@ -196,9 +196,11 @@ std_out_puts(const char *Src)
         std_out_puts("<NULL>");
         return;
     }
-
-    unsigned int *const CTRX_PRINT_STR = (unsigned int *)0x1F802064;
-    *CTRX_PRINT_STR = (unsigned int)Src;
+    while (*Src != 0)
+    {
+        std_out_putchar(*Src);
+        ++Src;
+    }
 }
 
 void
@@ -211,10 +213,7 @@ std_out_putchar(const char Src)
     }
 
     unsigned int *const CTRX_PRINT_STR = (unsigned int *)0x1F802064;
-    char Str[2];
-    Str[0] = Src;
-    Str[1] = 0;
-    *CTRX_PRINT_STR = (unsigned int)&Str;
+    *CTRX_PRINT_STR = (unsigned int)Src;
 }
 
 int
