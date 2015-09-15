@@ -98,7 +98,6 @@
 
 #define REG_INDEX_RA 31
 #define REG_INDEX_PC 32
-#define REG_INDEX_HL 33
 
 
 #define MEM_ACCESS_NONE   0

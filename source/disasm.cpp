@@ -686,7 +686,6 @@ DisassemblerDecodeOpcode(opcode *OpCode, u32 Data, u32 IAddress)
         //mthi/mtlo
         else if ((OpCode->Select1 & 0b111101) == 0b010001)
         {
-            OpCode->DestinationRegister = REG_INDEX_HL;
             OpCode->LeftValue = rs;
         }
         //mul/div
@@ -694,7 +693,6 @@ DisassemblerDecodeOpcode(opcode *OpCode, u32 Data, u32 IAddress)
         {
             OpCode->LeftValue = rs;
             OpCode->RightValue = rt;
-            OpCode->DestinationRegister = REG_INDEX_HL;
         }
         //alu-reg
         else if (OpCode->Select1 & 0b100000)

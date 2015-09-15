@@ -257,14 +257,12 @@ static void
 MTHI(MIPS_R3000 *Cpu, opcode *OpCode)
 {
     Cpu->hi = OpCode->LeftValue;
-    OpCode->DestinationRegister = 0;
 }
 
 static void
 MTLO(MIPS_R3000 *Cpu, opcode *OpCode)
 {
     Cpu->lo = OpCode->LeftValue;
-    OpCode->DestinationRegister = 0;
 }
 
 static void
@@ -772,7 +770,6 @@ DecodeOpcode(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
         //mthi/mtlo
         else if ((OpCode->Select1 & 0b111101) == 0b010001)
         {
-            OpCode->DestinationRegister = REG_INDEX_HL;
             OpCode->LeftValue = Cpu->registers[rs];
         }
         //mul/div
@@ -780,7 +777,6 @@ DecodeOpcode(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
         {
             OpCode->LeftValue = Cpu->registers[rs];
             OpCode->RightValue = Cpu->registers[rt];
-            OpCode->DestinationRegister = REG_INDEX_HL;
         }
         //alu-reg
         else if (OpCode->Select1 & 0b100000)
