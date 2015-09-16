@@ -291,7 +291,12 @@ GP0MonochromeRect(GPU *Gpu, u32 Param)
 inline u16
 swap16(u16 in)
 {
-    return (in << 8) | ((in >> 8) & 0xFF);
+    u16 ret = 0;
+    ret |= (in >> 15) & 1;
+    ret |= (in & 0b11111) << 11;
+    ret |= ((in >> 5) & 0b11111) << 6;
+    ret |= ((in >> 10) & 0b11111) << 1;
+    return ret;
 }
 
 static void
