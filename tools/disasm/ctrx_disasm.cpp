@@ -1,0 +1,52 @@
+#include <string>
+#include <cstring>
+#include "disasm.h"
+#include "psxexe.h"
+
+void
+PrintUsage()
+{
+    printf("ctrx_disasm <file[.exe]> (hex address) (number of instructions)\n");
+}
+
+int
+main(int argc, char **argv)
+{
+    if (argc < 2)
+    {
+        PrintUsage();
+        return -1;
+    }
+
+    std::string FilePath = std::string(argv[1], 0, strlen(argv[1]));
+
+    MIPS_R3000 DummyCpu;
+
+    FILE *f = fopen(FilePath.c_str(), "rb");
+    fseek(f, 0, SEEK_END);
+    long fsize = ftell(f);
+    fseek(f, 0, SEEK_SET);
+
+    u8 *ExeBuffer = (u8 *)linearAlloc(fsize + 1);
+    fread(ExeBuffer, fsize, 1, f);
+    fclose(f);
+
+    LoadPsxExe(&DummyCpu, (psxexe_hdr *)ExeBuffer);
+
+    u32 Address = DummyCpu.pc;
+    if (argc > 2)
+    {
+        std::string AddrStr = std::string(argv[2], 0, strlen(argv[2]));
+        Address = std::stoul(AddrStr, nullptr, 16);
+    }
+    u32 NumInstructions = 32;
+    if (argc > 3)
+    {
+        std::string NumStr = std::string(argv[3], 0, strlen(argv[3]));
+        NumInstructions = std::stoul(NumStr, nullptr, 10);
+    }
+
+    DisassemblerPrintRange(&DummyCpu, Address, NumInstructions, 0);
+
+    return 0;
+}
