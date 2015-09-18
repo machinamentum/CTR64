@@ -7,6 +7,8 @@
  * ----------------------------------------------------------------------------
  */
 
+#include "kernel.h"
+
 void *
 memcpy(void *Dst, const void *Src, unsigned int Length)
 {
@@ -224,11 +226,10 @@ strlen(const char *Src)
 {
     if (!Src) return 0;
     unsigned int Length = 0;
-    while (*(Src + Length) != '\0');
+    while (Src[Length] != 0)
     {
         ++Length;
     }
-
     return Length;
 }
 
@@ -428,8 +429,6 @@ bsearch(const void *Key, void *Base, int Num, int Width, int (*Callback)(const v
     return 0;
 }
 
-#include "kernel.h"
-
 void
 exit(int ExitCode)
 {
@@ -441,20 +440,6 @@ exit(int ExitCode)
 void
 printf(const char *fmt, ...)
 {
-
-//    int NumArgs = 0;
-//    {
-//        char *Str = fmt;
-//        while (*Str != 0)
-//        {
-//            if ( (*Str == '%') && (*(Str + 1) != '%') )
-//            {
-//                ++NumArgs;
-//            }
-//            ++Str;
-//        }
-//    }
-
     va_list vargs;
     va_start(vargs, fmt);
 
