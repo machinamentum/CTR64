@@ -23,7 +23,7 @@ TOPDIR ?= $(CURDIR)
 #---------------------------------------------------------------------------------
 TARGET		:=	$(notdir $(CURDIR))
 BUILD		:=	build
-SOURCES		:=	source
+SOURCES		:=	source source/core
 DATA		:=
 INCLUDES	:=	include raw_data
 
