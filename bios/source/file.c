@@ -8,10 +8,42 @@
  */
 #include "kernel.h"
 
+static int
+_CTRX_FileOpen(const char *FileName)
+{
+    int *FOpenRegister = (int *)0x1F802068;
+    *FOpenRegister = (int)FileName;
+    return *FOpenRegister;
+}
+
+static int
+_CTRX_FileRead(int Fd, void *Dst, int Length)
+{
+    struct
+    {
+        int Fd;
+        void *Dst;
+        int Length;
+    } FReadInfo;
+
+    FReadInfo.Fd = Fd;
+    FReadInfo.Dst = Dst;
+    FReadInfo.Length = Length;
+
+    int *FReadRegister = (int *)0x1F802070;
+    *FReadRegister = (int)&FReadInfo;
+    return *FReadRegister;
+}
+
 int
 FileOpen(const char *FileName, int AccessMode)
 {
     printf("%s\n", __FUNCTION__);
+    if (memcmp(FileName, "cdrom:", strlen("cdrom:")) == 0)
+    {
+        printf("Opening file from cdrom\n");
+        return _CTRX_FileOpen(FileName + strlen("cdrom:"));
+    }
     return -1;
 }
 
@@ -26,7 +58,7 @@ int
 FileRead(int Fd, void *Dst, int Length)
 {
     printf("%s\n", __FUNCTION__);
-    return -1;
+    return _CTRX_FileRead(Fd, Dst, Length);
 }
 
 int

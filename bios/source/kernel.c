@@ -560,13 +560,32 @@ void kmain(void)
     std_out_puts("Attaching jumper cables...");
     InstallBIOSJumperCables();
     std_out_puts("done\n");
+    InitHeap((void *)0x80000100, 0x10000 - 0x100);
 
+    std_out_puts("Loading system.cnf from CDROM\n");
+    CdInit();
+    int SysCnfFile = FileOpen("cdrom:SYSTEM.CNF", FILE_READ);
+    char *Buffer = malloc(512);
+    int ReadBytes = FileRead(SysCnfFile, Buffer, 512);
+    printf("Read %X bytes\n", ReadBytes);
+    printf("%s\n", Buffer);
+
+    char *ExeNameStart = Buffer;
+    while (*ExeNameStart != 'c')
+    {
+        ++ExeNameStart;
+    }
+
+    char *ExeNameEnd = ExeNameStart;
+    while (*ExeNameEnd != ';')
+    {
+        ++ExeNameEnd;
+    }
+    *ExeNameEnd = 0;
     std_out_puts("Enabling exceptions\n");
     extern void _enable_interrupts();
     _enable_interrupts();
-    std_out_puts("Calling user code...\n");
-    typedef void (*UEFunc)(void);
-    UEFunc UserEntry = (UEFunc)0x80010000;
-    UserEntry();
+    printf("Loading and running PSX EXE: %s\n", ExeNameStart);
+    LoadAndExecute(ExeNameStart, 0, 0);
     while (1){}
 }

@@ -8,6 +8,25 @@
  */
 #include "kernel.h"
 
+typedef struct
+{
+    char AsciiID[8];
+    char pad[8];
+    unsigned int InitPC;
+    unsigned int InitGP;
+    unsigned int DestAddress;
+    unsigned int FileSize;
+    unsigned int Unk0;
+    unsigned int Unk1;
+    unsigned int MemfillStartAddress;
+    unsigned int MemfillSize;
+    unsigned int InitSP;
+    unsigned int OffsetSP;
+    unsigned char Reserved[14];
+    char AsciiMarker[1]; //read off the bottom of the struct
+} psxexe_hdr;
+
+
 void
 LoadExeHeader(const char *FileName, void *HdrBuf)
 {
@@ -44,4 +63,11 @@ void
 LoadAndExecute(const char *FileName, unsigned int StackBase, unsigned int StackOffset)
 {
     printf("%s\n", __FUNCTION__);
+    int Fd = FileOpen(FileName, FILE_READ);
+    psxexe_hdr *Hdr = malloc(0x800);
+    FileRead(Fd, Hdr, 0x800);
+    FileRead(Fd, (void *)Hdr->DestAddress, Hdr->FileSize);
+    typedef void (*UEFunc)(void);
+    UEFunc UserEntry = (UEFunc)Hdr->InitPC;
+    UserEntry();
 }

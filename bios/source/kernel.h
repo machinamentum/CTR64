@@ -32,6 +32,8 @@ void *malloc(int Size);
 
 void free(void *Ptr);
 
+void InitHeap(void *Address, int Size);
+
 void ReturnFromException();
 
 FunctionHook *SetDefaultExitFromException();
@@ -110,6 +112,8 @@ int GPU_cw(unsigned int Cmd);
 unsigned int GetGPUStatus();
 int gpu_sync();
 
+void CdInit();
+
 typedef struct
 {
     char FileName[0x14];
@@ -119,6 +123,8 @@ typedef struct
     int SelectorNumber;
     int Reserved;
 } DirEntry;
+
+void LoadAndExecute(const char *FileName, unsigned int StackBase, unsigned int StackOffset);
 
 
 #endif
