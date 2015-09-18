@@ -96,7 +96,7 @@ DumpState(MIPS_R3000 *Cpu)
     printf("\x1b[0;0H");
     for (int i = 0; i < 32; ++i)
     {
-        printf("%s: 0x%08lX  ", RNT[i], Cpu->registers[i]);
+        printf("%s: 0x%08lX  ", RNT[i], i);
         if (i % 2 == 1) printf("\n");
     }
     printf("PC : 0x%08lX\n", Cpu->pc);
@@ -156,19 +156,28 @@ Break(opcode *OpCode)
     {
         printf(" 0x%08lX", Immediate);
     }
-    printf("\n");
 }
 
 //Arithmetic
 static void
 AddU(opcode *OpCode)
 {
-    printf("addu %s, %s, %s", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], RNT[OpCode->RightValue]);
+    return;
+    if (OpCode->RightValue)
+    {
+        printf("addu %s, %s, %s", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], RNT[OpCode->RightValue]);
+    }
+    else
+    {
+        printf("move %s, %s", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue]);
+    }
+
 }
 
 static void
 AddIU(opcode *OpCode)
 {
+    return;
     printf("addiu %s, %s, 0x%04lX", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], OpCode->Immediate);
 }
 
@@ -338,7 +347,7 @@ BranchZero(opcode *OpCode)
         printf("bgez");
         if (type & 0b10000)
         {
-            printf("al ");
+            printf("al");
         }
     }
     else
@@ -347,10 +356,10 @@ BranchZero(opcode *OpCode)
          printf("bltz");
         if (type & 0b10000)
         {
-            printf("al ");
+            printf("al");
         }
     }
-    printf("%s, 0x%04lX", RNT[OpCode->LeftValue], OpCode->Immediate);
+    printf(" %s, 0x%04lX", RNT[OpCode->LeftValue], OpCode->Immediate);
 }
 
 static void
@@ -382,13 +391,13 @@ BGTZ(opcode *OpCode)
 static void
 AndI(opcode *OpCode)
 {
-    printf("andi %s, %s, 0x%04lX", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], OpCode->Immediate);
+    printf("andi %s, %s, 0x%04lX", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], OpCode->Immediate & 0xFFFF);
 }
 
 static void
 OrI(opcode *OpCode)
 {
-    printf("ori %s, %s, 0x%04lX", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], OpCode->Immediate);
+    printf("ori %s, %s, 0x%04lX", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], OpCode->Immediate & 0xFFFF);
 }
 
 static void
@@ -417,7 +426,7 @@ NOr(opcode *OpCode)
 static void
 XOrI(opcode *OpCode)
 {
-    printf("xori %s, %s, 0x%04lX", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], OpCode->Immediate);
+    printf("xori %s, %s, 0x%04lX", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], OpCode->Immediate & 0xFFFF);
 }
 
 //shifts
@@ -632,12 +641,14 @@ DisassemblerDecodeOpcode(opcode *OpCode, u32 Data, u32 IAddress)
     OpCode->Select1 = (Data & SECONDARY_OP_MASK) >> 0;
     OpCode->MemAccessType = MEM_ACCESS_NONE;
     OpCode->MemAccessMode = MEM_ACCESS_WORD;
+    OpCode->WriteBackMode = WRITE_BACK_CPU;
     OpCode->LeftValue = 0;
     OpCode->RightValue = 0;
     OpCode->Immediate = 0;
     OpCode->Result = 0;
     OpCode->DestinationRegister = 0;
     OpCode->RADestinationRegister = 0;
+    OpCode->FunctionSelect = 0;
     u8 rs = (Data & REG_RS_MASK) >> 21;
     u8 rt = (Data & REG_RT_MASK) >> 16;
     u8 rd = (Data & REG_RD_MASK) >> 11;
@@ -648,7 +659,7 @@ DisassemblerDecodeOpcode(opcode *OpCode, u32 Data, u32 IAddress)
         if ((OpCode->Select1 & 0b111100) == 0)
         {
             OpCode->Immediate = (Data & IMM5_MASK) >> 6;
-            OpCode->LeftValue = rt;
+            OpCode->RightValue = rt;
             OpCode->DestinationRegister = rd;
         }
         //shift-reg
@@ -707,9 +718,8 @@ DisassemblerDecodeOpcode(opcode *OpCode, u32 Data, u32 IAddress)
     else if (OpCode->Select0 == 0b000001)
     {
         OpCode->LeftValue = rs;
-        OpCode->RightValue = rt; //rt is used as a function selector here
+        OpCode->FunctionSelect = rt;
         OpCode->Immediate = SignExtend16((Data & IMM16_MASK) >> 0);
-        OpCode->MemAccessType = MEM_ACCESS_BRANCH;
         //destination registers set within function
     }
     //j/jal
@@ -726,7 +736,6 @@ DisassemblerDecodeOpcode(opcode *OpCode, u32 Data, u32 IAddress)
         OpCode->LeftValue = rs;
         OpCode->RightValue = rt;
         OpCode->Immediate = SignExtend16((Data & IMM16_MASK) >> 0);
-        OpCode->MemAccessType = MEM_ACCESS_BRANCH;
         //destination registers set within function
     }
     //blez/bgtz
@@ -734,7 +743,6 @@ DisassemblerDecodeOpcode(opcode *OpCode, u32 Data, u32 IAddress)
     {
         OpCode->LeftValue = rs;
         OpCode->Immediate = SignExtend16((Data & IMM16_MASK) >> 0);
-        OpCode->MemAccessType = MEM_ACCESS_BRANCH;
         //destination registers set within function
     }
     //alu-imm

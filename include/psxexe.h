@@ -9,6 +9,8 @@
 #ifndef PSX_EXE_H
 #define PSX_EXE_H
 
+#include "mips.h"
+
 struct psxexe_hdr
 {
     char AsciiID[8];
@@ -26,5 +28,8 @@ struct psxexe_hdr
     u8 Reserved[14];
     char AsciiMarker[1]; //read off the bottom of the struct
 };
+
+
+void LoadPsxExe(MIPS_R3000 *Cpu, psxexe_hdr *Hdr);
 
 #endif
