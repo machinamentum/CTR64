@@ -234,6 +234,94 @@ GpuGp1(void *Object, u32 Value)
 
 }
 
+GLuint
+GpuGetTexture(GPU *Gpu, u32 TexPageX, u32 TexPageY)
+{
+    u32 Base = TexPageX + TexPageY * 1024;
+    GLuint *TexCache = Gpu->CachedTextures;
+    u32 *Bases = Gpu->TextureBases;
+    u32 NumCachedTextures = Gpu->NumCachedTextures;
+    for (u32 i = 0; i < NumCachedTextures; ++i)
+    {
+        if (Bases[i] == Base)
+        {
+            return TexCache[i];
+        }
+    }
+
+    return 0;
+}
+
+u16
+swap16(u16 in)
+{
+    u16 ret = 0;
+    ret |= (in >> 15) & 1;
+    ret |= (in & 0b11111) << 11;
+    ret |= ((in >> 5) & 0b11111) << 6;
+    ret |= ((in >> 10) & 0b11111) << 1;
+    return ret;
+}
+
+GLuint
+GpuGenerateTexture(GPU *Gpu, u32 TexPageColorMode, u32 BaseHW, u32 CLUT)
+{
+    u32 HalfWordsXCLUT = (CLUT & 0b111111) * 16;
+    u32 YCLUT = (CLUT >> 6) & 0b111111111;
+    u16 *CLUTStart = ((u16 *)Gpu->VRAM) + HalfWordsXCLUT + YCLUT * GPU_VRAM_LINE_SIZE;
+    GLuint TexID = 0;
+    u16 *Buffer = (u16 *)linearAlloc(256 * 256 * 2);
+    u8 *VRAM = (u8 *)Gpu->VRAM;
+    u32 Base = BaseHW * 2;
+    if (TexPageColorMode == GPU_TEXTURE_COLOR_4BIT)
+    {
+        for (u32 j = 0; j < 256; ++j)
+        {
+            for (u32 i = 0; i < 128; ++i)
+            {
+                Buffer[(i * 2) + j * 256] = swap16(CLUTStart[(VRAM[(Base + i + j * 1024 * 2)] & 0b1111)]);
+                Buffer[(i * 2) + 1 + j * 256] = swap16(CLUTStart[ ((VRAM[(Base + i + j * 1024 * 2)] >> 4) & 0b1111) ]);
+            }
+        }
+    }
+    else if (TexPageColorMode == GPU_TEXTURE_COLOR_8BIT)
+    {
+        for (u32 j = 0; j < 256; ++j)
+        {
+            for (u32 i = 0; i < 256; ++i)
+            {
+                Buffer[i + j * 256] = swap16(CLUTStart[(VRAM[(Base + i + j * 1024 * 2)])]);
+            }
+        }
+    }
+    else if (TexPageColorMode == GPU_TEXTURE_COLOR_15BIT)
+    {
+        u16 *VRAM16 = (u16 *)VRAM;
+        Base = BaseHW;
+        for (u32 j = 0; j < 256; ++j)
+        {
+            for (u32 i = 0; i < 256; ++i)
+            {
+                Buffer[i + j * 256] = swap16(VRAM16[(Base + i + j * 1024)]);;
+            }
+        }
+    }
+    glGenTextures(1, &TexID);
+    glBindTexture(GL_TEXTURE_2D, TexID);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+//    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 256, 256, GL_RGBA, GL_UNSIGNED_SHORT_5_5_5_1, Buffer);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 256, 256, 0, GL_RGBA, GL_UNSIGNED_SHORT_5_5_5_1, Buffer);
+    linearFree(Buffer);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    Gpu->TextureBases[Gpu->NumCachedTextures] = BaseHW;
+    Gpu->CachedTextures[Gpu->NumCachedTextures] = TexID;
+    Gpu->NumCachedTextures++;
+    return TexID;
+}
+
 static void
 GP0Nop(GPU *Gpu, u32 Param)
 {
@@ -327,104 +415,33 @@ GP0MonochromeRectST(GPU *Gpu, u32 Param)
     glDisable(GL_BLEND);
 }
 
-inline u16
-swap16(u16 in)
-{
-    u16 ret = 0;
-    ret |= (in >> 15) & 1;
-    ret |= (in & 0b11111) << 11;
-    ret |= ((in >> 5) & 0b11111) << 6;
-    ret |= ((in >> 10) & 0b11111) << 1;
-    return ret;
-}
-
 static void
 GP0TexturedRect(GPU *Gpu, u32 Param)
 {
-//    float R = (float)(Param & 0xFF) / 255.0f;
-//    float G = (float)((Param >> 8) & 0xFF) / 255.0f;
-//    float B = (float)((Param >> 16) & 0xFF) / 255.0f;
     s32 X = Gpu->Gp0Packets[2] & 0xFFFF;
     s32 Y = (Gpu->Gp0Packets[2] >> 16) & 0xFFFF;
     u32 Width = Gpu->Gp0Packets[0] & 0xFFFF;
     u32 Height = (Gpu->Gp0Packets[0] >> 16) & 0xFFFF;
-//    printf("Rect: input 0x%08lX\n", Gpu->Gp0Packets[2]);
-//    printf("Rect: X %ld, Y %ld, W %ld, H %ld\n", X, Y, Width, Height);
-    // TODO do tex page + palette
 
     u32 CLUT = (Gpu->Gp0Packets[1] >> 16) & 0xFFFF;
-    u32 HalfWordsXCLUT = (CLUT & 0b111111) * 16;
-    u32 YCLUT = (CLUT >> 6) & 0b111111111;
 
     u32 TexIndexX = (Gpu->Gp0Packets[1] & 0xFF);
     u32 TexIndexY = (Gpu->Gp0Packets[1] >> 8) & 0xFF;
 
-//    printf("Rect: Tex Index X %ld\n", TexIndexX);
-//    printf("Rect: Tex Index Y %ld\n", TexIndexY);
-//
-//    printf("Rect: CLUT on line %ld\n", YCLUT);
-//    printf("Rect: CLUT X %ld\n", HalfWordsXCLUT);
-//    printf("Rect: CLUT Base %ld\n", HalfWordsXCLUT + YCLUT * GPU_VRAM_LINE_SIZE);
 
-    u16 *CLUTStart = ((u16 *)Gpu->VRAM) + HalfWordsXCLUT + YCLUT * GPU_VRAM_LINE_SIZE;
 
     u32 TexPageX = (Gpu->DrawMode & 0b1111) * 64;
     u32 TexPageY = ((Gpu->DrawMode >> 4) & 1) * 256;
-//    printf("Rect: Tex Page X %ld\n", TexPageX);
-//    printf("Rect: Tex Page Y %ld\n", TexPageY);
-//
-//    printf("Rect: Tex Page Base %ld\n", TexPageX + TexPageY * 1024);
 
     glEnable(GL_TEXTURE_2D);
-    glBindTexture(GL_TEXTURE_2D, Gpu->TempTex);
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    u16 *Buffer = (u16 *)linearAlloc(256 * 256 * 2);
-    u32 Base = (TexPageX + TexPageY * 1024) * 2;
-    u8 *VRAM = (u8 *)Gpu->VRAM;
 
     u32 TexPageColorMode = (Gpu->DrawMode >> 7) & 3;
-
-    if (TexPageColorMode == GPU_TEXTURE_COLOR_4BIT)
+    GLuint TexID = GpuGetTexture(Gpu, TexPageX, TexPageY);
+    if (!TexID)
     {
-        for (u32 j = 0; j < 256; ++j)
-        {
-            for (u32 i = 0; i < 128; ++i)
-            {
-                Buffer[(i * 2) + j * 256] = swap16(CLUTStart[(VRAM[(Base + i + j * 1024 * 2)] & 0b1111)]);
-                Buffer[(i * 2) + 1 + j * 256] = swap16(CLUTStart[ ((VRAM[(Base + i + j * 1024 * 2)] >> 4) & 0b1111) ]);
-            }
-        }
+        TexID = GpuGenerateTexture(Gpu, TexPageColorMode, TexPageX + TexPageY * 1024, CLUT);
     }
-    else if (TexPageColorMode == GPU_TEXTURE_COLOR_8BIT)
-    {
-        for (u32 j = 0; j < 256; ++j)
-        {
-            for (u32 i = 0; i < 256; ++i)
-            {
-                Buffer[i + j * 256] = swap16(CLUTStart[(VRAM[(Base + i + j * 1024 * 2)])]);
-            }
-        }
-    }
-    else if (TexPageColorMode == GPU_TEXTURE_COLOR_15BIT)
-    {
-        u16 *VRAM16 = (u16 *)VRAM;
-        Base = (TexPageX + TexPageY * 1024);
-        for (u32 j = 0; j < 256; ++j)
-        {
-            for (u32 i = 0; i < 256; ++i)
-            {
-                Buffer[i + j * 256] = swap16(VRAM16[(Base + i + j * 1024)]);;
-            }
-        }
-    }
-
-    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 256, 256, GL_RGBA, GL_UNSIGNED_SHORT_5_5_5_1, Buffer);
-    linearFree(Buffer);
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glBindTexture(GL_TEXTURE_2D, TexID);
 
     float TX = (float)TexIndexX / 256.0f;
     float TY = (float)TexIndexY / 256.0f;
@@ -461,10 +478,6 @@ static void
 GP0TexturedQuad(GPU *Gpu, u32 Param)
 {
     u32 CLUT = (Gpu->Gp0Packets[6] >> 16) & 0xFFFF;
-    u32 HalfWordsXCLUT = (CLUT & 0b111111) * 16;
-    u32 YCLUT = (CLUT >> 6) & 0b111111111;
-
-    u16 *CLUTStart = ((u16 *)Gpu->VRAM) + HalfWordsXCLUT + YCLUT * GPU_VRAM_LINE_SIZE;
 
     u32 TexPageData = (Gpu->Gp0Packets[4] >> 16) & 0xFFFF;
     u32 TexPageX = (TexPageData & 0b1111) * 64;
@@ -473,53 +486,13 @@ GP0TexturedQuad(GPU *Gpu, u32 Param)
     u32 TexPageColorMode = (TexPageData >> 7) & 3;
 
     glEnable(GL_TEXTURE_2D);
-    glBindTexture(GL_TEXTURE_2D, Gpu->TempTex);
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    u16 *Buffer = (u16 *)linearAlloc(256 * 256 * 2);
-    u32 Base = (TexPageX + TexPageY * 1024) * 2;
-    u8 *VRAM = (u8 *)Gpu->VRAM;
-
-    if (TexPageColorMode == GPU_TEXTURE_COLOR_4BIT)
+    GLuint TexID = GpuGetTexture(Gpu, TexPageX, TexPageY);
+    if (!TexID)
     {
-        for (u32 j = 0; j < 256; ++j)
-        {
-            for (u32 i = 0; i < 128; ++i)
-            {
-                Buffer[(i * 2) + j * 256] = swap16(CLUTStart[(VRAM[(Base + i + j * 1024 * 2)] & 0b1111)]);
-                Buffer[(i * 2) + 1 + j * 256] = swap16(CLUTStart[ ((VRAM[(Base + i + j * 1024 * 2)] >> 4) & 0b1111) ]);
-            }
-        }
+        TexID = GpuGenerateTexture(Gpu, TexPageColorMode, TexPageX + TexPageY * 1024, CLUT);
     }
-    else if (TexPageColorMode == GPU_TEXTURE_COLOR_8BIT)
-    {
-        for (u32 j = 0; j < 256; ++j)
-        {
-            for (u32 i = 0; i < 256; ++i)
-            {
-                Buffer[i + j * 256] = swap16(CLUTStart[(VRAM[(Base + i + j * 1024 * 2)])]);
-            }
-        }
-    }
-    else if (TexPageColorMode == GPU_TEXTURE_COLOR_15BIT)
-    {
-        u16 *VRAM16 = (u16 *)VRAM;
-        Base = (TexPageX + TexPageY * 1024);
-        for (u32 j = 0; j < 256; ++j)
-        {
-            for (u32 i = 0; i < 256; ++i)
-            {
-                Buffer[i + j * 256] = swap16(VRAM16[(Base + i + j * 1024)]);
-            }
-        }
-    }
+    glBindTexture(GL_TEXTURE_2D, TexID);
 
-    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 256, 256, GL_RGBA, GL_UNSIGNED_SHORT_5_5_5_1, Buffer);
-    linearFree(Buffer);
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
     glColor3f(1, 1, 1);
     glBegin(GL_QUADS);

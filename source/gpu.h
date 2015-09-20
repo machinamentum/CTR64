@@ -156,6 +156,10 @@ struct GPU : public Coprocessor
         u32 X2;
         u32 Y2;
     } DrawAreaBounds;
+
+    u32 NumCachedTextures = 0;
+    u32 TextureBases[16];
+    GLuint CachedTextures[16];
 };
 
 void GpuGp0(void *, u32);
