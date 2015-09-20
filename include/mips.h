@@ -160,7 +160,7 @@ struct Coprocessor
         };
     };
     Coprocessor() {}
-    void (*ExecuteOperation)(Coprocessor *Cp, u32 FunctionCode) = NULL;
+    void (*ExecuteOperation)(Coprocessor *Cp, u32 FunctionCode) = nullptr;
 };
 
 struct mmr
@@ -176,6 +176,7 @@ struct DMA
     u32 MADR;
     u32 BCR;
     u32 CHCR;
+    u32 Empty;
 };
 
 struct MIPS_R3000
@@ -230,16 +231,16 @@ struct MIPS_R3000
         };
     };
 
-    opcode OpCodes[4] = {};
+    opcode OpCodes[4];
     u32 MachineCode = 0;
     u32 IAddress = 0;
     u32 BaseState = 0;
 
     MIPS_R3000();
 
-    void *RAM = linearAlloc(2048 * 1000);
-    void *BIOS = linearAlloc(512 * 1000);
-    void *Dummy = linearAlloc(512);
+    void *RAM;
+    void *BIOS;
+    void *Dummy;
 
     u32 DPCR;
     u32 DICR;
@@ -247,10 +248,9 @@ struct MIPS_R3000
     Coprocessor *CP1 = NULL;
     Coprocessor *CP2 = NULL;
     Coprocessor *CP3 = NULL;
-    mmr MemMappedRegisters[64];
-    u32 NumMMR = 0;
-
-    DMA DMAChannels[7];
+    DMA DMAChannels[8];
+    u32 NumMMR;
+    mmr MemMappedRegisters[16];
 };
 
 void MapRegister(MIPS_R3000 *Cpu, mmr MMR);
@@ -271,7 +271,7 @@ MapVirtualAddress(MIPS_R3000 *Cpu, u32 Address)
     {
         return ((u8 *)Cpu->RAM) + (Base % RAM_SIZE);
     }
-    if (Base >= 0x801080 && (Base - 0x801080) < 0x78)
+    if ((Base >= 0x801080) && ((Base - 0x801080) < 0x78))
     {
         return ((u8 *)&Cpu->DMAChannels) + (Base - 0x801080);
     }
@@ -286,14 +286,14 @@ ReadMemWordRaw(MIPS_R3000 *Cpu, u32 Address)
 }
 
 inline u8
-ReadMemByteRaw(MIPS_R3000 *Cpu, u32 Address, u8 value)
+ReadMemByteRaw(MIPS_R3000 *Cpu, u32 Address)
 {
     u32 Base = Address & 0x00FFFFFF;
     return *((u8 *)MapVirtualAddress(Cpu, Base));
 }
 
 inline u16
-ReadMemHalfWordRaw(MIPS_R3000 *Cpu, u32 Address, u16 value)
+ReadMemHalfWordRaw(MIPS_R3000 *Cpu, u32 Address)
 {
     u32 Base = Address & 0x00FFFFFF;
     return *((u16 *)((u8 *)MapVirtualAddress(Cpu, Base)));

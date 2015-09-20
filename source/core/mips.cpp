@@ -115,6 +115,10 @@ MIPS_R3000::
 MIPS_R3000()
 {
     CP0.ExecuteOperation = C0ExecuteOperation;
+    RAM = linearAlloc(2048 * 1000);
+    BIOS = linearAlloc(512 * 1000);
+    Dummy = linearAlloc(512);
+    NumMMR = 0;
 }
 
 //Exceptions
