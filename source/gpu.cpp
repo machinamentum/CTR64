@@ -17,9 +17,13 @@ GteExecuteOperation(Coprocessor *Cp, u32 FunctionCode)
 
 }
 
+#include <cstring>
+
 GPU::
 GPU()
 {
+    Gp0PacketsLeft = 0;
+    VRAM = (u32 *)linearAlloc(GPU_VRAM_LINES * GPU_VRAM_LINE_SIZE * 2);
     ExecuteOperation = GteExecuteOperation;
 
     glMatrixMode(GL_PROJECTION);
@@ -47,6 +51,8 @@ GPU()
     glGenTextures(1, &TempTex);
     glBindTexture(GL_TEXTURE_2D, TempTex);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 256, 256, 0, GL_RGBA, GL_UNSIGNED_SHORT_5_5_5_1, nullptr);
+
+    memset(VRAM, 0, GPU_VRAM_LINES * GPU_VRAM_LINE_SIZE * 2);
 }
 
 typedef void (*gpu_func)(GPU *, u32);
@@ -89,7 +95,7 @@ Gp0Cpu2VRAM(GPU* Gpu, u32 Packet)
     u32 Base = (X + Y * 512);
 //    printf("CPU2VRAM: Base %ld\n", Base * 2);
     u32 *VRAM = Gpu->VRAM;
-    for (u32 j = 0; j < Height; j++)
+    for (u32 j = 0; j < Height; ++j)
     {
         for (u32 i = 0; i < Width; ++i)
         {
@@ -151,7 +157,10 @@ GpuGp0(void *Object, u32 Value)
             break;
 
         case 0xE2:
-            // TODO texture window setting
+            Gpu->TexWindowMaskX = (Param) & 0b11111;
+            Gpu->TexWindowMaskY = (Param >> 5) &0b11111;
+            Gpu->TexWindowOffsetX = (Param >> 10) &0b11111;
+            Gpu->TexWindowOffsetY = (Param >> 15) &0b11111;
             break;
         case 0xE3:
             Gpu->DrawAreaBounds.X1 = Param & 0b1111111111;
@@ -175,6 +184,7 @@ GpuGp0(void *Object, u32 Value)
             break;
 
         case 0x60:
+        case 0x62:
             Gpu->Gp0WaitingCmd = Value;
             Gpu->Gp0PacketsLeft = 2;
             break;
@@ -288,6 +298,35 @@ GP0MonochromeRect(GPU *Gpu, u32 Param)
     glColor4f(1, 1, 1, 1);
 }
 
+static void
+GP0MonochromeRectST(GPU *Gpu, u32 Param)
+{
+    float R = (float)(Param & 0xFF) / 255.0f;
+    float G = (float)((Param >> 8) & 0xFF) / 255.0f;
+    float B = (float)((Param >> 16) & 0xFF) / 255.0f;
+
+    s32 X = Gpu->Gp0Packets[1] & 0xFFFF;
+    s32 Y = (Gpu->Gp0Packets[1] >> 16) & 0xFFFF;
+    u32 Width = Gpu->Gp0Packets[0] & 0xFFFF;
+    u32 Height = (Gpu->Gp0Packets[0] >> 16) & 0xFFFF;
+
+    // TODO different blend modes
+    glEnable(GL_BLEND);
+    glBlendColor(0.5f, 0.5f, 0.5f, 0.5f);
+    glBlendFunc(GL_CONSTANT_COLOR, GL_CONSTANT_COLOR);
+
+    glColor3f(R, G, B);
+    glBegin(GL_QUADS);
+    glVertex2i(X, Y);
+    glVertex2i(X + Width, Y);
+    glVertex2i(X + Width, Y + Height);
+    glVertex2i(X, Y + Height);
+    glEnd();
+    glColor4f(1, 1, 1, 1);
+
+    glDisable(GL_BLEND);
+}
+
 inline u16
 swap16(u16 in)
 {
@@ -347,7 +386,7 @@ GP0TexturedRect(GPU *Gpu, u32 Param)
 
     if (TexPageColorMode == GPU_TEXTURE_COLOR_4BIT)
     {
-        for (u32 j = 0; j < 256; j++)
+        for (u32 j = 0; j < 256; ++j)
         {
             for (u32 i = 0; i < 128; ++i)
             {
@@ -360,21 +399,21 @@ GP0TexturedRect(GPU *Gpu, u32 Param)
     {
         for (u32 j = 0; j < 256; ++j)
         {
-            for (u32 i = 0; i < 128; ++i)
+            for (u32 i = 0; i < 256; ++i)
             {
-                Buffer[(i * 2) + j * 256] = swap16(CLUTStart[(VRAM[(Base + i + 1 + j * 1024 * 2)])]);
-                Buffer[(i * 2) + 1 + j * 256] = swap16(CLUTStart[ ((VRAM[(Base + i + j * 1024 * 2)])) ]);
+                Buffer[i + j * 256] = swap16(CLUTStart[(VRAM[(Base + i + j * 1024 * 2)])]);
             }
         }
     }
     else if (TexPageColorMode == GPU_TEXTURE_COLOR_15BIT)
     {
         u16 *VRAM16 = (u16 *)VRAM;
-        for (u32 j = 0; j < 256; j++)
+        Base = (TexPageX + TexPageY * 1024);
+        for (u32 j = 0; j < 256; ++j)
         {
             for (u32 i = 0; i < 256; ++i)
             {
-                Buffer[i + j * 256] = swap16(VRAM16[(Base + i + j * 1024)]);
+                Buffer[i + j * 256] = swap16(VRAM16[(Base + i + j * 1024)]);;
             }
         }
     }
@@ -421,7 +460,6 @@ ToTexCoord(const u32 Coord)
 static void
 GP0TexturedQuad(GPU *Gpu, u32 Param)
 {
-    printf("%s\n", __FUNCTION__);
     u32 CLUT = (Gpu->Gp0Packets[6] >> 16) & 0xFFFF;
     u32 HalfWordsXCLUT = (CLUT & 0b111111) * 16;
     u32 YCLUT = (CLUT >> 6) & 0b111111111;
@@ -443,7 +481,7 @@ GP0TexturedQuad(GPU *Gpu, u32 Param)
 
     if (TexPageColorMode == GPU_TEXTURE_COLOR_4BIT)
     {
-        for (u32 j = 0; j < 256; j++)
+        for (u32 j = 0; j < 256; ++j)
         {
             for (u32 i = 0; i < 128; ++i)
             {
@@ -455,19 +493,19 @@ GP0TexturedQuad(GPU *Gpu, u32 Param)
     else if (TexPageColorMode == GPU_TEXTURE_COLOR_8BIT)
     {
         printf("I'm 8bit color mode! Look at meee!\n");
-        for (u32 j = 0; j < 256; j++)
+        for (u32 j = 0; j < 256; ++j)
         {
-            for (u32 i = 0; i < 128; ++i)
+            for (u32 i = 0; i < 256; ++i)
             {
-                Buffer[(i * 2) + j * 256] = swap16(CLUTStart[(VRAM[(Base + i + 1 + j * 1024 * 2)])]);
-                Buffer[(i * 2) + 1 + j * 256] = swap16(CLUTStart[ ((VRAM[(Base + i + j * 1024 * 2)])) ]);
+                Buffer[i + j * 256] = swap16(CLUTStart[(VRAM[(Base + i + j * 1024 * 2)])]);
             }
         }
     }
     else if (TexPageColorMode == GPU_TEXTURE_COLOR_15BIT)
     {
         u16 *VRAM16 = (u16 *)VRAM;
-        for (u32 j = 0; j < 256; j++)
+        Base = (TexPageX + TexPageY * 1024);
+        for (u32 j = 0; j < 256; ++j)
         {
             for (u32 i = 0; i < 256; ++i)
             {
@@ -508,22 +546,18 @@ void
 DMA2Trigger(void *Object, u32 Value)
 {
     MIPS_R3000 *Cpu = (MIPS_R3000 *)Object;
-    DMA *Dma = (DMA *)MapVirtualAddress(Cpu, 0x1F8010A0);
-    Dma->CHCR = Value;
-//    printf("DMA2\n");
-//    printf("Drawing list at 0x%08lX\n", Dma->MADR);
-    u32 *List = (u32 *)MapVirtualAddress(Cpu, Dma->MADR);
+    printf("DMA2: Drawing list at 0x%08lX\n", Value);
+    u32 *List = (u32 *)MapVirtualAddress(Cpu, Value);
 next_entry:
     u32 EntryHeader = List[0];
     u32 NumCommands = EntryHeader >> 24;
     u32 NextAddr = EntryHeader & 0xFFFFFF;
     for (u32 i = 1; i <= NumCommands; ++i)
     {
-        GpuGp0(Cpu->CP2, List[i]);
+        GpuGp0(Cpu->CP1, List[i]);
     }
     if (NextAddr != 0xFFFFFF)
     {
-//        printf("Drawing list at 0x%08lX\n", NextAddr);
         List = (u32 *)MapVirtualAddress(Cpu, NextAddr);
         goto next_entry;
     }
@@ -542,6 +576,7 @@ InitFuncTables()
     GP0FuncTable[GP0_COMMAND_FILL_RECT] = GP0FillRect;
     GP0FuncTable[0x28] = GP0MonochromeOpaqueQuad;
     GP0FuncTable[0x60] = GP0MonochromeRect;
+    GP0FuncTable[0x62] = GP0MonochromeRectST;
     GP0FuncTable[0x64] = GP0TexturedRect;
     GP0FuncTable[0x2C] = GP0TexturedQuad;
 }

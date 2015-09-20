@@ -137,9 +137,15 @@ struct GPU : public Coprocessor
     u32 Gp0PacketsLeft = 0;
     u32 Gp0WaitingCmd;
     u32 Gp0Packets[16];
+
+    u32 TexWindowMaskX;
+    u32 TexWindowMaskY;
+    u32 TexWindowOffsetX;
+    u32 TexWindowOffsetY;
+
     GLuint TempTex;
     u32 VRT = 0;
-    u32 *VRAM = (u32 *)linearAlloc(GPU_VRAM_LINES * GPU_VRAM_LINE_SIZE * 2);
+    u32 *VRAM;
     void (*Gp0Func)(GPU *, u32) = NULL;
 
     u32 DrawMode;
