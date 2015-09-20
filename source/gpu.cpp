@@ -492,7 +492,6 @@ GP0TexturedQuad(GPU *Gpu, u32 Param)
     }
     else if (TexPageColorMode == GPU_TEXTURE_COLOR_8BIT)
     {
-        printf("I'm 8bit color mode! Look at meee!\n");
         for (u32 j = 0; j < 256; ++j)
         {
             for (u32 i = 0; i < 256; ++i)
@@ -546,7 +545,6 @@ void
 DMA2Trigger(void *Object, u32 Value)
 {
     MIPS_R3000 *Cpu = (MIPS_R3000 *)Object;
-    printf("DMA2: Drawing list at 0x%08lX\n", Value);
     u32 *List = (u32 *)MapVirtualAddress(Cpu, Value);
 next_entry:
     u32 EntryHeader = List[0];
@@ -561,8 +559,6 @@ next_entry:
         List = (u32 *)MapVirtualAddress(Cpu, NextAddr);
         goto next_entry;
     }
-
-//    printf("End DMA2\n\n");
 }
 
 static void __attribute__((constructor))
