@@ -14,6 +14,7 @@
 #include "gpu.h"
 #include "disasm.h"
 #include "psxexe.h"
+#include "joypad.h"
 
 void
 ResetCpu(MIPS_R3000 *Cpu)
@@ -75,6 +76,18 @@ CTRXFileOpen(void *Ref, u32 Ptr)
         }
         if (NameBuf[Size - 3] == ';') //version identifier
             NameBuf[Size - 3] = 0;
+
+        char *FileName = NameBuf;
+        Size = strlen(FileName);
+        for (int i = 0; i < strlen(FileName); ++i)
+        {
+            if ((FileName[i] == '/') && (FileName[i + 1] == '/'))
+            {
+                strcpy(FileName + i, FileName + i + 1);
+                ++i;
+                Size = strlen(FileName);
+            }
+        }
         printf("CTRX: Opening file %s\n", NameBuf);
         FilePtrs[FreeFile].Ptr = fopen(NameBuf, "rb");
         if (!FilePtrs[FreeFile].Ptr)
@@ -182,6 +195,18 @@ CTRXFirstFile(void *Ref, u32 Ptr)
     }
     if (Entry->FileName[Size - 2] == ';') //version identifier
         Entry->FileName[Size - 2] = 0;
+
+    char *FileName = Entry->FileName;
+    Size = strlen(FileName);
+    for (int i = 0; i < strlen(FileName); ++i)
+    {
+        if ((FileName[i] == '/') && (FileName[i + 1] == '/'))
+        {
+            strcpy(FileName + i, FileName + i + 1);
+            ++i;
+            Size = strlen(FileName);
+        }
+    }
 
     auto GetFileSize = [](const char *FileName)
     {
