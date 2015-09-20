@@ -222,6 +222,7 @@ int main(int argc, char **argv)
     MapRegister(&Cpu, (mmr) {0x1F802074, &Cpu, CTRXFileSeek, CTRXFileSeekReturn});
     MapRegister(&Cpu, (mmr) {0x1F802078, &Cpu, CTRXFirstFile, CTRXFirstFileReturn});
     MapRegister(&Cpu, (mmr) {0x1F8010A0, &Cpu, DMA2Trigger, empty_ret});
+    MapRegister(&Cpu, (mmr) {JOY_TX_DATA, nullptr, JoyTxWrite, JoyRxRead});
 
     FILE *f = fopen("psx_bios.bin", "rb");
     fseek(f, 0, SEEK_END);

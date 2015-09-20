@@ -34,5 +34,6 @@ void InitPlatform(int, char **);
 void ExitPlatform();
 void SwapBuffersPlatform();
 bool MainLoopPlatform();
+u32 GetDigitalSwitchesPlatform();
 
 #endif
