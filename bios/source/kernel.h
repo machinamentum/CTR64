@@ -76,6 +76,10 @@ void DeliverEvent(int Class, int Spec);
 #define FILE_ASYNC        (1 << 15);
 #define FILE_CARD_BLOCKS(x) (x << 16)
 
+#define FILE_SEEK_START    (0)
+#define FILE_SEEK_CURRENT  (1)
+#define FILE_SEEK_END      (2)
+
 int FileOpen(const char *FileName, int AccessMode);
 
 int FileSeek(int Fd, int Offset, int SeekType);

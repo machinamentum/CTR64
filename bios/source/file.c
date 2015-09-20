@@ -35,6 +35,42 @@ _CTRX_FileRead(int Fd, void *Dst, int Length)
     return *FReadRegister;
 }
 
+static int
+_CTRX_FileSeek(int Fd, int Offset, int SeekType)
+{
+    struct
+    {
+        int Fd;
+        int Offset;
+        int SeekType;
+    } FSeekInfo;
+
+    FSeekInfo.Fd = Fd;
+    FSeekInfo.Offset = Offset;
+    FSeekInfo.SeekType = SeekType;
+
+    int *FSeekRegister = (int *)0x1F802074;
+    *FSeekRegister = (int)&FSeekInfo;
+    return *FSeekRegister;
+}
+
+static DirEntry *
+_CTRX_firstfile(const char *FileName, DirEntry *Entry)
+{
+    struct
+    {
+        char *FileName;
+        DirEntry *Entry;
+    } FFInfo;
+
+    FFInfo.FileName = (char *)FileName;
+    FFInfo.Entry = Entry;
+
+    int *FFRegister = (int *)0x1F802078;
+    *FFRegister = (int)&FFInfo;
+    return (DirEntry *)*FFRegister;
+}
+
 int
 FileOpen(const char *FileName, int AccessMode)
 {
@@ -51,7 +87,7 @@ int
 FileSeek(int Fd, int Offset, int SeekType)
 {
     printf("%s\n", __FUNCTION__);
-    return -1;
+    return _CTRX_FileSeek(Fd, Offset, SeekType);
 }
 
 int
@@ -155,7 +191,10 @@ DirEntry *
 firstfile(const char *FileName, DirEntry *Entry)
 {
     printf("%s\n", __FUNCTION__);
-    return 0;
+    _CTRX_firstfile(FileName, Entry);
+    printf("Entry name: %s\n", Entry->FileName);
+    printf("Entry Size %X\n", Entry->Size);
+    return Entry;
 }
 
 DirEntry *

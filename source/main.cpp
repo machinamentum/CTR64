@@ -33,10 +33,19 @@ empty_ret(void *Obj, u32 Val)
     return 0;
 }
 
-static FILE *FilePtrs[15] = {};
+struct FileAccessInfo
+{
+    FILE* Ptr;
+    char *Name;
+    int SeekPos;
+};
+
+static FileAccessInfo FilePtrs[15] = {};
 static int TakenFiles[15] = {};
 static int ReturnFile = 0;
 static int ReturnRead = 0;
+static int ReturnSeek = 0;
+static int ReturnFirstFile = 0;
 static const char *CDROMDir = "cdrom/";
 
 static void
@@ -57,13 +66,25 @@ CTRXFileOpen(void *Ref, u32 Ptr)
         int Size = strlen(CDROMDir) + strlen(FileName) + 1;
         char *NameBuf = (char *)linearAlloc(Size + 1);
         snprintf(NameBuf, Size, "%s%s", CDROMDir, FileName);
+        for (int i = 0; i < Size; ++i)
+        {
+            if (NameBuf[i] == '\\')
+            {
+                NameBuf[i] = '/';
+            }
+        }
+        if (NameBuf[Size - 3] == ';') //version identifier
+            NameBuf[Size - 3] = 0;
         printf("CTRX: Opening file %s\n", NameBuf);
-        FilePtrs[FreeFile] = fopen(NameBuf, "rb");
-        if (!FilePtrs[FreeFile])
+        FilePtrs[FreeFile].Ptr = fopen(NameBuf, "rb");
+        if (!FilePtrs[FreeFile].Ptr)
         {
             printf("Error opening file: %s\n", NameBuf);
             exit(-1);
         }
+        FilePtrs[FreeFile].Name = NameBuf;
+        FilePtrs[FreeFile].SeekPos = 0;
+        fclose(FilePtrs[FreeFile].Ptr);
     }
 
     ReturnFile = FreeFile;
@@ -86,13 +107,104 @@ CTRXFileRead(void *Ref, u32 Ptr)
         int Length;
     } *FReadInfoPtr;
     FReadInfoPtr = (FReadInfo *)MapVirtualAddress(Cpu, Ptr);
-    ReturnRead = fread(MapVirtualAddress(Cpu, FReadInfoPtr->Dst), 1, FReadInfoPtr->Length, FilePtrs[FReadInfoPtr->Fd]);
+    FilePtrs[FReadInfoPtr->Fd].Ptr = fopen(FilePtrs[FReadInfoPtr->Fd].Name, "rb");
+    fseek(FilePtrs[FReadInfoPtr->Fd].Ptr, FilePtrs[FReadInfoPtr->Fd].SeekPos, SEEK_SET);
+    ReturnRead = fread(MapVirtualAddress(Cpu, FReadInfoPtr->Dst), 1, FReadInfoPtr->Length, FilePtrs[FReadInfoPtr->Fd].Ptr);
+    FilePtrs[FReadInfoPtr->Fd].SeekPos += ReturnRead;
+    fclose(FilePtrs[FReadInfoPtr->Fd].Ptr);
 }
 
 static u32
 CTRXFileReadReturn(void *Ref, u32 Address)
 {
     return ReturnRead;
+}
+
+static void
+CTRXFileSeek(void *Ref, u32 Ptr)
+{
+    MIPS_R3000 *Cpu = (MIPS_R3000 *)Ref;
+    struct FSeekInfo
+    {
+        int Fd;
+        int Offset;
+        int SeekType;
+    } *FSeekInfoPtr;
+    FSeekInfoPtr = (FSeekInfo *)MapVirtualAddress(Cpu, Ptr);
+    FilePtrs[FSeekInfoPtr->Fd].Ptr = fopen(FilePtrs[FSeekInfoPtr->Fd].Name, "rb");
+    fseek(FilePtrs[FSeekInfoPtr->Fd].Ptr, FilePtrs[FSeekInfoPtr->Fd].SeekPos, SEEK_SET);
+    ReturnSeek = fseek(FilePtrs[FSeekInfoPtr->Fd].Ptr, FSeekInfoPtr->Offset, FSeekInfoPtr->SeekType);
+    FilePtrs[FSeekInfoPtr->Fd].SeekPos = ReturnSeek;
+    fclose(FilePtrs[FSeekInfoPtr->Fd].Ptr);
+}
+
+static u32
+CTRXFileSeekReturn(void *Ref, u32 Address)
+{
+    return ReturnSeek;
+}
+
+static void
+CTRXFirstFile(void *Ref, u32 Ptr)
+{
+    MIPS_R3000 *Cpu = (MIPS_R3000 *)Ref;
+
+    struct DirEntry
+    {
+        char FileName[0x14];
+        int Attribute;
+        int Size;
+        void *Next;
+        int SelectorNumber;
+        int Reserved;
+    };
+
+    struct FFInfo
+    {
+        char *FileName;
+        u32 Entry;
+    } *FFInfoPtr;
+
+    FFInfoPtr = (FFInfo *)MapVirtualAddress(Cpu, Ptr);
+    DirEntry *Entry = (DirEntry *)MapVirtualAddress(Cpu, FFInfoPtr->Entry);
+    snprintf(Entry->FileName, 0x14, "%s", (char *)MapVirtualAddress(Cpu, (u32)FFInfoPtr->FileName));
+    int Size = strlen(Entry->FileName);
+    for (int i = 0; i < Size; ++i)
+    {
+        if (Entry->FileName[i] == '\\')
+        {
+            Entry->FileName[i] = '/';
+        }
+        if (Entry->FileName[i] == ':')
+        {
+            Entry->FileName[i] = '/';
+        }
+    }
+    if (Entry->FileName[Size - 2] == ';') //version identifier
+        Entry->FileName[Size - 2] = 0;
+
+    auto GetFileSize = [](const char *FileName)
+    {
+        FILE *f = fopen(FileName, "rb");
+        if (!f)
+        {
+            printf("Could not open file: %s\n", FileName);
+            return 0L;
+        }
+        fseek(f, 0, SEEK_END);
+        long fsize = ftell(f);
+        fseek(f, 0, SEEK_SET);
+        fclose(f);
+        return fsize;
+    };
+    Entry->Size = GetFileSize(Entry->FileName);
+    ReturnFirstFile = (int)FFInfoPtr->Entry;
+}
+
+static u32
+CTRXFirstFileReturn(void *Ref, u32 Address)
+{
+    return ReturnFirstFile;
 }
 
 int main(int argc, char **argv)
@@ -107,18 +219,9 @@ int main(int argc, char **argv)
     MapRegister(&Cpu, (mmr) {0x1F802064, &Cpu, std_out_putchar, empty_ret});
     MapRegister(&Cpu, (mmr) {0x1F802068, &Cpu, CTRXFileOpen, CTRXFileOpenReturn});
     MapRegister(&Cpu, (mmr) {0x1F802070, &Cpu, CTRXFileRead, CTRXFileReadReturn});
-    MapRegister(&Cpu, (mmr) {0x1F8010A8, &Cpu, DMA2Trigger, empty_ret});
-
-//    FILE *f = fopen("boot.exe", "rb");
-//    fseek(f, 0, SEEK_END);
-//    long fsize = ftell(f);
-//    fseek(f, 0, SEEK_SET);
-//
-//    u8 *ExeBuffer = (u8 *)linearAlloc(fsize + 1);
-//    fread(ExeBuffer, fsize, 1, f);
-//    fclose(f);
-//
-//    LoadPsxExe(&Cpu, (psxexe_hdr *)ExeBuffer);
+    MapRegister(&Cpu, (mmr) {0x1F802074, &Cpu, CTRXFileSeek, CTRXFileSeekReturn});
+    MapRegister(&Cpu, (mmr) {0x1F802078, &Cpu, CTRXFirstFile, CTRXFirstFileReturn});
+    MapRegister(&Cpu, (mmr) {0x1F8010A0, &Cpu, DMA2Trigger, empty_ret});
 
     FILE *f = fopen("psx_bios.bin", "rb");
     fseek(f, 0, SEEK_END);
@@ -133,6 +236,7 @@ int main(int argc, char **argv)
     {
         WriteMemByteRaw(&Cpu, RESET_VECTOR + i, BiosBuffer[i]);
     }
+    linearFree(BiosBuffer);
 
     ResetCpu(&Cpu);
 
