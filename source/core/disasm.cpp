@@ -12,7 +12,7 @@
 #include "disasm.h"
 
 static void
-UnknownOpCode(opcode *Op)
+UnknownOpCode(disasm_opcode_info *Op)
 {
     // TODO exceptions & coprocessor0
     //    DumpState(Cpu, Op);
@@ -20,7 +20,7 @@ UnknownOpCode(opcode *Op)
 }
 
 
-typedef void (*jt_func)(opcode *);
+typedef void (*jt_func)(disasm_opcode_info *);
 
 static jt_func PrimaryJumpTable[0x40];
 static jt_func SecondaryJumpTable[0x40];
@@ -136,7 +136,7 @@ DumpC0State(Coprocessor *C0)
 
 //Exceptions
 static void
-SysCall(opcode *OpCode)
+SysCall(disasm_opcode_info *OpCode)
 {
     printf("syscall");
     u32 Immediate = OpCode->Immediate;
@@ -148,7 +148,7 @@ SysCall(opcode *OpCode)
 }
 
 static void
-Break(opcode *OpCode)
+Break(disasm_opcode_info *OpCode)
 {
     printf("break");
     u32 Immediate = OpCode->Immediate;
@@ -160,7 +160,7 @@ Break(opcode *OpCode)
 
 //Arithmetic
 static void
-AddU(opcode *OpCode)
+AddU(disasm_opcode_info *OpCode)
 {
     return;
     if (OpCode->RightValue)
@@ -175,137 +175,137 @@ AddU(opcode *OpCode)
 }
 
 static void
-AddIU(opcode *OpCode)
+AddIU(disasm_opcode_info *OpCode)
 {
     return;
     printf("addiu %s, %s, 0x%04lX", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], OpCode->Immediate);
 }
 
 static void
-SubU(opcode *OpCode)
+SubU(disasm_opcode_info *OpCode)
 {
     printf("subu %s, %s, %s", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], RNT[OpCode->RightValue]);
 }
 
 static void
-Add(opcode *OpCode)
+Add(disasm_opcode_info *OpCode)
 {
     printf("add %s, %s, %s", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], RNT[OpCode->RightValue]);
 }
 
 static void
-AddI(opcode *OpCode)
+AddI(disasm_opcode_info *OpCode)
 {
     printf("addi %s, %s, 0x%04lX", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], OpCode->Immediate);
 }
 
 static void
-Sub(opcode *OpCode)
+Sub(disasm_opcode_info *OpCode)
 {
     printf("sub %s, %s, %s", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], RNT[OpCode->RightValue]);
 }
 
 //HI:LO operations
 static void
-MFHI(opcode *OpCode)
+MFHI(disasm_opcode_info *OpCode)
 {
     printf("mfhi %s", RNT[OpCode->DestinationRegister]);
 }
 
 static void
-MFLO(opcode *OpCode)
+MFLO(disasm_opcode_info *OpCode)
 {
     printf("mflo %s", RNT[OpCode->DestinationRegister]);
 }
 
 static void
-MTHI(opcode *OpCode)
+MTHI(disasm_opcode_info *OpCode)
 {
     printf("mthi %s", RNT[OpCode->LeftValue]);
 }
 
 static void
-MTLO(opcode *OpCode)
+MTLO(disasm_opcode_info *OpCode)
 {
     printf("mtlo %s", RNT[OpCode->LeftValue]);
 }
 
 static void
-Mult(opcode *OpCode)
+Mult(disasm_opcode_info *OpCode)
 {
     printf("mult %s, %s", RNT[OpCode->LeftValue], RNT[OpCode->RightValue]);
 }
 
 static void
-MultU(opcode *OpCode)
+MultU(disasm_opcode_info *OpCode)
 {
     printf("multu %s, %s", RNT[OpCode->LeftValue], RNT[OpCode->RightValue]);
 }
 
 static void
-Div(opcode *OpCode)
+Div(disasm_opcode_info *OpCode)
 {
     printf("div %s, %s", RNT[OpCode->LeftValue], RNT[OpCode->RightValue]);
 }
 
 static void
-DivU(opcode *OpCode)
+DivU(disasm_opcode_info *OpCode)
 {
     printf("divu %s, %s", RNT[OpCode->LeftValue], RNT[OpCode->RightValue]);
 }
 
 //Store
 static void
-SW(opcode *OpCode)
+SW(disasm_opcode_info *OpCode)
 {
     printf("sw %s, 0x%04lX(%s)", RNT[OpCode->RightValue], OpCode->Immediate, RNT[OpCode->LeftValue]);
 }
 
 static void
-SH(opcode *OpCode)
+SH(disasm_opcode_info *OpCode)
 {
     printf("sh %s, 0x%04lX(%s)", RNT[OpCode->RightValue], OpCode->Immediate, RNT[OpCode->LeftValue]);
 }
 
 static void
-SB(opcode *OpCode)
+SB(disasm_opcode_info *OpCode)
 {
     printf("sb %s, 0x%04lX(%s)", RNT[OpCode->RightValue], OpCode->Immediate, RNT[OpCode->LeftValue]);
 }
 
 //Load
 static void
-LUI(opcode *OpCode)
+LUI(disasm_opcode_info *OpCode)
 {
     printf("lui %s, 0x%04lX", RNT[OpCode->DestinationRegister], OpCode->Immediate);
 }
 
 static void
-LW(opcode *OpCode)
+LW(disasm_opcode_info *OpCode)
 {
     printf("lw %s, 0x%04lX(%s)", RNT[OpCode->DestinationRegister], OpCode->Immediate, RNT[OpCode->LeftValue]);
 }
 
 static void
-LBU(opcode *OpCode)
+LBU(disasm_opcode_info *OpCode)
 {
     printf("lbu %s, 0x%04lX(%s)", RNT[OpCode->DestinationRegister], OpCode->Immediate, RNT[OpCode->LeftValue]);
 }
 
 static void
-LHU(opcode *OpCode)
+LHU(disasm_opcode_info *OpCode)
 {
     printf("lhu %s, 0x%04lX(%s)", RNT[OpCode->DestinationRegister], OpCode->Immediate, RNT[OpCode->LeftValue]);
 }
 
 static void
-LB(opcode *OpCode)
+LB(disasm_opcode_info *OpCode)
 {
     printf("lb %s, 0x%04lX(%s)", RNT[OpCode->DestinationRegister], OpCode->Immediate, RNT[OpCode->LeftValue]);
 }
 
 static void
-LH(opcode *OpCode)
+LH(disasm_opcode_info *OpCode)
 {
     printf("lh %s, 0x%04lX(%s)", RNT[OpCode->DestinationRegister], OpCode->Immediate, RNT[OpCode->LeftValue]);
 }
@@ -313,31 +313,31 @@ LH(opcode *OpCode)
 
 // Jump/Call
 static void
-J(opcode *OpCode)
+J(disasm_opcode_info *OpCode)
 {
     printf("j 0x%08lX", OpCode->Immediate * 4);
 }
 
 static void
-JAL(opcode *OpCode)
+JAL(disasm_opcode_info *OpCode)
 {
     printf("jal 0x%08lX", OpCode->Immediate * 4);
 }
 
 static void
-JR(opcode *OpCode)
+JR(disasm_opcode_info *OpCode)
 {
     printf("jr %s", RNT[OpCode->LeftValue]);
 }
 
 static void
-JALR(opcode *OpCode)
+JALR(disasm_opcode_info *OpCode)
 {
     printf("jalr %s, %s", RNT[OpCode->RADestinationRegister], RNT[OpCode->LeftValue]);
 }
 
 static void
-BranchZero(opcode *OpCode)
+BranchZero(disasm_opcode_info *OpCode)
 {
     //bltz, bgez, bltzal, bgezal
     u8 type = OpCode->RightValue;
@@ -363,25 +363,25 @@ BranchZero(opcode *OpCode)
 }
 
 static void
-BEQ(opcode *OpCode)
+BEQ(disasm_opcode_info *OpCode)
 {
     printf("beq %s, %s, 0x%08lX", RNT[OpCode->LeftValue], RNT[OpCode->RightValue], OpCode->CurrentAddress + 4 + OpCode->Immediate * 4);
 }
 
 static void
-BNE(opcode *OpCode)
+BNE(disasm_opcode_info *OpCode)
 {
     printf("bne %s, %s, 0x%08lX", RNT[OpCode->LeftValue], RNT[OpCode->RightValue], OpCode->CurrentAddress + 4 + OpCode->Immediate * 4);
 }
 
 static void
-BLEZ(opcode *OpCode)
+BLEZ(disasm_opcode_info *OpCode)
 {
     printf("blez %s, 0x%08lX", RNT[OpCode->LeftValue], OpCode->CurrentAddress + 4 + OpCode->Immediate * 4);
 }
 
 static void
-BGTZ(opcode *OpCode)
+BGTZ(disasm_opcode_info *OpCode)
 {
     printf("bgtz %s, 0x%08lX", RNT[OpCode->LeftValue], OpCode->CurrentAddress + 4 + OpCode->Immediate * 4);
 
@@ -389,67 +389,67 @@ BGTZ(opcode *OpCode)
 
 //Logical
 static void
-AndI(opcode *OpCode)
+AndI(disasm_opcode_info *OpCode)
 {
     printf("andi %s, %s, 0x%04lX", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], OpCode->Immediate & 0xFFFF);
 }
 
 static void
-OrI(opcode *OpCode)
+OrI(disasm_opcode_info *OpCode)
 {
     printf("ori %s, %s, 0x%04lX", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], OpCode->Immediate & 0xFFFF);
 }
 
 static void
-And(opcode *OpCode)
+And(disasm_opcode_info *OpCode)
 {
     printf("and %s, %s, %s", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], RNT[OpCode->RightValue]);
 }
 
 static void
-Or(opcode *OpCode)
+Or(disasm_opcode_info *OpCode)
 {
     printf("or %s, %s, %s", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], RNT[OpCode->RightValue]);
 }
 
 static void
-XOr(opcode *OpCode)
+XOr(disasm_opcode_info *OpCode)
 {
     printf("xor %s, %s, %s", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], RNT[OpCode->RightValue]);
 }
 static void
-NOr(opcode *OpCode)
+NOr(disasm_opcode_info *OpCode)
 {
     printf("nor %s, %s, %s", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], RNT[OpCode->RightValue]);
 }
 
 static void
-XOrI(opcode *OpCode)
+XOrI(disasm_opcode_info *OpCode)
 {
     printf("xori %s, %s, 0x%04lX", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], OpCode->Immediate & 0xFFFF);
 }
 
 //shifts
 static void
-SLLV(opcode *OpCode)
+SLLV(disasm_opcode_info *OpCode)
 {
     printf("sllv %s, %s, %s", RNT[OpCode->DestinationRegister], RNT[OpCode->RightValue], RNT[OpCode->LeftValue]);
 }
 
 static void
-SRLV(opcode *OpCode)
+SRLV(disasm_opcode_info *OpCode)
 {
     printf("srlv %s, %s, %s", RNT[OpCode->DestinationRegister], RNT[OpCode->RightValue], RNT[OpCode->LeftValue]);
 }
 
 static void
-SRAV(opcode *OpCode)
+SRAV(disasm_opcode_info *OpCode)
 {
     printf("srav %s, %s, %s", RNT[OpCode->DestinationRegister], RNT[OpCode->RightValue], RNT[OpCode->LeftValue]);
 }
 
 static void
-SLL(opcode *OpCode)
+SLL(disasm_opcode_info *OpCode)
 {
     if (OpCode->DestinationRegister | OpCode->RightValue | OpCode->Immediate)
     {
@@ -462,38 +462,38 @@ SLL(opcode *OpCode)
 }
 
 static void
-SRL(opcode *OpCode)
+SRL(disasm_opcode_info *OpCode)
 {
     printf("srl %s, %s, 0x%02lX", RNT[OpCode->DestinationRegister], RNT[OpCode->RightValue], OpCode->Immediate);
 }
 
 static void
-SRA(opcode *OpCode)
+SRA(disasm_opcode_info *OpCode)
 {
     printf("sra %s, %s, 0x%02lX", RNT[OpCode->DestinationRegister], RNT[OpCode->RightValue], OpCode->Immediate);
 }
 
 // comparison
 static void
-SLT(opcode *OpCode)
+SLT(disasm_opcode_info *OpCode)
 {
     printf("slt %s, %s, %s", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], RNT[OpCode->RightValue]);
 }
 
 static void
-SLTU(opcode *OpCode)
+SLTU(disasm_opcode_info *OpCode)
 {
     printf("sltu %s, %s, %s", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], RNT[OpCode->RightValue]);
 }
 
 static void
-SLTI(opcode *OpCode)
+SLTI(disasm_opcode_info *OpCode)
 {
     printf("slti %s, %s, 0x%04lX", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], OpCode->Immediate);
 }
 
 static void
-SLTIU(opcode *OpCode)
+SLTIU(disasm_opcode_info *OpCode)
 {
     printf("sltiu %s, %s, 0x%04lX", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], OpCode->Immediate);
 }
@@ -501,7 +501,7 @@ SLTIU(opcode *OpCode)
 
 // coprocessor ops
 static void
-COP0(opcode *OpCode)
+COP0(disasm_opcode_info *OpCode)
 {
     switch (OpCode->FunctionSelect) {
         case 0b00000:
@@ -534,7 +534,7 @@ COP0(opcode *OpCode)
 }
 
 static void
-COP1(opcode *OpCode)
+COP1(disasm_opcode_info *OpCode)
 {
     switch (OpCode->FunctionSelect) {
         case 0b00000:
@@ -567,7 +567,7 @@ COP1(opcode *OpCode)
 }
 
 static void
-COP2(opcode *OpCode)
+COP2(disasm_opcode_info *OpCode)
 {
     switch (OpCode->FunctionSelect) {
         case 0b00000:
@@ -600,7 +600,7 @@ COP2(opcode *OpCode)
 }
 
 static void
-COP3(opcode *OpCode)
+COP3(disasm_opcode_info *OpCode)
 {
     switch (OpCode->FunctionSelect) {
         case 0b00000:
@@ -634,7 +634,7 @@ COP3(opcode *OpCode)
 
 
 void
-DisassemblerDecodeOpcode(opcode *OpCode, u32 Data, u32 IAddress)
+DisassemblerDecodeOpcode(disasm_opcode_info *OpCode, u32 Data, u32 IAddress)
 {
     OpCode->CurrentAddress = IAddress;
     OpCode->Select0 = (Data & PRIMARY_OP_MASK) >> 26;
@@ -674,7 +674,7 @@ DisassemblerDecodeOpcode(opcode *OpCode, u32 Data, u32 IAddress)
         {
             OpCode->LeftValue = rs;
             OpCode->DestinationRegister = REG_INDEX_PC;
-            OpCode->MemAccessType = MEM_ACCESS_BRANCH;
+//            OpCode->MemAccessType = MEM_ACCESS_BRANCH;
         }
         //jalr
         else if (OpCode->Select1 == 0b001001)
@@ -682,7 +682,7 @@ DisassemblerDecodeOpcode(opcode *OpCode, u32 Data, u32 IAddress)
             OpCode->LeftValue = rs;
             OpCode->DestinationRegister = REG_INDEX_PC;
             OpCode->RADestinationRegister = rd;
-            OpCode->MemAccessType = MEM_ACCESS_BRANCH;
+//            OpCode->MemAccessType = MEM_ACCESS_BRANCH;
         }
         //sys/brk
         else if ((OpCode->Select1 & 0b111110) == 0b001100)
@@ -727,7 +727,7 @@ DisassemblerDecodeOpcode(opcode *OpCode, u32 Data, u32 IAddress)
     {
         OpCode->Immediate = (Data & IMM26_MASK) >> 0;
         OpCode->DestinationRegister = REG_INDEX_PC;
-        OpCode->MemAccessType = MEM_ACCESS_BRANCH;
+//        OpCode->MemAccessType = MEM_ACCESS_BRANCH;
         //RADestinationRegister set within function
     }
     //beq/bne
@@ -822,13 +822,13 @@ DisassemblerDecodeOpcode(opcode *OpCode, u32 Data, u32 IAddress)
 }
 
 static void
-PrintSecondary(opcode *Op)
+PrintSecondary(disasm_opcode_info *Op)
 {
     SecondaryJumpTable[Op->Select1](Op);
 }
 
 void
-DisassemblerPrintOpCode(opcode *OpCode)
+DisassemblerPrintOpCode(disasm_opcode_info *OpCode)
 {
     printf("0x%08lX: ", OpCode->CurrentAddress);
     PrimaryJumpTable[OpCode->Select0](OpCode);
@@ -841,7 +841,7 @@ DisassemblerPrintRange(MIPS_R3000 *Cpu, u32 Base, u32 Count, u32 PC)
     for (u32 i = 0; i < Count; ++i)
     {
         u32 MachineCode = ReadMemWordRaw(Cpu, Base + (i * 4));
-        opcode OpCode;
+        disasm_opcode_info OpCode;
         printf("\x1b[0m");
         if (Base + i * 4 == PC)
         {
