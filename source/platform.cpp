@@ -43,6 +43,7 @@ SwapBuffersPlatform()
     gfxFlush(gfxGetFramebuffer(GFX_TOP, GFX_LEFT, NULL, NULL));
     gfxFlushBuffers();
     gfxSwapBuffersGpu();
+    hidScanInput();
 }
 
 bool
@@ -56,7 +57,8 @@ GetDigitalSwitchesPlatform()
 {
     u32 Value;
     Value = 0xFFFFFFFF;
-    u32 KeysHeld = hidKeysHeld();
+
+    u32 KeysHeld = hidKeysHeld() | hidKeysDown();
     if (KeysHeld & KEY_A)
     {
         Value &= ~JOY_BUTTON_CIRCLE;

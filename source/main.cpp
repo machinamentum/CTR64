@@ -274,10 +274,7 @@ int main(int argc, char **argv)
     while (MainLoopPlatform())
     {
 #ifdef _3DS
-        hidScanInput();
         u32 KeysDown = hidKeysDown();
-        u32 KeysHeld = hidKeysHeld();
-        u32 KeysUp = hidKeysUp();
 
         if (KeysDown & KEY_START)
             break;
