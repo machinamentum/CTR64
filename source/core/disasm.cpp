@@ -162,7 +162,6 @@ Break(disasm_opcode_info *OpCode)
 static void
 AddU(disasm_opcode_info *OpCode)
 {
-    return;
     if (OpCode->RightValue)
     {
         printf("addu %s, %s, %s", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], RNT[OpCode->RightValue]);
@@ -177,7 +176,6 @@ AddU(disasm_opcode_info *OpCode)
 static void
 AddIU(disasm_opcode_info *OpCode)
 {
-    return;
     printf("addiu %s, %s, 0x%04lX", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], OpCode->Immediate);
 }
 
