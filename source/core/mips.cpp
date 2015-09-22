@@ -181,35 +181,34 @@ C0ExecuteOperation(Coprocessor *Cp, u32 FunctionCode)
 }
 
 static void
-ReservedInstructionException(MIPS_R3000 *Cpu, opcode *Op)
+ReservedInstructionException(MIPS_R3000 *Cpu, opcode *Op, u32 Data)
 {
     C0GenerateException(Cpu, C0_CAUSE_RI, Op->CurrentAddress);
 }
 
 static void
-SysCall(MIPS_R3000 *Cpu, opcode *OpCode)
+SysCall(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
 {
 //    u32 Immediate = (Data & COMMENT20_MASK) >> 6;
     C0GenerateException(Cpu, C0_CAUSE_SYSCALL, OpCode->CurrentAddress);
 }
 
 static void
-Break(MIPS_R3000 *Cpu, opcode *OpCode)
+Break(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
 {
 //    OpCode->Immediate = (Data & COMMENT20_MASK) >> 6;
     C0GenerateException(Cpu, C0_CAUSE_BKPT, OpCode->CurrentAddress);
 }
 
-typedef void (*jt_func)(MIPS_R3000 *, opcode *);
+typedef void (*jt_func)(MIPS_R3000 *, opcode *, u32 Data);
 
 static jt_func PrimaryJumpTable[0x40];
 static jt_func SecondaryJumpTable[0x40];
 
 //Arithmetic
 static void
-AddU(MIPS_R3000 *Cpu, opcode *OpCode)
+AddU(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
 {
-    u32 Data = OpCode->Data;
     u8 rd = (Data & REG_RD_MASK) >> 11;
 
     if (rd)
@@ -221,9 +220,8 @@ AddU(MIPS_R3000 *Cpu, opcode *OpCode)
 }
 
 static void
-AddIU(MIPS_R3000 *Cpu, opcode *OpCode)
+AddIU(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
 {
-    u32 Data = OpCode->Data;
     u8 rt = (Data & REG_RT_MASK) >> 16;
 
     if (rt)
@@ -235,9 +233,8 @@ AddIU(MIPS_R3000 *Cpu, opcode *OpCode)
 }
 
 static void
-SubU(MIPS_R3000 *Cpu, opcode *OpCode)
+SubU(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
 {
-    u32 Data = OpCode->Data;
     u8 rd = (Data & REG_RD_MASK) >> 11;
 
     if (rd)
@@ -249,9 +246,8 @@ SubU(MIPS_R3000 *Cpu, opcode *OpCode)
 }
 
 static void
-Add(MIPS_R3000 *Cpu, opcode *OpCode)
+Add(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
 {
-    u32 Data = OpCode->Data;
     u8 rd = (Data & REG_RD_MASK) >> 11;
 
     if (rd)
@@ -264,9 +260,8 @@ Add(MIPS_R3000 *Cpu, opcode *OpCode)
 }
 
 static void
-AddI(MIPS_R3000 *Cpu, opcode *OpCode)
+AddI(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
 {
-    u32 Data = OpCode->Data;
     u8 rt = (Data & REG_RT_MASK) >> 16;
 
     if (rt)
@@ -279,9 +274,8 @@ AddI(MIPS_R3000 *Cpu, opcode *OpCode)
 }
 
 static void
-Sub(MIPS_R3000 *Cpu, opcode *OpCode)
+Sub(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
 {
-    u32 Data = OpCode->Data;
     u8 rd = (Data & REG_RD_MASK) >> 11;
 
     if (rd)
@@ -295,41 +289,36 @@ Sub(MIPS_R3000 *Cpu, opcode *OpCode)
 
 //HI:LO operations
 static void
-MFHI(MIPS_R3000 *Cpu, opcode *OpCode)
+MFHI(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
 {
-    u32 Data = OpCode->Data;
     u8 rd = (Data & REG_RD_MASK) >> 11;
     Cpu->registers[rd] = Cpu->hi;
 }
 
 static void
-MFLO(MIPS_R3000 *Cpu, opcode *OpCode)
+MFLO(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
 {
-    u32 Data = OpCode->Data;
     u8 rd = (Data & REG_RD_MASK) >> 11;
     Cpu->registers[rd] = Cpu->lo;
 }
 
 static void
-MTHI(MIPS_R3000 *Cpu, opcode *OpCode)
+MTHI(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
 {
-    u32 Data = OpCode->Data;
     u8 rs = (Data & REG_RS_MASK) >> 21;
     Cpu->hi = rs;
 }
 
 static void
-MTLO(MIPS_R3000 *Cpu, opcode *OpCode)
+MTLO(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
 {
-    u32 Data = OpCode->Data;
     u8 rs = (Data & REG_RS_MASK) >> 21;
     Cpu->lo = rs;
 }
 
 static void
-Mult(MIPS_R3000 *Cpu, opcode *OpCode)
+Mult(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
 {
-    u32 Data = OpCode->Data;
     u8 rs = (Data & REG_RS_MASK) >> 21;
     u8 rt = (Data & REG_RT_MASK) >> 16;
 
@@ -339,9 +328,8 @@ Mult(MIPS_R3000 *Cpu, opcode *OpCode)
 }
 
 static void
-MultU(MIPS_R3000 *Cpu, opcode *OpCode)
+MultU(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
 {
-    u32 Data = OpCode->Data;
     u8 rs = (Data & REG_RS_MASK) >> 21;
     u8 rt = (Data & REG_RT_MASK) >> 16;
 
@@ -351,9 +339,8 @@ MultU(MIPS_R3000 *Cpu, opcode *OpCode)
 }
 
 static void
-Div(MIPS_R3000 *Cpu, opcode *OpCode)
+Div(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
 {
-    u32 Data = OpCode->Data;
     u8 rs = (Data & REG_RS_MASK) >> 21;
     u8 rt = (Data & REG_RT_MASK) >> 16;
 
@@ -383,9 +370,8 @@ Div(MIPS_R3000 *Cpu, opcode *OpCode)
 }
 
 static void
-DivU(MIPS_R3000 *Cpu, opcode *OpCode)
+DivU(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
 {
-    u32 Data = OpCode->Data;
     u8 rs = (Data & REG_RS_MASK) >> 21;
     u8 rt = (Data & REG_RT_MASK) >> 16;
 
@@ -403,9 +389,8 @@ DivU(MIPS_R3000 *Cpu, opcode *OpCode)
 
 //Store
 static void
-SW(MIPS_R3000 *Cpu, opcode *OpCode)
+SW(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
 {
-    u32 Data = OpCode->Data;
     u32 Immediate = SignExtend16((Data & IMM16_MASK));
     u8 rs = (Data & REG_RS_MASK) >> 21;
     u8 rt = (Data & REG_RT_MASK) >> 16;
@@ -416,9 +401,8 @@ SW(MIPS_R3000 *Cpu, opcode *OpCode)
 }
 
 static void
-SH(MIPS_R3000 *Cpu, opcode *OpCode)
+SH(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
 {
-    u32 Data = OpCode->Data;
     u32 Immediate = SignExtend16((Data & IMM16_MASK));
     u8 rs = (Data & REG_RS_MASK) >> 21;
     u8 rt = (Data & REG_RT_MASK) >> 16;
@@ -429,9 +413,8 @@ SH(MIPS_R3000 *Cpu, opcode *OpCode)
 }
 
 static void
-SB(MIPS_R3000 *Cpu, opcode *OpCode)
+SB(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
 {
-    u32 Data = OpCode->Data;
     u32 Immediate = SignExtend16((Data & IMM16_MASK));
     u8 rs = (Data & REG_RS_MASK) >> 21;
     u8 rt = (Data & REG_RT_MASK) >> 16;
@@ -443,9 +426,8 @@ SB(MIPS_R3000 *Cpu, opcode *OpCode)
 
 //Load
 static void
-LUI(MIPS_R3000 *Cpu, opcode *OpCode)
+LUI(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
 {
-    u32 Data = OpCode->Data;
     u8 rt = (Data & REG_RT_MASK) >> 16;
     if (rt)
     {
@@ -455,9 +437,8 @@ LUI(MIPS_R3000 *Cpu, opcode *OpCode)
 }
 
 static void
-LW(MIPS_R3000 *Cpu, opcode *OpCode)
+LW(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
 {
-    u32 Data = OpCode->Data;
     u8 rt = (Data & REG_RT_MASK) >> 16;
     if (rt)
     {
@@ -470,9 +451,8 @@ LW(MIPS_R3000 *Cpu, opcode *OpCode)
 }
 
 static void
-LBU(MIPS_R3000 *Cpu, opcode *OpCode)
+LBU(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
 {
-    u32 Data = OpCode->Data;
     u8 rt = (Data & REG_RT_MASK) >> 16;
     if (rt)
     {
@@ -485,9 +465,8 @@ LBU(MIPS_R3000 *Cpu, opcode *OpCode)
 }
 
 static void
-LHU(MIPS_R3000 *Cpu, opcode *OpCode)
+LHU(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
 {
-    u32 Data = OpCode->Data;
     u8 rt = (Data & REG_RT_MASK) >> 16;
     if (rt)
     {
@@ -500,9 +479,8 @@ LHU(MIPS_R3000 *Cpu, opcode *OpCode)
 }
 
 static void
-LB(MIPS_R3000 *Cpu, opcode *OpCode)
+LB(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
 {
-    u32 Data = OpCode->Data;
     u8 rt = (Data & REG_RT_MASK) >> 16;
     if (rt)
     {
@@ -515,9 +493,8 @@ LB(MIPS_R3000 *Cpu, opcode *OpCode)
 }
 
 static void
-LH(MIPS_R3000 *Cpu, opcode *OpCode)
+LH(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
 {
-    u32 Data = OpCode->Data;
     u8 rt = (Data & REG_RT_MASK) >> 16;
     if (rt)
     {
@@ -532,34 +509,30 @@ LH(MIPS_R3000 *Cpu, opcode *OpCode)
 
 // Jump/Call
 static void
-J(MIPS_R3000 *Cpu, opcode *OpCode)
+J(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
 {
-    u32 Data = OpCode->Data;
     u32 Immediate = (Data & IMM26_MASK) >> 0;
     Cpu->pc = (Cpu->pc & 0xF0000000) + (Immediate * 4);
 }
 
 static void
-JAL(MIPS_R3000 *Cpu, opcode *OpCode)
+JAL(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
 {
-    u32 Data = OpCode->Data;
     u32 Immediate = (Data & IMM26_MASK) >> 0;
     Cpu->ra = OpCode->CurrentAddress + 8;
     Cpu->pc = (Cpu->pc & 0xF0000000) + (Immediate * 4);
 }
 
 static void
-JR(MIPS_R3000 *Cpu, opcode *OpCode)
+JR(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
 {
-    u32 Data = OpCode->Data;
     u8 rs = (Data & REG_RS_MASK) >> 21;
     Cpu->pc = Cpu->registers[rs];
 }
 
 static void
-JALR(MIPS_R3000 *Cpu, opcode *OpCode)
+JALR(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
 {
-    u32 Data = OpCode->Data;
     u8 rs = (Data & REG_RS_MASK) >> 21;
     u8 rd = (Data & REG_RD_MASK) >> 11;
     Cpu->pc = Cpu->registers[rs];
@@ -567,25 +540,23 @@ JALR(MIPS_R3000 *Cpu, opcode *OpCode)
 }
 
 static void
-BranchZero(MIPS_R3000 *Cpu, opcode *OpCode)
+BranchZero(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
 {
-    u32 Data = OpCode->Data;
     u8 rs = (Data & REG_RS_MASK) >> 21;
     u8 rt = (Data & REG_RT_MASK) >> 16;
 
     u32 Immediate = SignExtend16((Data & IMM16_MASK) >> 0);
 
     //bltz, bgez, bltzal, bgezal
-    u8 type = rt;
     u32 Address = OpCode->CurrentAddress + 4 + Immediate * 4;
     s32 Check = Cpu->registers[rs];
 
-    if (type & 0b00001)
+    if (rt & 0b00001)
     {
         //bgez
         if (Check >= 0)
         {
-            if (type & 0b10000)
+            if (rt & 0b10000)
             {
                 Cpu->ra = OpCode->CurrentAddress + 8;
             }
@@ -597,7 +568,7 @@ BranchZero(MIPS_R3000 *Cpu, opcode *OpCode)
         //bltz
         if (Check < 0)
         {
-            if (type & 0b10000)
+            if (rt & 0b10000)
             {
                 Cpu->ra = OpCode->CurrentAddress + 8;
             }
@@ -607,9 +578,8 @@ BranchZero(MIPS_R3000 *Cpu, opcode *OpCode)
 }
 
 static void
-BEQ(MIPS_R3000 *Cpu, opcode *OpCode)
+BEQ(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
 {
-    u32 Data = OpCode->Data;
     u8 rs = (Data & REG_RS_MASK) >> 21;
     u8 rt = (Data & REG_RT_MASK) >> 16;
     
@@ -621,9 +591,8 @@ BEQ(MIPS_R3000 *Cpu, opcode *OpCode)
 }
 
 static void
-BNE(MIPS_R3000 *Cpu, opcode *OpCode)
+BNE(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
 {
-    u32 Data = OpCode->Data;
     u8 rs = (Data & REG_RS_MASK) >> 21;
     u8 rt = (Data & REG_RT_MASK) >> 16;
 
@@ -635,9 +604,8 @@ BNE(MIPS_R3000 *Cpu, opcode *OpCode)
 }
 
 static void
-BLEZ(MIPS_R3000 *Cpu, opcode *OpCode)
+BLEZ(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
 {
-    u32 Data = OpCode->Data;
     u8 rs = (Data & REG_RS_MASK) >> 21;
 
     if (Cpu->registers[rs] <= 0)
@@ -648,9 +616,8 @@ BLEZ(MIPS_R3000 *Cpu, opcode *OpCode)
 }
 
 static void
-BGTZ(MIPS_R3000 *Cpu, opcode *OpCode)
+BGTZ(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
 {
-    u32 Data = OpCode->Data;
     u8 rs = (Data & REG_RS_MASK) >> 21;
 
     if (Cpu->registers[rs] > 0)
@@ -662,9 +629,8 @@ BGTZ(MIPS_R3000 *Cpu, opcode *OpCode)
 
 //Logical
 static void
-AndI(MIPS_R3000 *Cpu, opcode *OpCode)
+AndI(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
 {
-    u32 Data = OpCode->Data;
     u8 rt = (Data & REG_RT_MASK) >> 16;
 
     if (rt)
@@ -676,9 +642,8 @@ AndI(MIPS_R3000 *Cpu, opcode *OpCode)
 }
 
 static void
-OrI(MIPS_R3000 *Cpu, opcode *OpCode)
+OrI(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
 {
-    u32 Data = OpCode->Data;
     u8 rt = (Data & REG_RT_MASK) >> 16;
 
     if (rt)
@@ -690,9 +655,8 @@ OrI(MIPS_R3000 *Cpu, opcode *OpCode)
 }
 
 static void
-And(MIPS_R3000 *Cpu, opcode *OpCode)
+And(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
 {
-    u32 Data = OpCode->Data;
     u8 rd = (Data & REG_RD_MASK) >> 11;
 
     if (rd)
@@ -704,9 +668,8 @@ And(MIPS_R3000 *Cpu, opcode *OpCode)
 }
 
 static void
-Or(MIPS_R3000 *Cpu, opcode *OpCode)
+Or(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
 {
-    u32 Data = OpCode->Data;
     u8 rd = (Data & REG_RD_MASK) >> 11;
 
     if (rd)
@@ -718,9 +681,8 @@ Or(MIPS_R3000 *Cpu, opcode *OpCode)
 }
 
 static void
-XOr(MIPS_R3000 *Cpu, opcode *OpCode)
+XOr(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
 {
-    u32 Data = OpCode->Data;
     u8 rd = (Data & REG_RD_MASK) >> 11;
 
     if (rd)
@@ -731,9 +693,8 @@ XOr(MIPS_R3000 *Cpu, opcode *OpCode)
     }
 }
 static void
-NOr(MIPS_R3000 *Cpu, opcode *OpCode)
+NOr(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
 {
-    u32 Data = OpCode->Data;
     u8 rd = (Data & REG_RD_MASK) >> 11;
 
     if (rd)
@@ -745,9 +706,8 @@ NOr(MIPS_R3000 *Cpu, opcode *OpCode)
 }
 
 static void
-XOrI(MIPS_R3000 *Cpu, opcode *OpCode)
+XOrI(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
 {
-    u32 Data = OpCode->Data;
     u8 rt = (Data & REG_RT_MASK) >> 16;
 
     if (rt)
@@ -760,9 +720,8 @@ XOrI(MIPS_R3000 *Cpu, opcode *OpCode)
 
 //shifts
 static void
-SLLV(MIPS_R3000 *Cpu, opcode *OpCode)
+SLLV(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
 {
-    u32 Data = OpCode->Data;
     u8 rd = (Data & REG_RD_MASK) >> 11;
 
     if (rd)
@@ -774,9 +733,8 @@ SLLV(MIPS_R3000 *Cpu, opcode *OpCode)
 }
 
 static void
-SRLV(MIPS_R3000 *Cpu, opcode *OpCode)
+SRLV(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
 {
-    u32 Data = OpCode->Data;
     u8 rd = (Data & REG_RD_MASK) >> 11;
 
     if (rd)
@@ -788,9 +746,8 @@ SRLV(MIPS_R3000 *Cpu, opcode *OpCode)
 }
 
 static void
-SRAV(MIPS_R3000 *Cpu, opcode *OpCode)
+SRAV(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
 {
-    u32 Data = OpCode->Data;
     u8 rd = (Data & REG_RD_MASK) >> 11;
 
     if (rd)
@@ -802,9 +759,8 @@ SRAV(MIPS_R3000 *Cpu, opcode *OpCode)
 }
 
 static void
-SLL(MIPS_R3000 *Cpu, opcode *OpCode)
+SLL(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
 {
-    u32 Data = OpCode->Data;
     u8 rd = (Data & REG_RD_MASK) >> 11;
 
     if (rd)
@@ -816,9 +772,8 @@ SLL(MIPS_R3000 *Cpu, opcode *OpCode)
 }
 
 static void
-SRL(MIPS_R3000 *Cpu, opcode *OpCode)
+SRL(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
 {
-    u32 Data = OpCode->Data;
     u8 rd = (Data & REG_RD_MASK) >> 11;
 
     if (rd)
@@ -830,9 +785,8 @@ SRL(MIPS_R3000 *Cpu, opcode *OpCode)
 }
 
 static void
-SRA(MIPS_R3000 *Cpu, opcode *OpCode)
+SRA(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
 {
-    u32 Data = OpCode->Data;
     u8 rd = (Data & REG_RD_MASK) >> 11;
 
     if (rd)
@@ -845,9 +799,8 @@ SRA(MIPS_R3000 *Cpu, opcode *OpCode)
 
 // comparison
 static void
-SLT(MIPS_R3000 *Cpu, opcode *OpCode)
+SLT(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
 {
-    u32 Data = OpCode->Data;
     u8 rd = (Data & REG_RD_MASK) >> 11;
 
     if (rd)
@@ -859,9 +812,8 @@ SLT(MIPS_R3000 *Cpu, opcode *OpCode)
 }
 
 static void
-SLTU(MIPS_R3000 *Cpu, opcode *OpCode)
+SLTU(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
 {
-    u32 Data = OpCode->Data;
     u8 rd = (Data & REG_RD_MASK) >> 11;
 
     if (rd)
@@ -873,9 +825,8 @@ SLTU(MIPS_R3000 *Cpu, opcode *OpCode)
 }
 
 static void
-SLTI(MIPS_R3000 *Cpu, opcode *OpCode)
+SLTI(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
 {
-    u32 Data = OpCode->Data;
     u8 rt = (Data & REG_RT_MASK) >> 16;
 
     if (rt)
@@ -887,9 +838,8 @@ SLTI(MIPS_R3000 *Cpu, opcode *OpCode)
 }
 
 static void
-SLTIU(MIPS_R3000 *Cpu, opcode *OpCode)
+SLTIU(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
 {
-    u32 Data = OpCode->Data;
     u8 rt = (Data & REG_RT_MASK) >> 16;
 
     if (rt)
@@ -902,9 +852,8 @@ SLTIU(MIPS_R3000 *Cpu, opcode *OpCode)
 
 // coprocessor ops
 static void
-COP0(MIPS_R3000 *Cpu, opcode *OpCode)
+COP0(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
 {
-    u32 Data = OpCode->Data;
     u8 rs = (Data & REG_RS_MASK) >> 21;
     u8 rt = (Data & REG_RT_MASK) >> 16;
     u8 rd = (Data & REG_RD_MASK) >> 11;
@@ -947,16 +896,15 @@ COP0(MIPS_R3000 *Cpu, opcode *OpCode)
 }
 
 static void
-COP1(MIPS_R3000 *Cpu, opcode *OpCode)
+COP1(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
 {
     // PSX missing cop1
     // TODO exceptions
 }
 
 static void
-COP2(MIPS_R3000 *Cpu, opcode *OpCode)
+COP2(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
 {
-    u32 Data = OpCode->Data;
     u8 rs = (Data & REG_RS_MASK) >> 21;
     u8 rt = (Data & REG_RT_MASK) >> 16;
     u8 rd = (Data & REG_RD_MASK) >> 11;
@@ -998,7 +946,7 @@ COP2(MIPS_R3000 *Cpu, opcode *OpCode)
 }
 
 static void
-COP3(MIPS_R3000 *Cpu, opcode *OpCode)
+COP3(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
 {
     // PSX missing cop3
     // TODO exceptions
@@ -1008,20 +956,7 @@ COP3(MIPS_R3000 *Cpu, opcode *OpCode)
 void
 DecodeOpcode(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
 {
-    u32 Select0 = (Data & PRIMARY_OP_MASK) >> 26;
-
-    if (Select0)
-    {
-        OpCode->ExecuteFunc = PrimaryJumpTable[Select0];
-    }
-    else
-    {
-        u32 Select1 = (Data & SECONDARY_OP_MASK);
-        OpCode->ExecuteFunc = SecondaryJumpTable[Select1];
-    }
-
     OpCode->CurrentAddress = Cpu->IAddress;
-    OpCode->Data = Data;
     OpCode->MemAccessMode = MEM_ACCESS_NONE;
 
 
@@ -1052,16 +987,16 @@ InstructionFetch(MIPS_R3000 *Cpu)
     Cpu->pc += 4;
     return Result;
 }
-
-inline void
-ExecuteOpCode(MIPS_R3000 *Cpu, opcode *OpCode)
-{
-    jt_func Func = OpCode->ExecuteFunc;
-    if (Func)
-    {
-        Func(Cpu, OpCode);
-    }
-}
+//
+//inline void
+//ExecuteOpCode(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
+//{
+//    jt_func Func = OpCode->ExecuteFunc;
+//    if (Func)
+//    {
+//        Func(Cpu, OpCode);
+//    }
+//}
 
 void
 MemoryAccess(MIPS_R3000 *Cpu, opcode *OpCode)
@@ -1137,18 +1072,44 @@ MapRegister(MIPS_R3000 *Cpu, mmr MMR)
 void
 StepCpu(MIPS_R3000 *Cpu, u32 Steps)
 {
+
+    opcode *OpCodes = Cpu->OpCodes;
     u32 BS = Cpu->BaseState;
+    jt_func NextFunc = Cpu->NextFunc;
+    u32 NextData = Cpu->NextData;
     for (u32 t = 0; t < Steps; ++t)
     {
-        MemoryAccess(Cpu, &Cpu->OpCodes[BS % 3]);
-        ExecuteOpCode(Cpu, &Cpu->OpCodes[(BS + 1) % 3]);
-        opcode *OpCode = &Cpu->OpCodes[(BS + 2) % 3];
-        *OpCode = {};
-        DecodeOpcode(Cpu, OpCode, Cpu->MachineCode);
-        Cpu->MachineCode = InstructionFetch(Cpu);
+        opcode *OpCodeMemAccess = &OpCodes[BS % 2];
+        if (OpCodeMemAccess->MemAccessMode)
+        {
+            MemoryAccess(Cpu, OpCodeMemAccess);
+        }
+
+        u32 TempData = InstructionFetch(Cpu);
         Cpu->IAddress = Cpu->pc - 4;
+
+        if (NextFunc) NextFunc(Cpu, &OpCodes[(BS + 1) % 2], NextData);
+
+        opcode *OpCode = &OpCodes[(BS + 2) % 2];
+        NextData = TempData;
+        OpCode->CurrentAddress = Cpu->IAddress;
+        OpCode->MemAccessMode = MEM_ACCESS_NONE;
+        u32 Select0 = (NextData & PRIMARY_OP_MASK) >> 26;
+
+        if (Select0)
+        {
+            NextFunc = PrimaryJumpTable[Select0];
+        }
+        else
+        {
+            u32 Select1 = (NextData & SECONDARY_OP_MASK);
+            NextFunc = SecondaryJumpTable[Select1];
+        }
+
         ++BS;
     }
+    Cpu->NextFunc = NextFunc;
+    Cpu->NextData = NextData;
     Cpu->BaseState = BS;
 }
 

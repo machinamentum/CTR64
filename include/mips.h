@@ -120,8 +120,6 @@ struct MIPS_R3000;
 
 struct opcode
 {
-    void (*ExecuteFunc)(MIPS_R3000 *, opcode *) = nullptr;
-    u32 Data;
     u32 CurrentAddress;
 
     u32 MemAccessAddress;
@@ -226,10 +224,14 @@ struct MIPS_R3000
         };
     };
 
-    opcode OpCodes[4];
-    u32 MachineCode = 0;
+    opcode OpCodes[2];
     u32 IAddress = 0;
     u32 BaseState = 0;
+    void (*NextFunc)(MIPS_R3000 *, opcode *, u32);
+    u32 NextData;
+    u32 NumMMR;
+    mmr MemMappedRegisters[16];
+
 
     MIPS_R3000();
 
@@ -244,8 +246,6 @@ struct MIPS_R3000
     Coprocessor *CP2 = NULL;
     Coprocessor *CP3 = NULL;
     DMA DMAChannels[8];
-    u32 NumMMR;
-    mmr MemMappedRegisters[16];
 };
 
 void MapRegister(MIPS_R3000 *Cpu, mmr MMR);
