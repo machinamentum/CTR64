@@ -15,51 +15,23 @@ inline u32
 ReadMemWord(MIPS_R3000 *Cpu, u32 Address)
 {
     u32 Base = Address & 0x00FFFFFF;
-    for (u32 i = 0; i < Cpu->NumMMR; ++i)
+    u8 *VirtualAddress = (u8 *)MapVirtualAddress(Cpu, Base);
+    if (VirtualAddress == Cpu->Dummy)
     {
-        mmr *MMR = &Cpu->MemMappedRegisters[i];
-        if (Base == MMR->Address)
+        for (u32 i = 0; i < Cpu->NumMMR; ++i)
         {
+            mmr *MMR = &Cpu->MemMappedRegisters[i];
+            if (Base == MMR->Address)
+            {
 
-            return MMR->RegisterReadFunc(MMR->Object, Address);
+                return MMR->RegisterReadFunc(MMR->Object, Address);
+            }
         }
     }
-    return *((u32 *)((u8 *)MapVirtualAddress(Cpu, Base)));
+    return *((u32 *)VirtualAddress);
 }
 
-inline u8
-ReadMemByte(MIPS_R3000 *Cpu, u32 Address)
-{
-    u32 Base = Address & 0x00FFFFFF;
-    for (u32 i = 0; i < Cpu->NumMMR; ++i)
-    {
-        mmr *MMR = &Cpu->MemMappedRegisters[i];
-        if (Base == MMR->Address)
-        {
-
-            return MMR->RegisterReadFunc(MMR->Object, Address);
-        }
-    }
-    return *((u8 *)MapVirtualAddress(Cpu, Base));
-}
-
-inline u16
-ReadMemHalfWord(MIPS_R3000 *Cpu, u32 Address)
-{
-    u32 Base = Address & 0x00FFFFFF;
-    for (u32 i = 0; i < Cpu->NumMMR; ++i)
-    {
-        mmr *MMR = &Cpu->MemMappedRegisters[i];
-        if (Base == MMR->Address)
-        {
-
-            return MMR->RegisterReadFunc(MMR->Object, Address);
-        }
-    }
-    return *((u16 *)((u8 *)MapVirtualAddress(Cpu, Base)));
-}
-
-inline void
+static void
 WriteMemByte(MIPS_R3000 *Cpu, u32 Address, u8 value)
 {
     u32 Base = Address & 0x00FFFFFF;
@@ -76,7 +48,7 @@ WriteMemByte(MIPS_R3000 *Cpu, u32 Address, u8 value)
     *((u8 *)MapVirtualAddress(Cpu, Base)) = value;
 }
 
-inline void
+static void
 WriteMemWord(MIPS_R3000 *Cpu, u32 Address, u32 value)
 {
     u32 Base = Address & 0x00FFFFFF;
@@ -92,7 +64,7 @@ WriteMemWord(MIPS_R3000 *Cpu, u32 Address, u32 value)
     *((u32 *)((u8 *)MapVirtualAddress(Cpu, Base))) = value;
 }
 
-inline void
+static void
 WriteMemHalfWord(MIPS_R3000 *Cpu, u32 Address, u16 value)
 {
     u32 Base = Address & 0x00FFFFFF;
@@ -202,8 +174,8 @@ Break(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
 
 typedef void (*jt_func)(MIPS_R3000 *, opcode *, u32 Data);
 
-static jt_func PrimaryJumpTable[0x40];
-static jt_func SecondaryJumpTable[0x40];
+//static jt_func PrimaryJumpTable[0x40];
+//static jt_func SecondaryJumpTable[0x40];
 
 //Arithmetic
 static void
@@ -952,51 +924,13 @@ COP3(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
     // TODO exceptions
 }
 
-
-void
-DecodeOpcode(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
-{
-    OpCode->CurrentAddress = Cpu->IAddress;
-    OpCode->MemAccessMode = MEM_ACCESS_NONE;
-
-
-
-//    //lwc
-//    else if ((Select0 & 0b111000) == 0b110000)
-//    {
-//        OpCode->WriteBackMode = Select0 & 0b111;
-//        OpCode->LeftValue = Cpu->registers[rs];
-//        OpCode->DestinationRegister = rt;
-//        OpCode->Immediate = (Data & IMM16_MASK) >> 0;
-//        OpCode->MemAccessType = MEM_ACCESS_READ;
-//    }
-//    //swc
-//    else if ((Select0 & 0b111000) == 0b111000)
-//    {
-//        OpCode->LeftValue = Cpu->registers[rs];
-//        OpCode->RightValue = Cpu->CP0.registers[rt];
-//        OpCode->Immediate = (Data & IMM16_MASK) >> 0;
-//        OpCode->MemAccessType = MEM_ACCESS_WRITE;
-//    }
-}
-
 inline u32
 InstructionFetch(MIPS_R3000 *Cpu)
 {
-    u32 Result = ReadMemWord(Cpu, Cpu->pc);
+    u32 Result = ReadMemWordRaw(Cpu, Cpu->pc);
     Cpu->pc += 4;
     return Result;
 }
-//
-//inline void
-//ExecuteOpCode(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
-//{
-//    jt_func Func = OpCode->ExecuteFunc;
-//    if (Func)
-//    {
-//        Func(Cpu, OpCode);
-//    }
-//}
 
 void
 MemoryAccess(MIPS_R3000 *Cpu, opcode *OpCode)
@@ -1028,9 +962,10 @@ MemoryAccess(MIPS_R3000 *Cpu, opcode *OpCode)
         {
             u32 Register = Value;
             u32 Signed = MemAccessMode & MEM_ACCESS_SIGNED;
+            Value = ReadMemWord(Cpu, Address);
             if (MemAccessMode & MEM_ACCESS_BYTE)
             {
-                Value = ReadMemByte(Cpu, Address);
+                Value &= 0xFF;
                 if (Signed)
                 {
                     Value = SignExtend8(Value);
@@ -1039,16 +974,11 @@ MemoryAccess(MIPS_R3000 *Cpu, opcode *OpCode)
 
             else if (MemAccessMode & MEM_ACCESS_HALF)
             {
-                Value = ReadMemHalfWord(Cpu, Address);
+                Value &= 0xFFFF;
                 if (Signed)
                 {
                     Value = SignExtend16(Value);
                 }
-            }
-
-            else if (MemAccessMode & MEM_ACCESS_WORD)
-            {
-                Value = ReadMemWord(Cpu, Address);
             }
             Cpu->registers[Register] = Value;
         }
@@ -1063,132 +993,296 @@ MapRegister(MIPS_R3000 *Cpu, mmr MMR)
     ++Cpu->NumMMR;
 }
 
-#define STAGE_IF 0
-#define STAGE_DC 1
-#define STAGE_EO 2
-#define STAGE_MA 3
-#define STAGE_WB 4
-
 void
 StepCpu(MIPS_R3000 *Cpu, u32 Steps)
 {
+    void *FJTPrimary[0x40] =
+    {
+        &&_ReservedInstructionException,
+        &&_BranchZero,
+        &&_Jump,
+        &&_JumpAL,
+        &&_BEQ,
+        &&_BNE,
+        &&_BLEZ,
+        &&_BGTZ,
+        &&_AddI,
+        &&_AddIU,
+        &&_SLTI,
+        &&_SLTIU,
+        &&_AndI,
+        &&_OrI,
+        &&_XOrI,
+        &&_LUI,
+        &&_COP0,
+        &&_COP1,
+        &&_COP2,
+        &&_COP3,
+        &&_ReservedInstructionException,
+        &&_ReservedInstructionException,
+        &&_ReservedInstructionException,
+        &&_ReservedInstructionException,
+        &&_ReservedInstructionException,
+        &&_ReservedInstructionException,
+        &&_ReservedInstructionException,
+        &&_ReservedInstructionException,
+        &&_ReservedInstructionException,
+        &&_ReservedInstructionException,
+        &&_ReservedInstructionException,
+        &&_ReservedInstructionException,
+        &&_LB,
+        &&_LH,
+        &&_ReservedInstructionException, // &&_LWL,
+        &&_LW,
+        &&_LBU,
+        &&_LHU,
+        &&_ReservedInstructionException, // &&_LWR,
+        &&_ReservedInstructionException,
+        &&_SB,
+        &&_SH,
+        &&_ReservedInstructionException, // &&_SWL,
+        &&_SW,
+        &&_ReservedInstructionException,
+        &&_ReservedInstructionException,
+        &&_ReservedInstructionException, // &&_SWR,
+        &&_ReservedInstructionException,
+        &&_ReservedInstructionException, // &&_LWC0,
+        &&_ReservedInstructionException, // &&_LWC1,
+        &&_ReservedInstructionException, // &&_LWC2,
+        &&_ReservedInstructionException, // &&_LWC3,
+        &&_ReservedInstructionException,
+        &&_ReservedInstructionException,
+        &&_ReservedInstructionException,
+        &&_ReservedInstructionException,
+        &&_ReservedInstructionException, //&&_SWC0,
+        &&_ReservedInstructionException, //&&_SWC1,
+        &&_ReservedInstructionException, //&&_SWC2,
+        &&_ReservedInstructionException, //&&_SWC3,
+        &&_ReservedInstructionException,
+        &&_ReservedInstructionException,
+        &&_ReservedInstructionException,
+        &&_ReservedInstructionException,
+    };
+
+    void *FJTSecondary[0x40] =
+    {
+        &&_SLL,
+        &&_ReservedInstructionException,
+        &&_SRL,
+        &&_SRA,
+        &&_SLLV,
+        &&_ReservedInstructionException,
+        &&_SRLV,
+        &&_SRAV,
+        &&_JumpR,
+        &&_JumpALR,
+        &&_ReservedInstructionException,
+        &&_ReservedInstructionException,
+        &&_Syscall,
+        &&_Break,
+        &&_ReservedInstructionException,
+        &&_ReservedInstructionException,
+        &&_MFHI,
+        &&_MTHI,
+        &&_MFLO,
+        &&_MTLO,
+        &&_ReservedInstructionException,
+        &&_ReservedInstructionException,
+        &&_ReservedInstructionException,
+        &&_ReservedInstructionException,
+        &&_Mult,
+        &&_MultU,
+        &&_Div,
+        &&_DivU,
+        &&_ReservedInstructionException,
+        &&_ReservedInstructionException,
+        &&_ReservedInstructionException,
+        &&_ReservedInstructionException,
+        &&_Add,
+        &&_AddU,
+        &&_Sub,
+        &&_SubU,
+        &&_And,
+        &&_Or,
+        &&_XOr,
+        &&_NOr,
+        &&_ReservedInstructionException,
+        &&_ReservedInstructionException,
+        &&_SLT,
+        &&_SLTU,
+        &&_ReservedInstructionException,
+        &&_ReservedInstructionException,
+        &&_ReservedInstructionException,
+        &&_ReservedInstructionException,
+        &&_ReservedInstructionException,
+        &&_ReservedInstructionException,
+        &&_ReservedInstructionException,
+        &&_ReservedInstructionException,
+        &&_ReservedInstructionException,
+        &&_ReservedInstructionException,
+        &&_ReservedInstructionException,
+        &&_ReservedInstructionException,
+        &&_ReservedInstructionException,
+        &&_ReservedInstructionException,
+        &&_ReservedInstructionException,
+        &&_ReservedInstructionException,
+        &&_ReservedInstructionException,
+        &&_ReservedInstructionException,
+        &&_ReservedInstructionException,
+        &&_ReservedInstructionException,
+    };
 
     opcode *OpCodes = Cpu->OpCodes;
     u32 BS = Cpu->BaseState;
-    jt_func NextFunc = Cpu->NextFunc;
+    void *NextJump = Cpu->NextJump;
+    u32 TempData;
     u32 NextData = Cpu->NextData;
-    for (u32 t = 0; t < Steps; ++t)
-    {
-        opcode *OpCodeMemAccess = &OpCodes[BS % 2];
-        if (OpCodeMemAccess->MemAccessMode)
-        {
-            MemoryAccess(Cpu, OpCodeMemAccess);
-        }
 
-        u32 TempData = InstructionFetch(Cpu);
-        Cpu->IAddress = Cpu->pc - 4;
+    opcode *OpCodeMemAccess = &OpCodes[BS % 2];
+    if (NextJump) goto *NextJump;
 
-        if (NextFunc) NextFunc(Cpu, &OpCodes[(BS + 1) % 2], NextData);
+#define NEXT(Instruction) \
+    if (!Steps) goto _ExitThread; \
+    OpCodeMemAccess = &OpCodes[BS % 2]; \
+    if (OpCodeMemAccess->MemAccessMode) \
+    { \
+        MemoryAccess(Cpu, OpCodeMemAccess); \
+    } \
+    OpCodeMemAccess->CurrentAddress = Cpu->pc; \
+    OpCodeMemAccess->MemAccessMode = MEM_ACCESS_NONE; \
+    TempData = InstructionFetch(Cpu); \
+    Instruction(Cpu, &OpCodes[(BS + 1) % 2], NextData); \
+    NextData = TempData; \
+    if ((NextData & PRIMARY_OP_MASK) >> 26) \
+    { \
+        NextJump = FJTPrimary[(NextData & PRIMARY_OP_MASK) >> 26]; \
+    } \
+    else \
+    { \
+        u32 Select1 = (NextData & SECONDARY_OP_MASK); \
+        NextJump = FJTSecondary[Select1]; \
+    } \
+    ++BS; \
+    --Steps; \
+    goto *NextJump;
 
-        opcode *OpCode = &OpCodes[(BS + 2) % 2];
-        NextData = TempData;
-        OpCode->CurrentAddress = Cpu->IAddress;
-        OpCode->MemAccessMode = MEM_ACCESS_NONE;
-        u32 Select0 = (NextData & PRIMARY_OP_MASK) >> 26;
 
-        if (Select0)
-        {
-            NextFunc = PrimaryJumpTable[Select0];
-        }
-        else
-        {
-            u32 Select1 = (NextData & SECONDARY_OP_MASK);
-            NextFunc = SecondaryJumpTable[Select1];
-        }
+_ReservedInstructionException:
+    NEXT(ReservedInstructionException);
+_BranchZero:
+    NEXT(BranchZero);
+_Jump:
+    NEXT(J);
+_JumpAL:
+    NEXT(JAL);
+_BEQ:
+    NEXT(BEQ);
+_BNE:
+    NEXT(BNE);
+_BLEZ:
+    NEXT(BLEZ);
+_BGTZ:
+    NEXT(BGTZ);
+_AddI:
+    NEXT(AddI);
+_AddIU:
+    NEXT(AddIU);
+_SLTI:
+    NEXT(SLTI);
+_SLTIU:
+    NEXT(SLTIU);
+_AndI:
+    NEXT(AndI);
+_OrI:
+    NEXT(OrI);
+_XOrI:
+    NEXT(XOrI);
+_LUI:
+    NEXT(LUI);
+_COP0:
+    NEXT(COP0);
+_COP1:
+    NEXT(COP1);
+_COP2:
+    NEXT(COP2);
+_COP3:
+    NEXT(COP3);
+_LB:
+    NEXT(LB);
+_LH:
+    NEXT(LH);
+_LW:
+    NEXT(LW);
+_LBU:
+    NEXT(LBU);
+_LHU:
+    NEXT(LHU);
+_SB:
+    NEXT(SB);
+_SH:
+    NEXT(SH);
+_SW:
+    NEXT(SW);
 
-        ++BS;
-    }
-    Cpu->NextFunc = NextFunc;
+_SLL:
+    NEXT(SLL);
+_SRL:
+    NEXT(SRL);
+_SRA:
+    NEXT(SRA);
+_SLLV:
+    NEXT(SLLV);
+_SRLV:
+    NEXT(SRLV);
+_SRAV:
+    NEXT(SRAV);
+_JumpR:
+    NEXT(JR);
+_JumpALR:
+    NEXT(JALR);
+_Syscall:
+    NEXT(SysCall);
+_Break:
+    NEXT(Break);
+_MFHI:
+    NEXT(MFHI);
+_MTHI:
+    NEXT(MTHI);
+_MFLO:
+    NEXT(MFLO);
+_MTLO:
+    NEXT(MTLO);
+_Mult:
+    NEXT(Mult);
+_MultU:
+    NEXT(MultU);
+_Div:
+    NEXT(Div);
+_DivU:
+    NEXT(DivU);
+_Add:
+    NEXT(Add);
+_AddU:
+    NEXT(AddU);
+_Sub:
+    NEXT(Sub);
+_SubU:
+    NEXT(SubU);
+_And:
+    NEXT(And);
+_Or:
+    NEXT(Or);
+_XOr:
+    NEXT(XOr);
+_NOr:
+    NEXT(NOr);
+_SLT:
+    NEXT(SLT);
+_SLTU:
+    NEXT(SLTU);
+
+_ExitThread:
+    Cpu->NextJump = NextJump;
     Cpu->NextData = NextData;
     Cpu->BaseState = BS;
-}
-
-static void __attribute__((constructor))
-InitJumpTables()
-{
-    for (int i = 0; i <= 0x3F; ++i)
-    {
-        PrimaryJumpTable[i] = ReservedInstructionException;
-        SecondaryJumpTable[i] = ReservedInstructionException;
-    }
-
-//    PrimaryJumpTable[0x00] = ExecuteSecondary;
-    PrimaryJumpTable[0x01] = BranchZero;
-    PrimaryJumpTable[0x02] = J;
-    PrimaryJumpTable[0x03] = JAL;
-    PrimaryJumpTable[0x04] = BEQ;
-    PrimaryJumpTable[0x05] = BNE;
-    PrimaryJumpTable[0x06] = BLEZ;
-    PrimaryJumpTable[0x07] = BGTZ;
-    PrimaryJumpTable[0x08] = AddI;
-    PrimaryJumpTable[0x09] = AddIU;
-    PrimaryJumpTable[0x0A] = SLTI;
-    PrimaryJumpTable[0x0B] = SLTIU;
-    PrimaryJumpTable[0x0C] = AndI;
-    PrimaryJumpTable[0x0D] = OrI;
-    PrimaryJumpTable[0x0E] = XOrI;
-    PrimaryJumpTable[0x0F] = LUI;
-    PrimaryJumpTable[0x10] = COP0;
-    PrimaryJumpTable[0x11] = COP1;
-    PrimaryJumpTable[0x12] = COP2;
-    PrimaryJumpTable[0x13] = COP3;
-    PrimaryJumpTable[0x20] = LB;
-    PrimaryJumpTable[0x21] = LH;
-    //    PrimaryJumpTable[0x22] = LWL;
-    PrimaryJumpTable[0x23] = LW;
-    PrimaryJumpTable[0x24] = LBU;
-    PrimaryJumpTable[0x25] = LHU;
-    //    PrimaryJumpTable[0x26] = LWR;
-    PrimaryJumpTable[0x28] = SB;
-    PrimaryJumpTable[0x29] = SH;
-    //    PrimaryJumpTable[0x2A] = SWL;
-    PrimaryJumpTable[0x2B] = SW;
-    //    PrimaryJumpTable[0x2E] = SWR;
-    //    PrimaryJumpTable[0x30] = LWC0;
-    //    PrimaryJumpTable[0x31] = LWC1;
-    //    PrimaryJumpTable[0x32] = LWC2;
-    //    PrimaryJumpTable[0x33] = LWC3;
-    //    PrimaryJumpTable[0x38] = SWC0;
-    //    PrimaryJumpTable[0x39] = SWC1;
-    //    PrimaryJumpTable[0x3A] = SWC2;
-    //    PrimaryJumpTable[0x3B] = SWC3;
-
-    SecondaryJumpTable[0x00] = SLL;
-    SecondaryJumpTable[0x02] = SRL;
-    SecondaryJumpTable[0x03] = SRA;
-    SecondaryJumpTable[0x04] = SLLV;
-    SecondaryJumpTable[0x06] = SRLV;
-    SecondaryJumpTable[0x07] = SRAV;
-    SecondaryJumpTable[0x08] = JR;
-    SecondaryJumpTable[0x09] = JALR;
-    SecondaryJumpTable[0x0C] = SysCall;
-    SecondaryJumpTable[0x0D] = Break;
-    SecondaryJumpTable[0x10] = MFHI;
-    SecondaryJumpTable[0x11] = MTHI;
-    SecondaryJumpTable[0x12] = MFLO;
-    SecondaryJumpTable[0x13] = MTLO;
-    SecondaryJumpTable[0x18] = Mult;
-    SecondaryJumpTable[0x19] = MultU;
-    SecondaryJumpTable[0x1A] = Div;
-    SecondaryJumpTable[0x1B] = DivU;
-    SecondaryJumpTable[0x20] = Add;
-    SecondaryJumpTable[0x21] = AddU;
-    SecondaryJumpTable[0x22] = Sub;
-    SecondaryJumpTable[0x23] = SubU;
-    SecondaryJumpTable[0x24] = And;
-    SecondaryJumpTable[0x25] = Or;
-    SecondaryJumpTable[0x26] = XOr;
-    SecondaryJumpTable[0x27] = NOr;
-    SecondaryJumpTable[0x2A] = SLT;
-    SecondaryJumpTable[0x2B] = SLTU;
 }

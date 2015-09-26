@@ -225,12 +225,11 @@ struct MIPS_R3000
     };
 
     opcode OpCodes[2];
-    u32 IAddress = 0;
     u32 BaseState = 0;
-    void (*NextFunc)(MIPS_R3000 *, opcode *, u32);
+    void *NextJump;
     u32 NextData;
     u32 NumMMR;
-    mmr MemMappedRegisters[16];
+    mmr MemMappedRegisters[12];
 
 
     MIPS_R3000();
