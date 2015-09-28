@@ -64,6 +64,15 @@ _CTRX_firstfile(const char *FileName, DirEntry *Entry)
     } FFInfo;
 
     FFInfo.FileName = (char *)FileName;
+
+    if (memcmp(FileName, "cdrom:", strlen("cdrom:")) == 0)
+    {
+        int Offset = 0;
+        if (FileName[6] == '\\') Offset = 1;
+
+        FFInfo.FileName = (char *)FileName + strlen("cdrom:") + Offset;
+    }
+
     FFInfo.Entry = Entry;
 
     int *FFRegister = (int *)0x1F802078;
@@ -78,7 +87,10 @@ FileOpen(const char *FileName, int AccessMode)
     if (memcmp(FileName, "cdrom:", strlen("cdrom:")) == 0)
     {
         printf("Opening file from cdrom\n");
-        return _CTRX_FileOpen(FileName + strlen("cdrom:"));
+        int Offset = 0;
+        if (FileName[6] == '\\') Offset = 1;
+
+        return _CTRX_FileOpen(FileName + strlen("cdrom:") + Offset);
     }
     return -1;
 }

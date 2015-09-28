@@ -15,6 +15,7 @@
 #include "disasm.h"
 #include "psxexe.h"
 #include "joypad.h"
+#include "hsf.h"
 
 void
 ResetCpu(MIPS_R3000 *Cpu)
@@ -34,20 +35,13 @@ empty_ret(void *Obj, u32 Val)
     return 0;
 }
 
-struct FileAccessInfo
-{
-    FILE* Ptr;
-    char *Name;
-    int SeekPos;
-};
-
-static FileAccessInfo FilePtrs[15] = {};
+static hsf HSF;
+static hsf_file *FilePtrs[15];
 static int TakenFiles[15] = {};
 static int ReturnFile = 0;
 static int ReturnRead = 0;
 static int ReturnSeek = 0;
 static int ReturnFirstFile = 0;
-static const char *CDROMDir = "cdrom/";
 
 static void
 CTRXFileOpen(void *Ref, u32 Ptr)
@@ -64,40 +58,16 @@ CTRXFileOpen(void *Ref, u32 Ptr)
 
     if (FreeFile > 1)
     {
-        int Size = strlen(CDROMDir) + strlen(FileName) + 1;
-        char *NameBuf = (char *)linearAlloc(Size + 1);
-        snprintf(NameBuf, Size, "%s%s", CDROMDir, FileName);
-        for (int i = 0; i < Size; ++i)
+        printf("CTRX: Opening file %s\n", FileName);
+        FilePtrs[FreeFile] = HsfFileOpen(&HSF, FileName);
+        if (!FilePtrs[FreeFile]->DirectoryEntry)
         {
-            if (NameBuf[i] == '\\')
-            {
-                NameBuf[i] = '/';
-            }
+            printf("Error opening file: %s\n", FileName);
+            ReturnFile = -1;
+            return;
         }
-        if (NameBuf[Size - 3] == ';') //version identifier
-            NameBuf[Size - 3] = 0;
 
-        char *FileName = NameBuf;
-        Size = strlen(FileName);
-        for (int i = 0; i < strlen(FileName); ++i)
-        {
-            if ((FileName[i] == '/') && (FileName[i + 1] == '/'))
-            {
-                strcpy(FileName + i, FileName + i + 1);
-                ++i;
-                Size = strlen(FileName);
-            }
-        }
-        printf("CTRX: Opening file %s\n", NameBuf);
-        FilePtrs[FreeFile].Ptr = fopen(NameBuf, "rb");
-        if (!FilePtrs[FreeFile].Ptr)
-        {
-            printf("Error opening file: %s\n", NameBuf);
-            exit(-1);
-        }
-        FilePtrs[FreeFile].Name = NameBuf;
-        FilePtrs[FreeFile].SeekPos = 0;
-        fclose(FilePtrs[FreeFile].Ptr);
+        TakenFiles[FreeFile] = 1;
     }
 
     ReturnFile = FreeFile;
@@ -120,11 +90,8 @@ CTRXFileRead(void *Ref, u32 Ptr)
         int Length;
     } *FReadInfoPtr;
     FReadInfoPtr = (FReadInfo *)MapVirtualAddress(Cpu, Ptr);
-    FilePtrs[FReadInfoPtr->Fd].Ptr = fopen(FilePtrs[FReadInfoPtr->Fd].Name, "rb");
-    fseek(FilePtrs[FReadInfoPtr->Fd].Ptr, FilePtrs[FReadInfoPtr->Fd].SeekPos, SEEK_SET);
-    ReturnRead = fread(MapVirtualAddress(Cpu, FReadInfoPtr->Dst), 1, FReadInfoPtr->Length, FilePtrs[FReadInfoPtr->Fd].Ptr);
-    FilePtrs[FReadInfoPtr->Fd].SeekPos += ReturnRead;
-    fclose(FilePtrs[FReadInfoPtr->Fd].Ptr);
+    ReturnRead = FReadInfoPtr->Length;
+    HsfFileRead(MapVirtualAddress(Cpu, FReadInfoPtr->Dst), 1, FReadInfoPtr->Length, FilePtrs[FReadInfoPtr->Fd]);
 }
 
 static u32
@@ -144,11 +111,8 @@ CTRXFileSeek(void *Ref, u32 Ptr)
         int SeekType;
     } *FSeekInfoPtr;
     FSeekInfoPtr = (FSeekInfo *)MapVirtualAddress(Cpu, Ptr);
-    FilePtrs[FSeekInfoPtr->Fd].Ptr = fopen(FilePtrs[FSeekInfoPtr->Fd].Name, "rb");
-    fseek(FilePtrs[FSeekInfoPtr->Fd].Ptr, FilePtrs[FSeekInfoPtr->Fd].SeekPos, SEEK_SET);
-    ReturnSeek = fseek(FilePtrs[FSeekInfoPtr->Fd].Ptr, FSeekInfoPtr->Offset, FSeekInfoPtr->SeekType);
-    FilePtrs[FSeekInfoPtr->Fd].SeekPos = ReturnSeek;
-    fclose(FilePtrs[FSeekInfoPtr->Fd].Ptr);
+    HsfFileSeek(FilePtrs[FSeekInfoPtr->Fd], FSeekInfoPtr->Offset, FSeekInfoPtr->SeekType);
+    ReturnSeek = HsfFileTell(FilePtrs[FSeekInfoPtr->Fd]);
 }
 
 static u32
@@ -181,45 +145,21 @@ CTRXFirstFile(void *Ref, u32 Ptr)
     FFInfoPtr = (FFInfo *)MapVirtualAddress(Cpu, Ptr);
     DirEntry *Entry = (DirEntry *)MapVirtualAddress(Cpu, FFInfoPtr->Entry);
     snprintf(Entry->FileName, 0x14, "%s", (char *)MapVirtualAddress(Cpu, (u32)FFInfoPtr->FileName));
-    int Size = strlen(Entry->FileName);
-    for (int i = 0; i < Size; ++i)
-    {
-        if (Entry->FileName[i] == '\\')
-        {
-            Entry->FileName[i] = '/';
-        }
-        if (Entry->FileName[i] == ':')
-        {
-            Entry->FileName[i] = '/';
-        }
-    }
-    if (Entry->FileName[Size - 2] == ';') //version identifier
-        Entry->FileName[Size - 2] = 0;
 
-    char *FileName = Entry->FileName;
-    Size = strlen(FileName);
-    for (int i = 0; i < strlen(FileName); ++i)
-    {
-        if ((FileName[i] == '/') && (FileName[i + 1] == '/'))
-        {
-            strcpy(FileName + i, FileName + i + 1);
-            ++i;
-            Size = strlen(FileName);
-        }
-    }
+    printf("CTRX filefile: %s\n", Entry->FileName);
 
     auto GetFileSize = [](const char *FileName)
     {
-        FILE *f = fopen(FileName, "rb");
+        hsf_file *f = HsfFileOpen(&HSF, FileName);
         if (!f)
         {
             printf("Could not open file: %s\n", FileName);
             return 0L;
         }
-        fseek(f, 0, SEEK_END);
-        long fsize = ftell(f);
-        fseek(f, 0, SEEK_SET);
-        fclose(f);
+        HsfFileSeek(f, 0, SEEK_END);
+        long fsize = HsfFileTell(f);
+        HsfFileSeek(f, 0, SEEK_SET);
+        HsfFileClose(f);
         return fsize;
     };
     Entry->Size = GetFileSize(Entry->FileName);
@@ -235,6 +175,8 @@ CTRXFirstFileReturn(void *Ref, u32 Address)
 int main(int argc, char **argv)
 {
     InitPlatform(argc, argv);
+
+    HsfOpen(&HSF, "puzzle.hsf");
 
     MIPS_R3000 Cpu;
     GPU Gpu;
@@ -267,7 +209,7 @@ int main(int argc, char **argv)
     ResetCpu(&Cpu);
 
     bool Step = false;
-    int CyclesToRun = 5000;
+    int CyclesToRun = 550000;
     bool EnableDisassembler = false;
     bool AutoStep = true;
     u32 IRQ0Steps = 0;
@@ -317,11 +259,12 @@ int main(int argc, char **argv)
         {
             StepCpu(&Cpu, CyclesToRun);
             IRQ0Steps += CyclesToRun;
-            if (IRQ0Steps > 550000)
+            if (IRQ0Steps >= 550000)
             {
                 C0GenerateException(&Cpu, 0, Cpu.pc - 4);
                 Cpu.CP0.cause |= (1 << 8);
                 IRQ0Steps = 0;
+                SwapBuffersPlatform();
             }
         }
 
@@ -331,9 +274,9 @@ int main(int argc, char **argv)
             DisassemblerPrintRange(&Cpu, Cpu.pc - (13 * 4), 29, Cpu.pc);
         }
 
-        SwapBuffersPlatform();
     }
 
+    HsfClose(&HSF);
     ExitPlatform();
 
     return 0;
