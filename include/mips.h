@@ -236,7 +236,6 @@ struct MIPS_R3000
 
     void *RAM;
     void *BIOS;
-    void *Dummy;
 
     u32 DPCR;
     u32 DICR;
@@ -265,11 +264,7 @@ MapVirtualAddress(MIPS_R3000 *Cpu, u32 Address)
     {
         return ((u8 *)Cpu->RAM) + (Base % RAM_SIZE);
     }
-    if ((Base >= 0x801080) && ((Base - 0x801080) < 0x78))
-    {
-        return ((u8 *)&Cpu->DMAChannels) + (Base - 0x801080);
-    }
-    return Cpu->Dummy;
+    return nullptr;
 }
 
 inline u32

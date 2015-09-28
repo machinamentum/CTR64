@@ -209,7 +209,7 @@ int main(int argc, char **argv)
     ResetCpu(&Cpu);
 
     bool Step = false;
-    int CyclesToRun = 550000;
+    int CyclesToRun = 10000;
     bool EnableDisassembler = false;
     bool AutoStep = true;
     u32 IRQ0Steps = 0;
@@ -264,7 +264,6 @@ int main(int argc, char **argv)
                 C0GenerateException(&Cpu, 0, Cpu.pc - 4);
                 Cpu.CP0.cause |= (1 << 8);
                 IRQ0Steps = 0;
-                SwapBuffersPlatform();
             }
         }
 
@@ -274,6 +273,7 @@ int main(int argc, char **argv)
             DisassemblerPrintRange(&Cpu, Cpu.pc - (13 * 4), 29, Cpu.pc);
         }
 
+        SwapBuffersPlatform();
     }
 
     HsfClose(&HSF);

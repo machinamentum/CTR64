@@ -33,7 +33,7 @@ INCLUDES	:=	include raw_data
 ARCH	:= -m32
 
 CFLAGS	:=	 -g -Wall -O2  -Wno-format -m32 \
-			-fomit-frame-pointer -ffast-math \
+			-fno-omit-frame-pointer -ffast-math \
 			$(ARCH)
 
 CFLAGS	+=	$(INCLUDE) -D_DESKTOP $(shell pkg-config --cflags glfw3)

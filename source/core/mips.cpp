@@ -16,7 +16,7 @@ ReadMemWord(MIPS_R3000 *Cpu, u32 Address)
 {
     u32 Base = Address & 0x00FFFFFF;
     u8 *VirtualAddress = (u8 *)MapVirtualAddress(Cpu, Base);
-    if (VirtualAddress == Cpu->Dummy)
+    if (!VirtualAddress)
     {
         for (u32 i = 0; i < Cpu->NumMMR; ++i)
         {
@@ -27,6 +27,8 @@ ReadMemWord(MIPS_R3000 *Cpu, u32 Address)
                 return MMR->RegisterReadFunc(MMR->Object, Address);
             }
         }
+
+        return -1;
     }
     return *((u32 *)VirtualAddress);
 }
@@ -35,49 +37,67 @@ static void
 WriteMemByte(MIPS_R3000 *Cpu, u32 Address, u8 value)
 {
     u32 Base = Address & 0x00FFFFFF;
-    for (u32 i = 0; i < Cpu->NumMMR; ++i)
+    u8 *VirtualAddress = (u8 *)MapVirtualAddress(Cpu, Base);
+    if (!VirtualAddress)
     {
-        mmr *MMR = &Cpu->MemMappedRegisters[i];
-        if (Base == MMR->Address)
+        for (u32 i = 0; i < Cpu->NumMMR; ++i)
         {
-            
-            MMR->RegisterWriteFunc(MMR->Object, value);
-            return;
+            mmr *MMR = &Cpu->MemMappedRegisters[i];
+            if (Base == MMR->Address)
+            {
+                
+                MMR->RegisterWriteFunc(MMR->Object, value);
+                return;
+            }
         }
+
+        return;
     }
-    *((u8 *)MapVirtualAddress(Cpu, Base)) = value;
+    *((u8 *)VirtualAddress) = value;
 }
 
 static void
 WriteMemWord(MIPS_R3000 *Cpu, u32 Address, u32 value)
 {
     u32 Base = Address & 0x00FFFFFF;
-    for (u32 i = 0; i < Cpu->NumMMR; ++i)
+    u8 *VirtualAddress = (u8 *)MapVirtualAddress(Cpu, Base);
+    if (!VirtualAddress)
     {
-        mmr *MMR = &Cpu->MemMappedRegisters[i];
-        if (Base == MMR->Address)
+        for (u32 i = 0; i < Cpu->NumMMR; ++i)
         {
-            MMR->RegisterWriteFunc(MMR->Object, value);
-            return;
+            mmr *MMR = &Cpu->MemMappedRegisters[i];
+            if (Base == MMR->Address)
+            {
+                MMR->RegisterWriteFunc(MMR->Object, value);
+                return;
+            }
         }
+
+        return;
     }
-    *((u32 *)((u8 *)MapVirtualAddress(Cpu, Base))) = value;
+    *((u32 *)((u8 *)VirtualAddress)) = value;
 }
 
 static void
 WriteMemHalfWord(MIPS_R3000 *Cpu, u32 Address, u16 value)
 {
     u32 Base = Address & 0x00FFFFFF;
-    for (u32 i = 0; i < Cpu->NumMMR; ++i)
+    u8 *VirtualAddress = (u8 *)MapVirtualAddress(Cpu, Base);
+    if (!VirtualAddress)
     {
-        mmr *MMR = &Cpu->MemMappedRegisters[i];
-        if (Base == MMR->Address)
+        for (u32 i = 0; i < Cpu->NumMMR; ++i)
         {
-            MMR->RegisterWriteFunc(MMR->Object, value);
-            return;
+            mmr *MMR = &Cpu->MemMappedRegisters[i];
+            if (Base == MMR->Address)
+            {
+                MMR->RegisterWriteFunc(MMR->Object, value);
+                return;
+            }
         }
+
+        return;
     }
-    *((u16 *)((u8 *)MapVirtualAddress(Cpu, Base))) = value;
+    *((u16 *)((u8 *)VirtualAddress)) = value;
 }
 
 static void
@@ -89,7 +109,6 @@ MIPS_R3000()
     CP0.ExecuteOperation = C0ExecuteOperation;
     RAM = linearAlloc(2048 * 1000);
     BIOS = linearAlloc(512 * 1000);
-    Dummy = linearAlloc(512);
     NumMMR = 0;
 }
 
