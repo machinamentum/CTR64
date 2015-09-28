@@ -41,7 +41,6 @@ void
 SwapBuffersPlatform()
 {
     gfxFlush(gfxGetFramebuffer(GFX_TOP, GFX_LEFT, NULL, NULL));
-    gfxFlushBuffers();
     gfxSwapBuffersGpu();
     hidScanInput();
 }
