@@ -35,6 +35,12 @@ empty_ret(void *Obj, u32 Val)
     return 0;
 }
 
+static void
+empty_write(void *Obj, u32 Address)
+{
+
+}
+
 static hsf HSF;
 static hsf_file *FilePtrs[15];
 static int TakenFiles[15] = {};
@@ -172,6 +178,20 @@ CTRXFirstFileReturn(void *Ref, u32 Address)
     return ReturnFirstFile;
 }
 
+static u32 InterruptMask;
+
+static void
+CTRXInterruptRegisterWrite(void *Ref, u32 Value)
+{
+    InterruptMask = Value;
+}
+
+static u32
+CTRXInterruptRegisterRead(void *Ref, u32 Address)
+{
+    return InterruptMask;
+}
+
 int main(int argc, char **argv)
 {
     InitPlatform(argc, argv);
@@ -190,6 +210,8 @@ int main(int argc, char **argv)
     MapRegister(&Cpu, (mmr) {0x1F802078, &Cpu, CTRXFirstFile, CTRXFirstFileReturn});
     MapRegister(&Cpu, (mmr) {0x1F8010A0, &Cpu, DMA2Trigger, empty_ret});
     MapRegister(&Cpu, (mmr) {JOY_TX_DATA, nullptr, JoyTxWrite, JoyRxRead});
+    MapRegister(&Cpu, (mmr) {0x1F801070, nullptr, empty_write, CTRXInterruptRegisterRead});
+    MapRegister(&Cpu, (mmr) {0x1F801070, nullptr, CTRXInterruptRegisterWrite, empty_ret});
 
     FILE *f = fopen("psx_bios.bin", "rb");
     fseek(f, 0, SEEK_END);
@@ -221,48 +243,14 @@ int main(int argc, char **argv)
         if (KeysDown & KEY_START)
             break;
 #endif
-//
-//        if (KeysDown & KEY_DDOWN)
-//        {
-//            ResetCpu(&Cpu);
-//        }
-//
-//        if (KeysHeld & KEY_DLEFT)
-//        {
-//            CyclesToRun -= 1000;
-//            if (CyclesToRun < 1)
-//                CyclesToRun = 1;
-//        }
-//
-//        if (KeysHeld & KEY_DRIGHT)
-//        {
-//            CyclesToRun += 1000;
-//        }
-//
-//        if (KeysDown & KEY_DUP)
-//        {
-//            EnableDisassembler = !EnableDisassembler;
-//        }
-//
-//        Step = false;
-//        if (KeysUp & KEY_A)
-//        {
-//            printf("\x1b[0;0H");
-//            printf("\e[0;0H\e[2J");
-//            Step = true;
-//        }
-//
-//        if (KeysDown & KEY_Y)
-//            AutoStep = !AutoStep;
 
         if (Step || AutoStep)
         {
             StepCpu(&Cpu, CyclesToRun);
             IRQ0Steps += CyclesToRun;
-            if (IRQ0Steps >= 550000)
+            if (IRQ0Steps >= 50000)
             {
-                C0GenerateException(&Cpu, 0, Cpu.pc - 4);
-                Cpu.CP0.cause |= (1 << 8);
+                C0GenerateException(&Cpu, C0_CAUSE_INT, Cpu.pc - 4);
                 IRQ0Steps = 0;
             }
         }

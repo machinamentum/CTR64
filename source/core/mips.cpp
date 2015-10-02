@@ -152,8 +152,20 @@ C0GenerateException(MIPS_R3000 *Cpu, u8 Cause, u32 EPC)
         Cpu->CP0.epc = EPC;
         C0ExceptionPushSRBits(&Cpu->CP0);
         Cpu->CP0.sr &= ~C0_STATUS_KUc;
+        Cpu->CP0.sr &= ~C0_STATUS_IEc;
         Cpu->pc = GNRAL_VECTOR;
     }
+}
+
+static void
+C0GenerateSoftwareException(MIPS_R3000 *Cpu, u8 Cause, u32 EPC)
+{
+    Cpu->CP0.cause = (Cause << 2) & C0_CAUSE_MASK;
+    Cpu->CP0.epc = EPC;
+    C0ExceptionPushSRBits(&Cpu->CP0);
+    Cpu->CP0.sr &= ~C0_STATUS_KUc;
+    Cpu->CP0.sr &= ~C0_STATUS_IEc;
+    Cpu->pc = GNRAL_VECTOR;
 }
 
 static void
@@ -181,7 +193,7 @@ static void
 SysCall(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
 {
 //    u32 Immediate = (Data & COMMENT20_MASK) >> 6;
-    C0GenerateException(Cpu, C0_CAUSE_SYSCALL, OpCode->CurrentAddress);
+    C0GenerateSoftwareException(Cpu, C0_CAUSE_SYSCALL, OpCode->CurrentAddress);
 }
 
 static void
@@ -192,9 +204,6 @@ Break(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
 }
 
 typedef void (*jt_func)(MIPS_R3000 *, opcode *, u32 Data);
-
-//static jt_func PrimaryJumpTable[0x40];
-//static jt_func SecondaryJumpTable[0x40];
 
 //Arithmetic
 static void
@@ -851,13 +860,13 @@ COP0(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
 
     Coprocessor *CP0 = &Cpu->CP0;
 
-    if (rs < 0b00100)
+    if (rs < 0b001000 && rs > 0b00010)
     {
         CP0->registers[rd + (rs & 0b00010 ? 32 : 0)] = Cpu->registers[rt];
     }
     else if (rs < 0b10000)
     {
-        if (rs < 0b01000)
+        if (rs < 0b00100)
         {
             if (rt) Cpu->registers[rt] = CP0->registers[rd + (rs & 0b00010 ? 32 : 0)];
         }
@@ -901,13 +910,13 @@ COP2(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
     u8 rd = (Data & REG_RD_MASK) >> 11;
 
     Coprocessor *CP2 = Cpu->CP2;
-    if (rs < 0b00100)
+    if (rs < 0b001000 && rs > 0b00010)
     {
         CP2->registers[rd + (rs & 0b00010 ? 32 : 0)] = Cpu->registers[rt];
     }
     else if (rs < 0b10000)
     {
-        if (rs < 0b01000)
+        if (rs < 0b00100)
         {
             if (rt) Cpu->registers[rt] = CP2->registers[rd + (rs & 0b00010 ? 32 : 0)];
         }
@@ -916,14 +925,14 @@ COP2(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
             u32 Immediate = SignExtend16((Data & IMM16_MASK) >> 0);
             if (rt)
             {
-                if (CP2->sr & C0_STATUS_CU2)
+                if (Cpu->CP0.sr & C0_STATUS_CU2)
                 {
                     Cpu->pc = OpCode->CurrentAddress + Immediate;
                 }
             }
             else
             {
-                if ((CP2->sr & C0_STATUS_CU2) == 0)
+                if ((Cpu->CP0.sr & C0_STATUS_CU2) == 0)
                 {
                     Cpu->pc = OpCode->CurrentAddress + Immediate;
                 }
@@ -951,7 +960,7 @@ InstructionFetch(MIPS_R3000 *Cpu)
     return Result;
 }
 
-void
+inline void
 MemoryAccess(MIPS_R3000 *Cpu, opcode *OpCode)
 {
     u32 Address = OpCode->MemAccessAddress;
@@ -1154,22 +1163,21 @@ StepCpu(MIPS_R3000 *Cpu, u32 Steps)
     opcode *OpCodes = Cpu->OpCodes;
     u32 BS = Cpu->BaseState;
     void *NextJump = Cpu->NextJump;
-    u32 TempData;
     u32 NextData = Cpu->NextData;
 
-    opcode *OpCodeMemAccess = &OpCodes[BS % 2];
     if (NextJump) goto *NextJump;
 
 #define NEXT(Instruction) \
+    { \
     if (!Steps) goto _ExitThread; \
-    OpCodeMemAccess = &OpCodes[BS % 2]; \
+    opcode *OpCodeMemAccess = &OpCodes[BS % 2]; \
     if (OpCodeMemAccess->MemAccessMode) \
     { \
         MemoryAccess(Cpu, OpCodeMemAccess); \
     } \
     OpCodeMemAccess->CurrentAddress = Cpu->pc; \
     OpCodeMemAccess->MemAccessMode = MEM_ACCESS_NONE; \
-    TempData = InstructionFetch(Cpu); \
+    u32 TempData = InstructionFetch(Cpu); \
     Instruction(Cpu, &OpCodes[(BS + 1) % 2], NextData); \
     NextData = TempData; \
     if ((NextData & PRIMARY_OP_MASK) >> 26) \
@@ -1183,7 +1191,8 @@ StepCpu(MIPS_R3000 *Cpu, u32 Steps)
     } \
     ++BS; \
     --Steps; \
-    goto *NextJump;
+    goto *NextJump; \
+    }
 
 
 _ReservedInstructionException:

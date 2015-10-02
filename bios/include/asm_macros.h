@@ -46,22 +46,26 @@
     push s7
     push t8
     push t9
-    push k0
-    push k1
     push gp
     push fp
     push ra
+    push zr
+    push zr
+    push zr
+    push zr
     .set pop
     .endm
 
     .macro popall
     .set push
     .set noat
+    pop zr
+    pop zr
+    pop zr
+    pop zr
     pop ra
     pop fp
     pop gp
-    pop k1
-    pop k0
     pop t9
     pop t8
     pop s7

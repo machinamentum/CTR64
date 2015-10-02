@@ -332,6 +332,8 @@ ChangeThread(void *Handle)
     return (void *)1;
 }
 
+static const int *const I_STAT = (int *)0x1F801070;
+static int *const I_MASK = (int *)0x1F801074;
 
 void
 ExceptionHandler(unsigned int Cause, unsigned int EPC, unsigned int Selector, void *Addr)
@@ -344,7 +346,6 @@ ExceptionHandler(unsigned int Cause, unsigned int EPC, unsigned int Selector, vo
 
     if (Cause == 0x8)
     {
-        std_out_puts("Syscall\n");
         switch (Selector)
         {
             case 0x01:
@@ -360,7 +361,6 @@ ExceptionHandler(unsigned int Cause, unsigned int EPC, unsigned int Selector, vo
                 DeliverEvent(0xF0000010, 0x4000);
                 break;
         }
-
     }
     if (Cause == 0x9)
     {
@@ -368,10 +368,15 @@ ExceptionHandler(unsigned int Cause, unsigned int EPC, unsigned int Selector, vo
     }
     if (Cause == 0)
     {
-        std_out_puts("Interrupt\n");
+        int Stat = *I_STAT;
+        if (Stat & (1 << 0)) //Vblank
+        {
+            DeliverEvent(EVENT_VBLANK, 0x0002);
+            DeliverEvent(EVENT_VRETRACE, 0x0002);
+        }
+
     }
 
-    ReturnFromException();
 }
 
 void

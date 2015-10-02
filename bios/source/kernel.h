@@ -67,6 +67,24 @@ void ExitCriticalSection();
 void ExceptionHandler(unsigned int Cause, unsigned int EPC, unsigned int Selector, void *Addr);
 void InstallExceptionHandler();
 
+#define EVENT_VBLANK     (0xF0000001)
+#define EVENT_GPU        (0xF0000002)
+#define EVENT_CDROM      (0xF0000003)
+#define EVENT_DMA        (0xF0000004)
+#define EVENT_RTC0       (0xF0000005)
+#define EVENT_RTC1       (0xF0000006)
+#define EVENT_JOYPAD     (0xF0000008)
+#define EVENT_SPU        (0xF0000009)
+#define EVENT_PIO        (0xF000000A)
+#define EVENT_SIO        (0xF000000B)
+#define EVENT_CRASH      (0xF0000010)
+#define EVENT_MEMCARD    (0xF0000011)
+
+#define EVENT_DOTCLOCK   (0xF2000000)
+#define EVENT_HRETRACE   (0xF2000001)
+#define EVENT_SLOWCLOCK  (0xF2000002)
+#define EVENT_VRETRACE   (0xF2000003)
+
 void DeliverEvent(int Class, int Spec);
 
 #define FILE_READ         (1 << 0)

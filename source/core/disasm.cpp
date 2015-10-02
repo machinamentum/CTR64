@@ -93,7 +93,6 @@ static const char *C0RNT[17] =
 void
 DumpState(MIPS_R3000 *Cpu)
 {
-    printf("\x1b[0;0H");
     for (int i = 0; i < 32; ++i)
     {
         printf("%s: 0x%08lX  ", RNT[i], Cpu->registers[i]);
@@ -126,7 +125,6 @@ CNName(u8 Reg)
 void
 DumpC0State(Coprocessor *C0)
 {
-    printf("\x1b[0;0H");
     for (int i = 0; i < 32; ++i)
     {
         printf("%s: 0x%08lX  ", C0Name(i), C0->registers[i]);
