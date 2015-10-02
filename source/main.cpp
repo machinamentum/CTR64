@@ -252,6 +252,7 @@ int main(int argc, char **argv)
             {
                 C0GenerateException(&Cpu, C0_CAUSE_INT, Cpu.pc - 4);
                 IRQ0Steps = 0;
+                InterruptMask |= 1;
             }
         }
 

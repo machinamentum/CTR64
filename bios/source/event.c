@@ -87,7 +87,6 @@ TestEvent(void *Event)
 void
 DeliverEvent(int Class, int Spec)
 {
-    printf("%s\n", __FUNCTION__);
     for (int i = 0; i < 0x10; ++i)
     {
         EvCB *Event = &EventTable[i];

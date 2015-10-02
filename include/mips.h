@@ -229,7 +229,7 @@ struct MIPS_R3000
     void *NextJump;
     u32 NextData;
     u32 NumMMR;
-    mmr MemMappedRegisters[12];
+    mmr MemMappedRegisters[0x10];
 
 
     MIPS_R3000();
