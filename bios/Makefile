@@ -30,7 +30,7 @@ TOPDIR ?= $(CURDIR)
 #     - icon.png
 #     - <libctru folder>/default_icon.png
 #---------------------------------------------------------------------------------
-TARGET		:=	psx_bios
+TARGET		:=	n64_ipl
 BUILD		:=	build
 SOURCES		:=	source
 DATA		:=	data
@@ -119,7 +119,7 @@ $(BUILD):
 #---------------------------------------------------------------------------------
 clean:
 	@echo clean ...
-	@rm -fr $(BUILD) $(TARGET).bin $(TARGET).elf PSX-BIOS.ROM
+	@rm -fr $(BUILD) $(TARGET).bin $(TARGET).elf
 
 
 #---------------------------------------------------------------------------------
@@ -137,7 +137,6 @@ endif
 
 $(OUTPUT).bin	:	$(OUTPUT).elf
 	$(OBJCOPY) $^ -O binary $@
-	cp $@ ../PSX-BIOS.ROM
 
 $(OUTPUT).elf	:	$(OFILES)
 	$(CC) -T ../kernel.ld -o $@ $^ $(LDFLAGS) $(LIBS)
