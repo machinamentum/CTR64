@@ -9,6 +9,7 @@
 #include <cstdio>
 #include <cstring>
 #include "z64.h"
+#include "disasm.h"
 
 void
 PrintUsage()
@@ -48,6 +49,10 @@ main(int argc, char **argv)
     printf("Image name:   %.20s\n", Z64.Hdr.ImageName);
     printf("Manufacturer: %s\n", Z64GetManufacturerString(Z64.Hdr.ManufacturerID));
     printf("Region:       %s\n", Z64GetCountryString(Z64.Hdr.Country));
+    printf("Boot code:\n");
+    MIPS_R3000 Dummy;
+    memcpy(Dummy.RAM, &Z64.Hdr.BootCode, 1008 * 4);
+    DisassemblerPrintRange(&Dummy, 0, 32, 0);
     Z64Close(&Z64);
     return 0;
 }

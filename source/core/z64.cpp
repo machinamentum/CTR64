@@ -62,6 +62,11 @@ Z64GetHeader(z64 *Z64, FILE *File)
     Hdr->ManufacturerID = Swap32(Hdr->ManufacturerID);
     Hdr->CartridgeID = Swap16(Hdr->CartridgeID);
     Hdr->Country = Swap16(Hdr->Country);
+
+    for (int i = 0; i < 1008; ++i)
+    {
+        Hdr->BootCode[i] = Swap32(Hdr->BootCode[i]);
+    }
 }
 
 void
