@@ -16,6 +16,8 @@ ReadMemWord(MIPS_R3000 *Cpu, u32 Address)
 {
     u32 Base = Address & 0x00FFFFFF;
     u8 *VirtualAddress = (u8 *)MapVirtualAddress(Cpu, Base);
+    u32 Swap = Cpu->CP0.sr & C0_STATUS_RE;
+    u32 Value = -1;
     if (!VirtualAddress)
     {
         for (u32 i = 0; i < Cpu->NumMMR; ++i)
@@ -23,14 +25,15 @@ ReadMemWord(MIPS_R3000 *Cpu, u32 Address)
             mmr *MMR = &Cpu->MemMappedRegisters[i];
             if (Base == MMR->Address)
             {
-
-                return MMR->RegisterReadFunc(MMR->Object, Address);
+                Value = MMR->RegisterReadFunc(MMR->Object, Address);
+                return (Swap ? __builtin_bswap32(Value) : Value);
             }
         }
 
-        return -1;
+        return Value;
     }
-    return *((u32 *)VirtualAddress);
+    Value = *((u32 *)VirtualAddress);
+    return (Swap ? __builtin_bswap32(Value) : Value);
 }
 
 static void
@@ -57,7 +60,7 @@ WriteMemByte(MIPS_R3000 *Cpu, u32 Address, u8 value)
 }
 
 static void
-WriteMemWord(MIPS_R3000 *Cpu, u32 Address, u32 value)
+WriteMemWord(MIPS_R3000 *Cpu, u32 Address, u32 Value)
 {
     u32 Base = Address & 0x00FFFFFF;
     u8 *VirtualAddress = (u8 *)MapVirtualAddress(Cpu, Base);
@@ -68,18 +71,19 @@ WriteMemWord(MIPS_R3000 *Cpu, u32 Address, u32 value)
             mmr *MMR = &Cpu->MemMappedRegisters[i];
             if (Base == MMR->Address)
             {
-                MMR->RegisterWriteFunc(MMR->Object, value);
+                MMR->RegisterWriteFunc(MMR->Object, Value);
                 return;
             }
         }
 
         return;
     }
-    *((u32 *)((u8 *)VirtualAddress)) = value;
+    u32 Swap = Cpu->CP0.sr & C0_STATUS_RE;
+    *((u32 *)((u8 *)VirtualAddress)) = (Swap ? __builtin_bswap32(Value) : Value);
 }
 
 static void
-WriteMemHalfWord(MIPS_R3000 *Cpu, u32 Address, u16 value)
+WriteMemHalfWord(MIPS_R3000 *Cpu, u32 Address, u16 Value)
 {
     u32 Base = Address & 0x00FFFFFF;
     u8 *VirtualAddress = (u8 *)MapVirtualAddress(Cpu, Base);
@@ -90,14 +94,15 @@ WriteMemHalfWord(MIPS_R3000 *Cpu, u32 Address, u16 value)
             mmr *MMR = &Cpu->MemMappedRegisters[i];
             if (Base == MMR->Address)
             {
-                MMR->RegisterWriteFunc(MMR->Object, value);
+                MMR->RegisterWriteFunc(MMR->Object, Value);
                 return;
             }
         }
 
         return;
     }
-    *((u16 *)((u8 *)VirtualAddress)) = value;
+    u32 Swap = Cpu->CP0.sr & C0_STATUS_RE;
+    *((u16 *)((u8 *)VirtualAddress)) = (Swap ? __builtin_bswap16(Value) : Value);
 }
 
 static void
@@ -955,7 +960,7 @@ COP3(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
 inline u32
 InstructionFetch(MIPS_R3000 *Cpu)
 {
-    u32 Result = ReadMemWordRaw(Cpu, Cpu->pc);
+    u32 Result = ReadMemWord(Cpu, Cpu->pc);
     Cpu->pc += 4;
     return Result;
 }
