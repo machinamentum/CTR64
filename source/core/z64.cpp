@@ -20,23 +20,6 @@ SwapME32(u32 Data)
     return Value;
 }
 
-inline u32
-Swap32(u32 Data)
-{
-    u32 Value = 0;
-    Value |= ((Data & 0xFF) << 24);
-    Value |= ((Data & 0xFF00) << 8);
-    Value |= ((Data & 0xFF0000) >> 8);
-    Value |= ((Data & 0xFF000000) >> 24);
-    return Value;
-}
-
-inline u16
-Swap16(u16 Data)
-{
-    return ((Data & 0xFF) << 8) | ((Data >> 8) & 0xFF);
-}
-
 static void
 Z64GetHeader(z64 *Z64, FILE *File)
 {
@@ -54,18 +37,18 @@ Z64GetHeader(z64 *Z64, FILE *File)
     memcpy(Hdr, StaleData, sizeof(z64_hdr));
     linearFree(StaleData);
 
-    Hdr->ClockRate = Swap32(Hdr->ClockRate);
-    Hdr->PC = Swap32(Hdr->PC);
-    Hdr->Release = Swap32(Hdr->Release);
-    Hdr->CRC1 = Swap32(Hdr->CRC1);
-    Hdr->CRC2 = Swap32(Hdr->CRC2);
-    Hdr->ManufacturerID = Swap32(Hdr->ManufacturerID);
-    Hdr->CartridgeID = Swap16(Hdr->CartridgeID);
-    Hdr->Country = Swap16(Hdr->Country);
+    Hdr->ClockRate = __builtin_bswap32(Hdr->ClockRate);
+    Hdr->PC = __builtin_bswap32(Hdr->PC);
+    Hdr->Release = __builtin_bswap32(Hdr->Release);
+    Hdr->CRC1 = __builtin_bswap32(Hdr->CRC1);
+    Hdr->CRC2 = __builtin_bswap32(Hdr->CRC2);
+    Hdr->ManufacturerID = __builtin_bswap32(Hdr->ManufacturerID);
+    Hdr->CartridgeID = __builtin_bswap16(Hdr->CartridgeID);
+    Hdr->Country = __builtin_bswap16(Hdr->Country);
 
     for (int i = 0; i < 1008; ++i)
     {
-        Hdr->BootCode[i] = Swap32(Hdr->BootCode[i]);
+        Hdr->BootCode[i] = __builtin_bswap32(Hdr->BootCode[i]);
     }
 }
 
