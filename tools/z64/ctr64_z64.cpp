@@ -47,8 +47,8 @@ main(int argc, char **argv)
     z64 Z64;
     Z64Open(&Z64, Flags, argv[1]);
     printf("Image name:   %.20s\n", Z64.Hdr.ImageName);
-    printf("Manufacturer: %s\n", Z64GetManufacturerString(Z64.Hdr.ManufacturerID));
-    printf("Region:       %s\n", Z64GetCountryString(Z64.Hdr.Country));
+    printf("Manufacturer: %s (%d)\n", Z64GetManufacturerString(Z64.Hdr.ManufacturerID), Z64.Hdr.ManufacturerID);
+    printf("Region:       %s (%d)\n", Z64GetCountryString(Z64.Hdr.Country), Z64.Hdr.Country);
     printf("Boot code:\n");
     MIPS_R3000 Dummy;
     memcpy(Dummy.RAM, &Z64.Hdr.BootCode, 1008 * 4);
