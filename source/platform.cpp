@@ -22,10 +22,10 @@ InitPlatform(int argc, char **argv)
     sdmcInit();
     if (argc > 1) chdir(argv[1]);
     gfxInitDefault();
-    hidInit(NULL);
+    hidInit();
     consoleInit(GFX_BOTTOM, NULL);
 
-    GfxHandle = gfxCreateDevice(240, 400);
+    GfxHandle = gfxCreateDevice(240, 400, 0);
     gfxMakeCurrent(GfxHandle);
 }
 
@@ -40,7 +40,7 @@ ExitPlatform()
 void
 SwapBuffersPlatform()
 {
-    gfxFlush(gfxGetFramebuffer(GFX_TOP, GFX_LEFT, NULL, NULL));
+    gfxFlush(gfxGetFramebuffer(GFX_TOP, GFX_LEFT, NULL, NULL), 240, 400, GX_TRANSFER_FMT_RGB8);
     gfxSwapBuffersGpu();
     hidScanInput();
 }
