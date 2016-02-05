@@ -59,6 +59,9 @@ int main(int argc, char **argv)
 
     MIPS_R3000 Cpu;
 
+    void *RDRAM = linearAlloc(0x400000);
+    MapMemoryRegion(&Cpu, (mmm) {RDRAM, 0x00000000, 0x400000});
+
     FILE *f = fopen("n64_ipl.bin", "rb");
     fseek(f, 0, SEEK_END);
     long fsize = ftell(f);

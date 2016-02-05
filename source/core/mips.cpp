@@ -112,9 +112,8 @@ MIPS_R3000::
 MIPS_R3000()
 {
     CP0.ExecuteOperation = C0ExecuteOperation;
-    RAM = linearAlloc(2048 * 1000);
-    BIOS = linearAlloc(512 * 1000);
     NumMMR = 0;
+    NumMMM = 0;
 }
 
 //Exceptions
@@ -1024,6 +1023,14 @@ MapRegister(MIPS_R3000 *Cpu, mmr MMR)
     Cpu->MemMappedRegisters[Cpu->NumMMR] = MMR;
     Cpu->MemMappedRegisters[Cpu->NumMMR].Address &= 0x00FFFFFF;
     ++Cpu->NumMMR;
+}
+
+void
+MapMemoryRegion(MIPS_R3000 *Cpu, mmm MMM)
+{
+    Cpu->MemMappedMemRegions[Cpu->NumMMM] = MMM;
+    Cpu->MemMappedMemRegions[Cpu->NumMMM].VirtualAddress &= 0x00FFFFFF;
+    ++Cpu->NumMMM;
 }
 
 void

@@ -164,6 +164,13 @@ struct mmr
     u32  (*RegisterReadFunc)(void *, u32 Address);
 };
 
+struct mmm
+{
+    void *Ptr;
+    u32 VirtualAddress;
+    u32 Size;
+};
+
 struct DMA
 {
     u32 MADR;
@@ -230,12 +237,10 @@ struct MIPS_R3000
     u32 NextData;
     u32 NumMMR;
     mmr MemMappedRegisters[0x10];
-
+    u32 NumMMM;
+    mmm MemMappedMemRegions[0x10];
 
     MIPS_R3000();
-
-    void *RAM;
-    void *BIOS;
 
     u32 DPCR;
     u32 DICR;
@@ -249,20 +254,20 @@ struct MIPS_R3000
 void MapRegister(MIPS_R3000 *Cpu, mmr MMR);
 void StepCpu(MIPS_R3000 *Cpu, u32 Steps);
 void C0GenerateException(MIPS_R3000 *, u8, u32);
+void MapMemoryRegion(MIPS_R3000 *, mmm);
 
 inline void *
 MapVirtualAddress(MIPS_R3000 *Cpu, u32 Address)
 {
-    const u32 BIOS_SIZE = 512 * 1000;
-    const u32 RAM_SIZE = 2048 * 1000;
-    u32 Base = Address & 0x00FFFFFF;
-    if (Base >= 0xC00000 && (Base - 0xC00000) < BIOS_SIZE)
+    Address = Address & 0x00FFFFFF;
+    for (u32 i = 0; i < Cpu->NumMMM; ++i)
     {
-        return ((u8 *)Cpu->BIOS) + (Base - 0xC00000);
-    }
-    if (Base < RAM_SIZE * 4)
-    {
-        return ((u8 *)Cpu->RAM) + (Base % RAM_SIZE);
+        mmm *MMM = &Cpu->MemMappedMemRegions[i];
+        u32 Addr = MMM->VirtualAddress;
+        u32 Size = MMM->Size;
+        if ( (Address > Addr) && (Address < (Addr + Size)) ) {
+            return MMM->Ptr;
+        }
     }
     return nullptr;
 }
