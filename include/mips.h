@@ -265,8 +265,8 @@ MapVirtualAddress(MIPS_R3000 *Cpu, u32 Address)
         mmm *MMM = &Cpu->MemMappedMemRegions[i];
         u32 Addr = MMM->VirtualAddress;
         u32 Size = MMM->Size;
-        if ( (Address > Addr) && (Address < (Addr + Size)) ) {
-            return MMM->Ptr;
+        if ( (Address >= Addr) && (Address < (Addr + Size)) ) {
+            return ((u8 *)MMM->Ptr) + (Address - Addr);
         }
     }
     return nullptr;
