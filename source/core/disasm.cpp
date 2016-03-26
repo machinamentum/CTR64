@@ -95,10 +95,10 @@ DumpState(MIPS_R3000 *Cpu)
 {
     for (int i = 0; i < 32; ++i)
     {
-        printf("%s: 0x%08lX  ", RNT[i], Cpu->registers[i]);
+        printf("%s: 0x%08llX  ", RNT[i], Cpu->GPR[i]);
         if (i % 2 == 1) printf("\n");
     }
-    printf("PC : 0x%08lX\n", Cpu->pc);
+    printf("PC : 0x%08llX\n", Cpu->pc);
 }
 
 static char ScratchString[5];

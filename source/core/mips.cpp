@@ -219,7 +219,7 @@ AddU(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
     {
         u8 rs = (Data & REG_RS_MASK) >> 21;
         u8 rt = (Data & REG_RT_MASK) >> 16;
-        Cpu->registers[rd] = Cpu->registers[rs] + Cpu->registers[rt];
+        Cpu->GPR[rd] = Cpu->GPR[rs] + Cpu->GPR[rt];
     }
 }
 
@@ -232,7 +232,7 @@ AddIU(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
     {
         u8 rs = (Data & REG_RS_MASK) >> 21;
         u32 Immediate = SignExtend16((Data & IMM16_MASK) >> 0);
-        Cpu->registers[rt] = Cpu->registers[rs] + Immediate;
+        Cpu->GPR[rt] = Cpu->GPR[rs] + Immediate;
     }
 }
 
@@ -245,7 +245,7 @@ SubU(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
     {
         u8 rs = (Data & REG_RS_MASK) >> 21;
         u8 rt = (Data & REG_RT_MASK) >> 16;
-        Cpu->registers[rd] = Cpu->registers[rs] - Cpu->registers[rt];
+        Cpu->GPR[rd] = Cpu->GPR[rs] - Cpu->GPR[rt];
     }
 }
 
@@ -258,7 +258,7 @@ Add(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
     {
         u8 rs = (Data & REG_RS_MASK) >> 21;
         u8 rt = (Data & REG_RT_MASK) >> 16;
-        Cpu->registers[rd] = Cpu->registers[rs] + Cpu->registers[rt];
+        Cpu->GPR[rd] = Cpu->GPR[rs] + Cpu->GPR[rt];
     }
     // TODO overflow trap
 }
@@ -272,7 +272,7 @@ AddI(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
     {
         u8 rs = (Data & REG_RS_MASK) >> 21;
         u32 Immediate = SignExtend16((Data & IMM16_MASK) >> 0);
-        Cpu->registers[rt] = Cpu->registers[rs] + Immediate;
+        Cpu->GPR[rt] = Cpu->GPR[rs] + Immediate;
     }
     // TODO overflow trap
 }
@@ -286,7 +286,7 @@ Sub(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
     {
         u8 rs = (Data & REG_RS_MASK) >> 21;
         u8 rt = (Data & REG_RT_MASK) >> 16;
-        Cpu->registers[rd] = Cpu->registers[rs] - Cpu->registers[rt];
+        Cpu->GPR[rd] = Cpu->GPR[rs] - Cpu->GPR[rt];
     }
     // TODO overflow trap
 }
@@ -296,14 +296,14 @@ static void
 MFHI(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
 {
     u8 rd = (Data & REG_RD_MASK) >> 11;
-    Cpu->registers[rd] = Cpu->hi;
+    Cpu->GPR[rd] = Cpu->hi;
 }
 
 static void
 MFLO(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
 {
     u8 rd = (Data & REG_RD_MASK) >> 11;
-    Cpu->registers[rd] = Cpu->lo;
+    Cpu->GPR[rd] = Cpu->lo;
 }
 
 static void
@@ -326,7 +326,7 @@ Mult(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
     u8 rs = (Data & REG_RS_MASK) >> 21;
     u8 rt = (Data & REG_RT_MASK) >> 16;
 
-    s64 Result = (s64)Cpu->registers[rs] * (s64)Cpu->registers[rt];
+    s64 Result = (s64)Cpu->GPR[rs] * (s64)Cpu->GPR[rt];
     Cpu->hi = (Result >> 32) & 0xFFFFFFFF;
     Cpu->lo = Result & 0xFFFFFFFF;
 }
@@ -337,7 +337,7 @@ MultU(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
     u8 rs = (Data & REG_RS_MASK) >> 21;
     u8 rt = (Data & REG_RT_MASK) >> 16;
 
-    u64 Result = (u64)Cpu->registers[rs] * (u64)Cpu->registers[rt];
+    u64 Result = (u64)Cpu->GPR[rs] * (u64)Cpu->GPR[rt];
     Cpu->hi = Result >> 32;
     Cpu->lo = Result & 0xFFFFFFFF;
 }
@@ -348,8 +348,8 @@ Div(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
     u8 rs = (Data & REG_RS_MASK) >> 21;
     u8 rt = (Data & REG_RT_MASK) >> 16;
 
-    s32 Left = Cpu->registers[rs];
-    s32 Right = Cpu->registers[rt];
+    s32 Left = Cpu->GPR[rs];
+    s32 Right = Cpu->GPR[rt];
     if (!Right)
     {
         Cpu->hi = Left;
@@ -379,8 +379,8 @@ DivU(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
     u8 rs = (Data & REG_RS_MASK) >> 21;
     u8 rt = (Data & REG_RT_MASK) >> 16;
 
-    u32 Left = Cpu->registers[rs];
-    u32 Right = Cpu->registers[rt];
+    u32 Left = Cpu->GPR[rs];
+    u32 Right = Cpu->GPR[rt];
     if (!Right)
     {
         Cpu->hi = Left;
@@ -399,8 +399,8 @@ SW(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
     u8 rs = (Data & REG_RS_MASK) >> 21;
     u8 rt = (Data & REG_RT_MASK) >> 16;
 
-    OpCode->MemAccessAddress = Cpu->registers[rs] + Immediate;
-    OpCode->MemAccessValue = Cpu->registers[rt];
+    OpCode->MemAccessAddress = Cpu->GPR[rs] + Immediate;
+    OpCode->MemAccessValue = Cpu->GPR[rt];
     OpCode->MemAccessMode = MEM_ACCESS_WORD | MEM_ACCESS_WRITE;
 }
 
@@ -411,8 +411,8 @@ SH(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
     u8 rs = (Data & REG_RS_MASK) >> 21;
     u8 rt = (Data & REG_RT_MASK) >> 16;
 
-    OpCode->MemAccessAddress = Cpu->registers[rs] + Immediate;
-    OpCode->MemAccessValue = Cpu->registers[rt];
+    OpCode->MemAccessAddress = Cpu->GPR[rs] + Immediate;
+    OpCode->MemAccessValue = Cpu->GPR[rt];
     OpCode->MemAccessMode = MEM_ACCESS_HALF | MEM_ACCESS_WRITE;
 }
 
@@ -423,8 +423,8 @@ SB(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
     u8 rs = (Data & REG_RS_MASK) >> 21;
     u8 rt = (Data & REG_RT_MASK) >> 16;
 
-    OpCode->MemAccessAddress = Cpu->registers[rs] + Immediate;
-    OpCode->MemAccessValue = Cpu->registers[rt];
+    OpCode->MemAccessAddress = Cpu->GPR[rs] + Immediate;
+    OpCode->MemAccessValue = Cpu->GPR[rt];
     OpCode->MemAccessMode = MEM_ACCESS_BYTE | MEM_ACCESS_WRITE;
 }
 
@@ -436,7 +436,7 @@ LUI(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
     if (rt)
     {
         u32 Immediate = (Data & IMM16_MASK) >> 0;
-        Cpu->registers[rt] = Immediate << 16;
+        Cpu->GPR[rt] = Immediate << 16;
     }
 }
 
@@ -448,7 +448,7 @@ LW(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
     {
         u8 rs = (Data & REG_RS_MASK) >> 21;
         u32 Immediate = SignExtend16((Data & IMM16_MASK));
-        OpCode->MemAccessAddress = Cpu->registers[rs] + Immediate;
+        OpCode->MemAccessAddress = Cpu->GPR[rs] + Immediate;
         OpCode->MemAccessValue = rt;
         OpCode->MemAccessMode = MEM_ACCESS_READ | MEM_ACCESS_WORD;
     }
@@ -462,7 +462,7 @@ LBU(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
     {
         u8 rs = (Data & REG_RS_MASK) >> 21;
         u32 Immediate = SignExtend16((Data & IMM16_MASK));
-        OpCode->MemAccessAddress = Cpu->registers[rs] + Immediate;
+        OpCode->MemAccessAddress = Cpu->GPR[rs] + Immediate;
         OpCode->MemAccessValue = rt;
         OpCode->MemAccessMode = MEM_ACCESS_READ | MEM_ACCESS_BYTE;
     }
@@ -476,7 +476,7 @@ LHU(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
     {
         u8 rs = (Data & REG_RS_MASK) >> 21;
         u32 Immediate = SignExtend16((Data & IMM16_MASK));
-        OpCode->MemAccessAddress = Cpu->registers[rs] + Immediate;
+        OpCode->MemAccessAddress = Cpu->GPR[rs] + Immediate;
         OpCode->MemAccessValue = rt;
         OpCode->MemAccessMode = MEM_ACCESS_READ | MEM_ACCESS_HALF;
     }
@@ -490,7 +490,7 @@ LB(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
     {
         u8 rs = (Data & REG_RS_MASK) >> 21;
         u32 Immediate = SignExtend16((Data & IMM16_MASK));
-        OpCode->MemAccessAddress = Cpu->registers[rs] + Immediate;
+        OpCode->MemAccessAddress = Cpu->GPR[rs] + Immediate;
         OpCode->MemAccessValue = rt;
         OpCode->MemAccessMode = MEM_ACCESS_READ | MEM_ACCESS_BYTE | MEM_ACCESS_SIGNED;
     }
@@ -504,7 +504,7 @@ LH(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
     {
         u8 rs = (Data & REG_RS_MASK) >> 21;
         u32 Immediate = SignExtend16((Data & IMM16_MASK));
-        OpCode->MemAccessAddress = Cpu->registers[rs] + Immediate;
+        OpCode->MemAccessAddress = Cpu->GPR[rs] + Immediate;
         OpCode->MemAccessValue = rt;
         OpCode->MemAccessMode = MEM_ACCESS_READ | MEM_ACCESS_HALF | MEM_ACCESS_SIGNED;
     }
@@ -531,7 +531,7 @@ static void
 JR(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
 {
     u8 rs = (Data & REG_RS_MASK) >> 21;
-    Cpu->pc = Cpu->registers[rs];
+    Cpu->pc = Cpu->GPR[rs];
 }
 
 static void
@@ -539,8 +539,8 @@ JALR(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
 {
     u8 rs = (Data & REG_RS_MASK) >> 21;
     u8 rd = (Data & REG_RD_MASK) >> 11;
-    Cpu->pc = Cpu->registers[rs];
-    if (rd) Cpu->registers[rd] = OpCode->CurrentAddress + 8;
+    Cpu->pc = Cpu->GPR[rs];
+    if (rd) Cpu->GPR[rd] = OpCode->CurrentAddress + 8;
 }
 
 static void
@@ -553,7 +553,7 @@ BranchZero(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
 
     //bltz, bgez, bltzal, bgezal
     u32 Address = OpCode->CurrentAddress + 4 + Immediate * 4;
-    s32 Check = Cpu->registers[rs];
+    s32 Check = Cpu->GPR[rs];
 
     if (rt & 0b00001)
     {
@@ -587,10 +587,25 @@ BEQ(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
     u8 rs = (Data & REG_RS_MASK) >> 21;
     u8 rt = (Data & REG_RT_MASK) >> 16;
     
-    if (Cpu->registers[rs] == Cpu->registers[rt])
+    if (Cpu->GPR[rs] == Cpu->GPR[rt])
     {
         u32 Immediate = SignExtend16((Data & IMM16_MASK));
         Cpu->pc = OpCode->CurrentAddress + 4 + Immediate * 4;
+    }
+}
+
+static void
+BEQL(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
+{
+    u8 rs = (Data & REG_RS_MASK) >> 21;
+    u8 rt = (Data & REG_RT_MASK) >> 16;
+
+    if (Cpu->GPR[rs] == Cpu->GPR[rt])
+    {
+        u32 Immediate = SignExtend16((Data & IMM16_MASK));
+        Cpu->pc = OpCode->CurrentAddress + 4 + Immediate * 4;
+    } else {
+        Cpu->SkipExecute = true;
     }
 }
 
@@ -600,10 +615,25 @@ BNE(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
     u8 rs = (Data & REG_RS_MASK) >> 21;
     u8 rt = (Data & REG_RT_MASK) >> 16;
 
-    if (Cpu->registers[rs] != Cpu->registers[rt])
+    if (Cpu->GPR[rs] != Cpu->GPR[rt])
     {
         u32 Immediate = SignExtend16((Data & IMM16_MASK));
         Cpu->pc = OpCode->CurrentAddress + 4 + Immediate * 4;
+    }
+}
+
+static void
+BNEL(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
+{
+    u8 rs = (Data & REG_RS_MASK) >> 21;
+    u8 rt = (Data & REG_RT_MASK) >> 16;
+
+    if (Cpu->GPR[rs] != Cpu->GPR[rt])
+    {
+        u32 Immediate = SignExtend16((Data & IMM16_MASK));
+        Cpu->pc = OpCode->CurrentAddress + 4 + Immediate * 4;
+    } else {
+        Cpu->SkipExecute = true;
     }
 }
 
@@ -612,10 +642,24 @@ BLEZ(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
 {
     u8 rs = (Data & REG_RS_MASK) >> 21;
 
-    if (Cpu->registers[rs] <= 0)
+    if (Cpu->GPR[rs] <= 0)
     {
         u32 Immediate = SignExtend16((Data & IMM16_MASK));
         Cpu->pc = OpCode->CurrentAddress + 4 + Immediate * 4;
+    }
+}
+
+static void
+BLEZL(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
+{
+    u8 rs = (Data & REG_RS_MASK) >> 21;
+
+    if (Cpu->GPR[rs] <= 0)
+    {
+        u32 Immediate = SignExtend16((Data & IMM16_MASK));
+        Cpu->pc = OpCode->CurrentAddress + 4 + Immediate * 4;
+    } else {
+        Cpu->SkipExecute = true;
     }
 }
 
@@ -624,10 +668,24 @@ BGTZ(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
 {
     u8 rs = (Data & REG_RS_MASK) >> 21;
 
-    if (Cpu->registers[rs] > 0)
+    if (Cpu->GPR[rs] > 0)
     {
         u32 Immediate = SignExtend16((Data & IMM16_MASK));
         Cpu->pc = OpCode->CurrentAddress + 4 + Immediate * 4;
+    }
+}
+
+static void
+BGTZL(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
+{
+    u8 rs = (Data & REG_RS_MASK) >> 21;
+
+    if (Cpu->GPR[rs] > 0)
+    {
+        u32 Immediate = SignExtend16((Data & IMM16_MASK));
+        Cpu->pc = OpCode->CurrentAddress + 4 + Immediate * 4;
+    } else {
+        Cpu->SkipExecute = true;
     }
 }
 
@@ -641,7 +699,7 @@ AndI(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
     {
         u8 rs = (Data & REG_RS_MASK) >> 21;
         u32 Immediate = Data & IMM16_MASK;
-        Cpu->registers[rt] = Cpu->registers[rs] & Immediate;
+        Cpu->GPR[rt] = Cpu->GPR[rs] & Immediate;
     }
 }
 
@@ -654,7 +712,7 @@ OrI(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
     {
         u8 rs = (Data & REG_RS_MASK) >> 21;
         u32 Immediate = Data & IMM16_MASK;
-        Cpu->registers[rt] = Cpu->registers[rs] | Immediate;
+        Cpu->GPR[rt] = Cpu->GPR[rs] | Immediate;
     }
 }
 
@@ -667,7 +725,7 @@ And(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
     {
         u8 rs = (Data & REG_RS_MASK) >> 21;
         u8 rt = (Data & REG_RT_MASK) >> 16;
-        Cpu->registers[rd] = Cpu->registers[rs] & Cpu->registers[rt];
+        Cpu->GPR[rd] = Cpu->GPR[rs] & Cpu->GPR[rt];
     }
 }
 
@@ -680,7 +738,7 @@ Or(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
     {
         u8 rs = (Data & REG_RS_MASK) >> 21;
         u8 rt = (Data & REG_RT_MASK) >> 16;
-        Cpu->registers[rd] = Cpu->registers[rs] | Cpu->registers[rt];
+        Cpu->GPR[rd] = Cpu->GPR[rs] | Cpu->GPR[rt];
     }
 }
 
@@ -693,7 +751,7 @@ XOr(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
     {
         u8 rs = (Data & REG_RS_MASK) >> 21;
         u8 rt = (Data & REG_RT_MASK) >> 16;
-        Cpu->registers[rd] = Cpu->registers[rs] ^ Cpu->registers[rt];
+        Cpu->GPR[rd] = Cpu->GPR[rs] ^ Cpu->GPR[rt];
     }
 }
 static void
@@ -705,7 +763,7 @@ NOr(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
     {
         u8 rs = (Data & REG_RS_MASK) >> 21;
         u8 rt = (Data & REG_RT_MASK) >> 16;
-        Cpu->registers[rd] = 0xFFFFFFFF ^ (Cpu->registers[rs] | Cpu->registers[rt]);
+        Cpu->GPR[rd] = 0xFFFFFFFF ^ (Cpu->GPR[rs] | Cpu->GPR[rt]);
     }
 }
 
@@ -718,7 +776,7 @@ XOrI(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
     {
         u8 rs = (Data & REG_RS_MASK) >> 21;
         u32 Immediate = Data & IMM16_MASK;
-        Cpu->registers[rt] = Cpu->registers[rs] ^ Immediate;
+        Cpu->GPR[rt] = Cpu->GPR[rs] ^ Immediate;
     }
 }
 
@@ -732,7 +790,7 @@ SLLV(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
     {
         u8 rs = (Data & REG_RS_MASK) >> 21;
         u8 rt = (Data & REG_RT_MASK) >> 16;
-        Cpu->registers[rd] = Cpu->registers[rt] << (Cpu->registers[rs] & 0x1F);
+        Cpu->GPR[rd] = Cpu->GPR[rt] << (Cpu->GPR[rs] & 0x1F);
     }
 }
 
@@ -745,7 +803,7 @@ SRLV(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
     {
         u8 rs = (Data & REG_RS_MASK) >> 21;
         u8 rt = (Data & REG_RT_MASK) >> 16;
-        Cpu->registers[rd] = Cpu->registers[rt] >> (Cpu->registers[rs] & 0x1F);
+        Cpu->GPR[rd] = Cpu->GPR[rt] >> (Cpu->GPR[rs] & 0x1F);
     }
 }
 
@@ -758,7 +816,7 @@ SRAV(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
     {
         u8 rs = (Data & REG_RS_MASK) >> 21;
         u8 rt = (Data & REG_RT_MASK) >> 16;
-        Cpu->registers[rd] = ((s32)Cpu->registers[rt]) >> (Cpu->registers[rs] & 0x1F);
+        Cpu->GPR[rd] = ((s32)Cpu->GPR[rt]) >> (Cpu->GPR[rs] & 0x1F);
     }
 }
 
@@ -771,7 +829,7 @@ SLL(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
     {
         u8 Immediate = (Data & IMM5_MASK) >> 6;
         u8 rt = (Data & REG_RT_MASK) >> 16;
-        Cpu->registers[rd] = Cpu->registers[rt] << Immediate;
+        Cpu->GPR[rd] = Cpu->GPR[rt] << Immediate;
     }
 }
 
@@ -784,7 +842,7 @@ SRL(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
     {
         u8 Immediate = (Data & IMM5_MASK) >> 6;
         u8 rt = (Data & REG_RT_MASK) >> 16;
-        Cpu->registers[rd] = Cpu->registers[rt] >> Immediate;
+        Cpu->GPR[rd] = Cpu->GPR[rt] >> Immediate;
     }
 }
 
@@ -797,7 +855,7 @@ SRA(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
     {
         u8 Immediate = (Data & IMM5_MASK) >> 6;
         u8 rt = (Data & REG_RT_MASK) >> 16;
-        Cpu->registers[rd] = ((s32)Cpu->registers[rt]) >> Immediate;
+        Cpu->GPR[rd] = ((s32)Cpu->GPR[rt]) >> Immediate;
     }
 }
 
@@ -811,7 +869,7 @@ SLT(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
     {
         u8 rs = (Data & REG_RS_MASK) >> 21;
         u8 rt = (Data & REG_RT_MASK) >> 16;
-        Cpu->registers[rd] = ( ((s32)Cpu->registers[rs] < (s32)Cpu->registers[rt]) ? 1 : 0);
+        Cpu->GPR[rd] = ( ((s32)Cpu->GPR[rs] < (s32)Cpu->GPR[rt]) ? 1 : 0);
     }
 }
 
@@ -824,7 +882,7 @@ SLTU(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
     {
         u8 rs = (Data & REG_RS_MASK) >> 21;
         u8 rt = (Data & REG_RT_MASK) >> 16;
-        Cpu->registers[rd] = ( (Cpu->registers[rs] < Cpu->registers[rt]) ? 1 : 0);
+        Cpu->GPR[rd] = ( (Cpu->GPR[rs] < Cpu->GPR[rt]) ? 1 : 0);
     }
 }
 
@@ -837,7 +895,7 @@ SLTI(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
     {
         u8 rs = (Data & REG_RS_MASK) >> 21;
         u32 Immediate = SignExtend16((Data & IMM16_MASK) >> 0);
-        Cpu->registers[rt] = ( ((s32)Cpu->registers[rs] < (s32)Immediate) ? 1 : 0);
+        Cpu->GPR[rt] = ( ((s32)Cpu->GPR[rs] < (s32)Immediate) ? 1 : 0);
     }
 }
 
@@ -850,7 +908,7 @@ SLTIU(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
     {
         u8 rs = (Data & REG_RS_MASK) >> 21;
         u32 Immediate = SignExtend16((Data & IMM16_MASK) >> 0);
-        Cpu->registers[rt] = ( (Cpu->registers[rs] < Immediate) ? 1 : 0);
+        Cpu->GPR[rt] = ( (Cpu->GPR[rs] < Immediate) ? 1 : 0);
     }
 }
 
@@ -866,13 +924,13 @@ COP0(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
 
     if (rs < 0b001000 && rs > 0b00010)
     {
-        CP0->registers[rd + (rs & 0b00010 ? 32 : 0)] = Cpu->registers[rt];
+        CP0->registers[rd + (rs & 0b00010 ? 32 : 0)] = Cpu->GPR[rt];
     }
     else if (rs < 0b10000)
     {
         if (rs < 0b00100)
         {
-            if (rt) Cpu->registers[rt] = CP0->registers[rd + (rs & 0b00010 ? 32 : 0)];
+            if (rt) Cpu->GPR[rt] = CP0->registers[rd + (rs & 0b00010 ? 32 : 0)];
         }
         else
         {
@@ -916,13 +974,13 @@ COP2(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
     Coprocessor *CP2 = Cpu->CP2;
     if (rs < 0b001000 && rs > 0b00010)
     {
-        CP2->registers[rd + (rs & 0b00010 ? 32 : 0)] = Cpu->registers[rt];
+        CP2->registers[rd + (rs & 0b00010 ? 32 : 0)] = Cpu->GPR[rt];
     }
     else if (rs < 0b10000)
     {
         if (rs < 0b00100)
         {
-            if (rt) Cpu->registers[rt] = CP2->registers[rd + (rs & 0b00010 ? 32 : 0)];
+            if (rt) Cpu->GPR[rt] = CP2->registers[rd + (rs & 0b00010 ? 32 : 0)];
         }
         else
         {
@@ -1012,7 +1070,7 @@ MemoryAccess(MIPS_R3000 *Cpu, opcode *OpCode)
                     Value = SignExtend16(Value);
                 }
             }
-            Cpu->registers[Register] = Value;
+            Cpu->GPR[Register] = Value;
         }
     }
 }
@@ -1058,10 +1116,10 @@ StepCpu(MIPS_R3000 *Cpu, u32 Steps)
         &&_COP1,
         &&_COP2,
         &&_COP3,
-        &&_ReservedInstructionException,
-        &&_ReservedInstructionException,
-        &&_ReservedInstructionException,
-        &&_ReservedInstructionException,
+        &&_BEQL,
+        &&_BNEL,
+        &&_BLEZL,
+        &&_BGTZL,
         &&_ReservedInstructionException,
         &&_ReservedInstructionException,
         &&_ReservedInstructionException,
@@ -1190,7 +1248,11 @@ StepCpu(MIPS_R3000 *Cpu, u32 Steps)
     OpCodeMemAccess->CurrentAddress = Cpu->pc; \
     OpCodeMemAccess->MemAccessMode = MEM_ACCESS_NONE; \
     u32 TempData = InstructionFetch(Cpu); \
+    if (!Cpu->SkipExecute) { \
     Instruction(Cpu, &OpCodes[(BS + 1) % 2], NextData); \
+    } else { \
+        Cpu->SkipExecute = 0; \
+    } \
     NextData = TempData; \
     if ((NextData & PRIMARY_OP_MASK) >> 26) \
     { \
@@ -1247,6 +1309,14 @@ _COP2:
     NEXT(COP2);
 _COP3:
     NEXT(COP3);
+_BEQL:
+    NEXT(BEQL);
+_BNEL:
+    NEXT(BNEL);
+_BLEZL:
+    NEXT(BLEZL);
+_BGTZL:
+    NEXT(BGTZL);
 _LB:
     NEXT(LB);
 _LH:

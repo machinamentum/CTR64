@@ -183,54 +183,62 @@ struct MIPS_R3000
 {
     union
     {
-        u32 registers[35];
+        u64 GPR[35];
         struct
         {
-            u32 zero;
-            u32 at;
+            u64 zero;
+            u64 at;
 
-            u32 v0;
-            u32 v1;
+            u64 v0;
+            u64 v1;
 
-            u32 a0;
-            u32 a1;
-            u32 a2;
-            u32 a3;
+            u64 a0;
+            u64 a1;
+            u64 a2;
+            u64 a3;
 
-            u32 t0;
-            u32 t1;
-            u32 t2;
-            u32 t3;
-            u32 t4;
-            u32 t5;
-            u32 t6;
-            u32 t7;
+            u64 t0;
+            u64 t1;
+            u64 t2;
+            u64 t3;
+            u64 t4;
+            u64 t5;
+            u64 t6;
+            u64 t7;
 
-            u32 s0;
-            u32 s1;
-            u32 s2;
-            u32 s3;
-            u32 s4;
-            u32 s5;
-            u32 s6;
-            u32 s7;
-            u32 t8;
-            u32 t9;
+            u64 s0;
+            u64 s1;
+            u64 s2;
+            u64 s3;
+            u64 s4;
+            u64 s5;
+            u64 s6;
+            u64 s7;
+            u64 t8;
+            u64 t9;
 
-            u32 k0;
-            u32 k1;
+            u64 k0;
+            u64 k1;
 
-            u32 gp;
-            u32 sp;
-            u32 fp;
+            u64 gp;
+            u64 sp;
+            u64 fp;
 
-            u32 ra;
-            u32 pc = RESET_VECTOR;
+            u64 ra;
+            u64 pc = RESET_VECTOR;
 
-            u32 hi, lo;
+            u64 hi, lo;
+
+            u32 fcr0;
+            u32 frc31;
+
+            u32 llbit;
         };
     };
 
+    double FGR[32];
+
+    u32 SkipExecute = 0; // Skips execution of a single instruction
     opcode OpCodes[2];
     u32 BaseState = 0;
     void *NextJump;
