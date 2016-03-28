@@ -365,9 +365,21 @@ BEQ(disasm_opcode_info *OpCode)
 }
 
 static void
+BEQL(disasm_opcode_info *OpCode)
+{
+    printf("beql %s, %s, 0x%08lX", RNT[OpCode->LeftValue], RNT[OpCode->RightValue], OpCode->CurrentAddress + 4 + OpCode->Immediate * 4);
+}
+
+static void
 BNE(disasm_opcode_info *OpCode)
 {
     printf("bne %s, %s, 0x%08lX", RNT[OpCode->LeftValue], RNT[OpCode->RightValue], OpCode->CurrentAddress + 4 + OpCode->Immediate * 4);
+}
+
+static void
+BNEL(disasm_opcode_info *OpCode)
+{
+    printf("bnel %s, %s, 0x%08lX", RNT[OpCode->LeftValue], RNT[OpCode->RightValue], OpCode->CurrentAddress + 4 + OpCode->Immediate * 4);
 }
 
 static void
@@ -377,10 +389,21 @@ BLEZ(disasm_opcode_info *OpCode)
 }
 
 static void
+BLEZL(disasm_opcode_info *OpCode)
+{
+    printf("blezl %s, 0x%08lX", RNT[OpCode->LeftValue], OpCode->CurrentAddress + 4 + OpCode->Immediate * 4);
+}
+
+static void
 BGTZ(disasm_opcode_info *OpCode)
 {
     printf("bgtz %s, 0x%08lX", RNT[OpCode->LeftValue], OpCode->CurrentAddress + 4 + OpCode->Immediate * 4);
+}
 
+static void
+BGTZL(disasm_opcode_info *OpCode)
+{
+    printf("bgtzl %s, 0x%08lX", RNT[OpCode->LeftValue], OpCode->CurrentAddress + 4 + OpCode->Immediate * 4);
 }
 
 //Logical
@@ -893,6 +916,10 @@ InitJumpTables()
     PrimaryJumpTable[0x11] = COP1;
     PrimaryJumpTable[0x12] = COP2;
     PrimaryJumpTable[0x13] = COP3;
+    PrimaryJumpTable[0x14] = BEQL;
+    PrimaryJumpTable[0x15] = BNEL;
+    PrimaryJumpTable[0x16] = BLEZL;
+    PrimaryJumpTable[0x17] = BGTZL;
     PrimaryJumpTable[0x20] = LB;
     PrimaryJumpTable[0x21] = LH;
     //    PrimaryJumpTable[0x22] = LWL;
