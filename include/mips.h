@@ -328,6 +328,12 @@ SignExtend16(s16 i)
     return (u32)(s32)i;
 }
 
+inline u64
+SignExtend16To64(s16 i)
+{
+    return (u64)(s64)i;
+}
+
 inline u32
 SignExtend8(s8 i)
 {

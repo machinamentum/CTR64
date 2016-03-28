@@ -232,6 +232,19 @@ AddIU(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
     {
         u8 rs = (Data & REG_RS_MASK) >> 21;
         u32 Immediate = SignExtend16((Data & IMM16_MASK) >> 0);
+        Cpu->GPR[rt] = (Cpu->GPR[rs] & 0xFFFFFFFF) + Immediate;
+    }
+}
+
+static void
+DAddIU(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
+{
+    u8 rt = (Data & REG_RT_MASK) >> 16;
+
+    if (rt)
+    {
+        u8 rs = (Data & REG_RS_MASK) >> 21;
+        u64 Immediate = SignExtend16To64((Data & IMM16_MASK) >> 0);
         Cpu->GPR[rt] = Cpu->GPR[rs] + Immediate;
     }
 }
@@ -272,6 +285,20 @@ AddI(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
     {
         u8 rs = (Data & REG_RS_MASK) >> 21;
         u32 Immediate = SignExtend16((Data & IMM16_MASK) >> 0);
+        Cpu->GPR[rt] = (Cpu->GPR[rs] & 0xFFFFFFFF) + Immediate;
+    }
+    // TODO overflow trap
+}
+
+static void
+DAddI(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
+{
+    u8 rt = (Data & REG_RT_MASK) >> 16;
+
+    if (rt)
+    {
+        u8 rs = (Data & REG_RS_MASK) >> 21;
+        u64 Immediate = SignExtend16To64((Data & IMM16_MASK) >> 0);
         Cpu->GPR[rt] = Cpu->GPR[rs] + Immediate;
     }
     // TODO overflow trap
@@ -1120,8 +1147,8 @@ StepCpu(MIPS_R3000 *Cpu, u32 Steps)
         &&_BNEL,
         &&_BLEZL,
         &&_BGTZL,
-        &&_ReservedInstructionException,
-        &&_ReservedInstructionException,
+        &&_DAddI,
+        &&_DAddIU,
         &&_ReservedInstructionException,
         &&_ReservedInstructionException,
         &&_ReservedInstructionException,
@@ -1249,7 +1276,7 @@ StepCpu(MIPS_R3000 *Cpu, u32 Steps)
     OpCodeMemAccess->MemAccessMode = MEM_ACCESS_NONE; \
     u32 TempData = InstructionFetch(Cpu); \
     if (!Cpu->SkipExecute) { \
-    Instruction(Cpu, &OpCodes[(BS + 1) % 2], NextData); \
+        Instruction(Cpu, &OpCodes[(BS + 1) % 2], NextData); \
     } else { \
         Cpu->SkipExecute = 0; \
     } \
@@ -1317,6 +1344,10 @@ _BLEZL:
     NEXT(BLEZL);
 _BGTZL:
     NEXT(BGTZL);
+_DAddI:
+    NEXT(DAddI);
+_DAddIU:
+    NEXT(DAddIU);
 _LB:
     NEXT(LB);
 _LH:

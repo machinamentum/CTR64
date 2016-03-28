@@ -178,6 +178,12 @@ AddIU(disasm_opcode_info *OpCode)
 }
 
 static void
+DAddIU(disasm_opcode_info *OpCode)
+{
+    printf("daddiu %s, %s, 0x%04lX", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], OpCode->Immediate);
+}
+
+static void
 SubU(disasm_opcode_info *OpCode)
 {
     printf("subu %s, %s, %s", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], RNT[OpCode->RightValue]);
@@ -193,6 +199,12 @@ static void
 AddI(disasm_opcode_info *OpCode)
 {
     printf("addi %s, %s, 0x%04lX", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], OpCode->Immediate);
+}
+
+static void
+DAddI(disasm_opcode_info *OpCode)
+{
+    printf("daddi %s, %s, 0x%04lX", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], OpCode->Immediate);
 }
 
 static void
@@ -920,6 +932,8 @@ InitJumpTables()
     PrimaryJumpTable[0x15] = BNEL;
     PrimaryJumpTable[0x16] = BLEZL;
     PrimaryJumpTable[0x17] = BGTZL;
+    PrimaryJumpTable[0x18] = DAddI;
+    PrimaryJumpTable[0x19] = DAddIU;
     PrimaryJumpTable[0x20] = LB;
     PrimaryJumpTable[0x21] = LH;
     //    PrimaryJumpTable[0x22] = LWL;
