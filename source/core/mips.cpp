@@ -9,7 +9,32 @@
 #include <cstdio>
 #include "mips.h"
 
+inline u64
+ReadMemDWord(MIPS_R3000 *Cpu, u32 Address)
+{
+    u32 Base = Address & 0x00FFFFFF;
+    u8 *VirtualAddress = (u8 *)MapVirtualAddress(Cpu, Base);
+    u32 Swap = Cpu->CP0.sr & C0_STATUS_RE;
+    u64 Value = -1;
+    if (!VirtualAddress)
+    {
+        for (u32 i = 0; i < Cpu->NumMMR; ++i)
+        {
+            mmr *MMR = &Cpu->MemMappedRegisters[i];
+            if (Base == MMR->Address)
+            {
+                // TODO read double from two 32-bit consecutive registers
+                // NOTE does R4300 support mapping 64 bit registers?
+                Value = MMR->RegisterReadFunc(MMR->Object, Address);
+                return (Swap ? __builtin_bswap64(Value) : Value);
+            }
+        }
 
+        return Value;
+    }
+    Value = *((u64 *)VirtualAddress);
+    return (Swap ? __builtin_bswap64(Value) : Value);
+}
 
 inline u32
 ReadMemWord(MIPS_R3000 *Cpu, u32 Address)
@@ -57,6 +82,30 @@ WriteMemByte(MIPS_R3000 *Cpu, u32 Address, u8 value)
         return;
     }
     *((u8 *)VirtualAddress) = value;
+}
+
+static void
+WriteMemDWord(MIPS_R3000 *Cpu, u32 Address, u64 Value)
+{
+    u32 Base = Address & 0x00FFFFFF;
+    u8 *VirtualAddress = (u8 *)MapVirtualAddress(Cpu, Base);
+    if (!VirtualAddress)
+    {
+        for (u32 i = 0; i < Cpu->NumMMR; ++i)
+        {
+            mmr *MMR = &Cpu->MemMappedRegisters[i];
+            if (Base == MMR->Address)
+            {
+                // NOTE does R4300 support writing a single 64 bit register?
+                MMR->RegisterWriteFunc(MMR->Object, Value);
+                return;
+            }
+        }
+
+        return;
+    }
+    u32 Swap = Cpu->CP0.sr & C0_STATUS_RE;
+    *((u64 *)((u8 *)VirtualAddress)) = (Swap ? __builtin_bswap64(Value) : Value);
 }
 
 static void
@@ -474,10 +523,52 @@ LW(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
     if (rt)
     {
         u8 rs = (Data & REG_RS_MASK) >> 21;
+        u64 Immediate = SignExtend16To64((Data & IMM16_MASK));
+        OpCode->MemAccessAddress = Cpu->GPR[rs] + Immediate;
+        OpCode->MemAccessValue = rt;
+        OpCode->MemAccessMode = MEM_ACCESS_READ | MEM_ACCESS_WORD | MEM_ACCESS_SIGNED;
+    }
+}
+
+static void
+LD(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
+{
+    u8 rt = (Data & REG_RT_MASK) >> 16;
+    if (rt)
+    {
+        u8 rs = (Data & REG_RS_MASK) >> 21;
         u32 Immediate = SignExtend16((Data & IMM16_MASK));
         OpCode->MemAccessAddress = Cpu->GPR[rs] + Immediate;
         OpCode->MemAccessValue = rt;
-        OpCode->MemAccessMode = MEM_ACCESS_READ | MEM_ACCESS_WORD;
+        OpCode->MemAccessMode = MEM_ACCESS_READ | MEM_ACCESS_DWORD;
+    }
+}
+
+static void
+LDL(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
+{
+    u8 rt = (Data & REG_RT_MASK) >> 16;
+    if (rt)
+    {
+        u8 rs = (Data & REG_RS_MASK) >> 21;
+        u32 Immediate = SignExtend16((Data & IMM16_MASK));
+        OpCode->MemAccessAddress = Cpu->GPR[rs] + Immediate;
+        OpCode->MemAccessValue = rt;
+        OpCode->MemAccessMode = MEM_ACCESS_READ | MEM_ACCESS_DWORD | MEM_ACCESS_HIGH;
+    }
+}
+
+static void
+LDR(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
+{
+    u8 rt = (Data & REG_RT_MASK) >> 16;
+    if (rt)
+    {
+        u8 rs = (Data & REG_RS_MASK) >> 21;
+        u32 Immediate = SignExtend16((Data & IMM16_MASK));
+        OpCode->MemAccessAddress = Cpu->GPR[rs] + Immediate;
+        OpCode->MemAccessValue = rt;
+        OpCode->MemAccessMode = MEM_ACCESS_READ | MEM_ACCESS_DWORD | MEM_ACCESS_LOW;
     }
 }
 
@@ -1053,7 +1144,7 @@ inline void
 MemoryAccess(MIPS_R3000 *Cpu, opcode *OpCode)
 {
     u32 Address = OpCode->MemAccessAddress;
-    u32 Value = OpCode->MemAccessValue;
+    u64 Value = OpCode->MemAccessValue;
     u32 MemAccessMode = OpCode->MemAccessMode;
 
     if (MemAccessMode & MEM_ACCESS_WRITE)
@@ -1072,6 +1163,11 @@ MemoryAccess(MIPS_R3000 *Cpu, opcode *OpCode)
         {
             WriteMemWord(Cpu, Address, Value);
         }
+
+        else if (MemAccessMode & MEM_ACCESS_DWORD)
+        {
+            WriteMemDWord(Cpu, Address, Value);
+        }
     }
     else if (MemAccessMode & MEM_ACCESS_READ)
     {
@@ -1079,13 +1175,13 @@ MemoryAccess(MIPS_R3000 *Cpu, opcode *OpCode)
         {
             u32 Register = Value;
             u32 Signed = MemAccessMode & MEM_ACCESS_SIGNED;
-            Value = ReadMemWord(Cpu, Address);
+            Value = ReadMemDWord(Cpu, Address);
             if (MemAccessMode & MEM_ACCESS_BYTE)
             {
                 Value &= 0xFF;
                 if (Signed)
                 {
-                    Value = SignExtend8(Value);
+                    Value = SignExtend8To64(Value);
                 }
             }
 
@@ -1094,7 +1190,28 @@ MemoryAccess(MIPS_R3000 *Cpu, opcode *OpCode)
                 Value &= 0xFFFF;
                 if (Signed)
                 {
-                    Value = SignExtend16(Value);
+                    Value = SignExtend16To64(Value);
+                }
+            }
+
+            else if (MemAccessMode & MEM_ACCESS_WORD)
+            {
+                Value &= 0xFFFFFFFF;
+                if (Signed)
+                {
+                    Value = SignExtend32To64(Value);
+                }
+            }
+
+            else if (MemAccessMode & MEM_ACCESS_DWORD)
+            {
+                if (MemAccessMode & MEM_ACCESS_HIGH)
+                {
+                    Value = (Cpu->GPR[Register] & 0xFFFFFFFF) | (Value & 0xFFFFFFFF00000000);
+                }
+                else if (MemAccessMode & MEM_ACCESS_LOW)
+                {
+                    Value = (Cpu->GPR[Register] & 0xFFFFFFFF00000000) | (Value & 0xFFFFFFFF);
                 }
             }
             Cpu->GPR[Register] = Value;
@@ -1149,8 +1266,8 @@ StepCpu(MIPS_R3000 *Cpu, u32 Steps)
         &&_BGTZL,
         &&_DAddI,
         &&_DAddIU,
-        &&_ReservedInstructionException,
-        &&_ReservedInstructionException,
+        &&_LDL,
+        &&_LDR,
         &&_ReservedInstructionException,
         &&_ReservedInstructionException,
         &&_ReservedInstructionException,
@@ -1175,10 +1292,10 @@ StepCpu(MIPS_R3000 *Cpu, u32 Steps)
         &&_ReservedInstructionException, // &&_LWC1,
         &&_ReservedInstructionException, // &&_LWC2,
         &&_ReservedInstructionException, // &&_LWC3,
-        &&_ReservedInstructionException,
-        &&_ReservedInstructionException,
-        &&_ReservedInstructionException,
-        &&_ReservedInstructionException,
+        &&_ReservedInstructionException, // &&_LLD
+        &&_ReservedInstructionException, // &&_LDC1
+        &&_ReservedInstructionException, // &&_LDC2
+        &&_LD,
         &&_ReservedInstructionException, //&&_SWC0,
         &&_ReservedInstructionException, //&&_SWC1,
         &&_ReservedInstructionException, //&&_SWC2,
@@ -1348,6 +1465,10 @@ _DAddI:
     NEXT(DAddI);
 _DAddIU:
     NEXT(DAddIU);
+_LDL:
+    NEXT(LDL);
+_LDR:
+    NEXT(LDR);
 _LB:
     NEXT(LB);
 _LH:
@@ -1364,6 +1485,8 @@ _SH:
     NEXT(SH);
 _SW:
     NEXT(SW);
+_LD:
+    NEXT(LD);
 
 _SLL:
     NEXT(SLL);

@@ -295,6 +295,24 @@ LW(disasm_opcode_info *OpCode)
 }
 
 static void
+LD(disasm_opcode_info *OpCode)
+{
+    printf("ld %s, 0x%04lX(%s)", RNT[OpCode->DestinationRegister], OpCode->Immediate, RNT[OpCode->LeftValue]);
+}
+
+static void
+LDL(disasm_opcode_info *OpCode)
+{
+    printf("ldl %s, 0x%04lX(%s)", RNT[OpCode->DestinationRegister], OpCode->Immediate, RNT[OpCode->LeftValue]);
+}
+
+static void
+LDR(disasm_opcode_info *OpCode)
+{
+    printf("ldr %s, 0x%04lX(%s)", RNT[OpCode->DestinationRegister], OpCode->Immediate, RNT[OpCode->LeftValue]);
+}
+
+static void
 LBU(disasm_opcode_info *OpCode)
 {
     printf("lbu %s, 0x%04lX(%s)", RNT[OpCode->DestinationRegister], OpCode->Immediate, RNT[OpCode->LeftValue]);
@@ -934,6 +952,8 @@ InitJumpTables()
     PrimaryJumpTable[0x17] = BGTZL;
     PrimaryJumpTable[0x18] = DAddI;
     PrimaryJumpTable[0x19] = DAddIU;
+    PrimaryJumpTable[0x1A] = LDL;
+    PrimaryJumpTable[0x1B] = LDR;
     PrimaryJumpTable[0x20] = LB;
     PrimaryJumpTable[0x21] = LH;
     //    PrimaryJumpTable[0x22] = LWL;
@@ -950,6 +970,7 @@ InitJumpTables()
     //    PrimaryJumpTable[0x31] = LWC1;
     //    PrimaryJumpTable[0x32] = LWC2;
     //    PrimaryJumpTable[0x33] = LWC3;
+    PrimaryJumpTable[0x37] = LD;
     //    PrimaryJumpTable[0x38] = SWC0;
     //    PrimaryJumpTable[0x39] = SWC1;
     //    PrimaryJumpTable[0x3A] = SWC2;

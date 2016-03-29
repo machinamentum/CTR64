@@ -107,8 +107,11 @@
 #define MEM_ACCESS_BYTE   4
 #define MEM_ACCESS_HALF   8
 #define MEM_ACCESS_WORD   16
+#define MEM_ACCESS_DWORD  32
 
-#define MEM_ACCESS_SIGNED 32
+#define MEM_ACCESS_SIGNED 64
+#define MEM_ACCESS_HIGH   128
+#define MEM_ACCESS_LOW    256
 
 #define WRITE_BACK_CPU    0
 #define WRITE_BACK_C0     1
@@ -280,6 +283,13 @@ MapVirtualAddress(MIPS_R3000 *Cpu, u32 Address)
     return nullptr;
 }
 
+inline u64
+ReadMemDWordRaw(MIPS_R3000 *Cpu, u32 Address)
+{
+    u32 Base = Address & 0x00FFFFFF;
+    return *((u64 *)((u8 *)MapVirtualAddress(Cpu, Base)));
+}
+
 inline u32
 ReadMemWordRaw(MIPS_R3000 *Cpu, u32 Address)
 {
@@ -323,6 +333,12 @@ WriteMemHalfWordRaw(MIPS_R3000 *Cpu, u32 Address, u16 value)
 }
 
 inline u32
+SignExtend32To64(s32 i)
+{
+    return (u64)(s64)i;
+}
+
+inline u32
 SignExtend16(s16 i)
 {
     return (u32)(s32)i;
@@ -338,6 +354,12 @@ inline u32
 SignExtend8(s8 i)
 {
     return (u32)(s32)i;
+}
+
+inline u32
+SignExtend8To64(s8 i)
+{
+    return (u64)(s64)i;
 }
 
 
