@@ -20,38 +20,7 @@ ResetCpu(MIPS_R3000 *Cpu)
     Cpu->pc = RESET_VECTOR;
 }
 
-static void
-std_out_putchar(void *Ref, u32 Value)
-{
-    putchar(Value);
-}
-
-static u32
-empty_ret(void *Obj, u32 Val)
-{
-    return 0;
-}
-
-static void
-empty_write(void *Obj, u32 Address)
-{
-
-}
-
-
 static u32 InterruptMask;
-
-static void
-CTRXInterruptRegisterWrite(void *Ref, u32 Value)
-{
-    InterruptMask = Value;
-}
-
-static u32
-CTRXInterruptRegisterRead(void *Ref, u32 Address)
-{
-    return InterruptMask;
-}
 
 int main(int argc, char **argv)
 {
