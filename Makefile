@@ -42,7 +42,7 @@ APP_AUTHOR	:= machinamentum
 ARCH	:=	-march=armv6k -mtune=mpcore -mfloat-abi=hard
 
 CFLAGS	:=	 -g -Wall -Wextra -Wno-unused-parameter -O2 -mword-relocations \
-			-fomit-frame-pointer -ffast-math \
+			-fomit-frame-pointer -ffast-math -Wconversion \
 			$(ARCH) -fdiagnostics-color
 
 CFLAGS	+=	$(INCLUDE) -DARM11 -D_3DS

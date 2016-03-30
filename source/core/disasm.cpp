@@ -104,11 +104,11 @@ DumpState(MIPS_R3000 *Cpu)
 static char ScratchString[5];
 
 inline const char *
-C0Name(u8 Reg)
+C0Name(u32 Reg)
 {
     if (Reg > C0_PRID)
     {
-        snprintf(ScratchString, 4, "r%d",  Reg);
+        snprintf(ScratchString, 4, "r%lud",  Reg);
         return ScratchString;
     }
 
@@ -116,9 +116,9 @@ C0Name(u8 Reg)
 }
 
 inline const char *
-CNName(u8 Reg)
+CNName(u32 Reg)
 {
-    snprintf(ScratchString, 3, "r%d",  Reg);
+    snprintf(ScratchString, 3, "r%lud",  Reg);
     return ScratchString;
 }
 
@@ -366,7 +366,7 @@ static void
 BranchZero(disasm_opcode_info *OpCode)
 {
     //bltz, bgez, bltzal, bgezal
-    u8 type = OpCode->RightValue;
+    u32 type = OpCode->RightValue;
     if (type & 0b00001)
     {
         //bgez
@@ -698,9 +698,9 @@ DisassemblerDecodeOpcode(disasm_opcode_info *OpCode, u32 Data, u32 IAddress)
     OpCode->DestinationRegister = 0;
     OpCode->RADestinationRegister = 0;
     OpCode->FunctionSelect = 0;
-    u8 rs = (Data & REG_RS_MASK) >> 21;
-    u8 rt = (Data & REG_RT_MASK) >> 16;
-    u8 rd = (Data & REG_RD_MASK) >> 11;
+    u32 rs = (Data & REG_RS_MASK) >> 21;
+    u32 rt = (Data & REG_RT_MASK) >> 16;
+    u32 rd = (Data & REG_RD_MASK) >> 11;
 
     if (OpCode->Select0 == 0)
     {

@@ -123,10 +123,10 @@ struct MIPS_R3000;
 
 struct opcode
 {
-    u32 CurrentAddress;
+    u64 CurrentAddress;
 
-    u32 MemAccessAddress;
-    u32 MemAccessValue;
+    u64 MemAccessAddress;
+    u64 MemAccessValue;
     u32 MemAccessMode;
 };
 
@@ -134,25 +134,25 @@ struct Coprocessor
 {
     union
     {
-        u32 registers[64];
+        u64 registers[64];
         struct
         {
-            u32 r0;
-            u32 r1;
-            u32 r2;
-            u32 bpc;
-            u32 r4;
-            u32 bda;
-            u32 jumpdest;
-            u32 dcic;
-            u32 bva;
-            u32 bdam;
-            u32 r10;
-            u32 bpcm;
-            u32 sr;
-            u32 cause;
-            u32 epc;
-            u32 prid = C0_PRID_VALUE;
+            u64 r0;
+            u64 r1;
+            u64 r2;
+            u64 bpc;
+            u64 r4;
+            u64 bda;
+            u64 jumpdest;
+            u64 dcic;
+            u64 bva;
+            u64 bdam;
+            u64 r10;
+            u64 bpcm;
+            u64 sr;
+            u64 cause;
+            u64 epc;
+            u64 prid = C0_PRID_VALUE;
         };
     };
     Coprocessor() {}
@@ -161,16 +161,16 @@ struct Coprocessor
 
 struct mmr
 {
-    u32 Address;
+    u64 Address;
     void *Object;
-    void (*RegisterWriteFunc)(void *, u32 Value);
-    u32  (*RegisterReadFunc)(void *, u32 Address);
+    void (*RegisterWriteFunc)(void *, u64 Value);
+    u32  (*RegisterReadFunc)(void *, u64 Address);
 };
 
 struct mmm
 {
     void *Ptr;
-    u32 VirtualAddress;
+    u64 VirtualAddress;
     u32 Size;
 };
 
@@ -264,17 +264,16 @@ struct MIPS_R3000
 
 void MapRegister(MIPS_R3000 *Cpu, mmr MMR);
 void StepCpu(MIPS_R3000 *Cpu, u32 Steps);
-void C0GenerateException(MIPS_R3000 *, u8, u32);
+void C0GenerateException(MIPS_R3000 *, u8, u64);
 void MapMemoryRegion(MIPS_R3000 *, mmm);
 
 inline void *
-MapVirtualAddress(MIPS_R3000 *Cpu, u32 Address)
+MapVirtualAddress(MIPS_R3000 *Cpu, u64 Address)
 {
-    Address = Address & 0x00FFFFFF;
     for (u32 i = 0; i < Cpu->NumMMM; ++i)
     {
         mmm *MMM = &Cpu->MemMappedMemRegions[i];
-        u32 Addr = MMM->VirtualAddress;
+        u64 Addr = MMM->VirtualAddress;
         u32 Size = MMM->Size;
         if ( (Address >= Addr) && (Address < (Addr + Size)) ) {
             return ((u8 *)MMM->Ptr) + (Address - Addr);
@@ -332,22 +331,22 @@ WriteMemHalfWordRaw(MIPS_R3000 *Cpu, u32 Address, u16 value)
     *((u16 *)((u8 *)MapVirtualAddress(Cpu, Base))) = value;
 }
 
-inline u32
-SignExtend32To64(s32 i)
+inline u64
+SignExtend32To64(s64 i)
 {
-    return (u64)(s64)i;
+    return (u64)(s64)(s32)i;
 }
 
 inline u32
-SignExtend16(s16 i)
+SignExtend16(s32 i)
 {
-    return (u32)(s32)i;
+    return (u32)(s32)(s16)i;
 }
 
 inline u64
-SignExtend16To64(s16 i)
+SignExtend16To64(s64 i)
 {
-    return (u64)(s64)i;
+    return (u64)(s64)(s16)i;
 }
 
 inline u32
@@ -356,10 +355,10 @@ SignExtend8(s8 i)
     return (u32)(s32)i;
 }
 
-inline u32
-SignExtend8To64(s8 i)
+inline u64
+SignExtend8To64(s64 i)
 {
-    return (u64)(s64)i;
+    return (u64)(s64)(s8)i;
 }
 
 
