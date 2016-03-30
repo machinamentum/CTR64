@@ -18,7 +18,7 @@ struct disasm_opcode_info
     u32 Select1;
     u32 LeftValue = 0;
     u32 RightValue;
-    u32 Immediate;
+    u64 Immediate;
     u32 Result;
     u32 FunctionSelect;
     u32 MemAccessType;
@@ -26,10 +26,10 @@ struct disasm_opcode_info
     u32 WriteBackMode;
     u32 DestinationRegister;
     u32 RADestinationRegister; // Used for return address writing
-    u32 CurrentAddress;
+    u64 CurrentAddress;
 };
 
-void DisassemblerPrintRange(MIPS_R3000 *Cpu, u32 Base, u32 Count, u32 PC);
+void DisassemblerPrintRange(MIPS_R3000 *Cpu, u64 Base, u32 Count, u64 PC);
 void DumpState(MIPS_R3000 *Cpu);
 void DumpC0State(Coprocessor *C0);
 

@@ -127,7 +127,7 @@ DumpC0State(Coprocessor *C0)
 {
     for (int i = 0; i < 32; ++i)
     {
-        printf("%s: 0x%08lX  ", C0Name(i), C0->registers[i]);
+        printf("%s: 0x%08llX  ", C0Name(i), C0->registers[i]);
         if (i % 2 == 1) printf("\n");
     }
 }
@@ -137,7 +137,7 @@ static void
 SysCall(disasm_opcode_info *OpCode)
 {
     printf("syscall");
-    u32 Immediate = OpCode->Immediate;
+    u32 Immediate = (u32)OpCode->Immediate;
     if (Immediate)
     {
         printf(" 0x%08lX", Immediate);
@@ -149,7 +149,7 @@ static void
 Break(disasm_opcode_info *OpCode)
 {
     printf("break");
-    u32 Immediate = OpCode->Immediate;
+    u32 Immediate = (u32)OpCode->Immediate;
     if (Immediate)
     {
         printf(" 0x%08lX", Immediate);
@@ -174,13 +174,13 @@ AddU(disasm_opcode_info *OpCode)
 static void
 AddIU(disasm_opcode_info *OpCode)
 {
-    printf("addiu %s, %s, 0x%04lX", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], OpCode->Immediate);
+    printf("addiu %s, %s, 0x%04X", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], (u16)OpCode->Immediate);
 }
 
 static void
 DAddIU(disasm_opcode_info *OpCode)
 {
-    printf("daddiu %s, %s, 0x%04lX", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], OpCode->Immediate);
+    printf("daddiu %s, %s, 0x%04X", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], (u16)OpCode->Immediate);
 }
 
 static void
@@ -198,13 +198,13 @@ Add(disasm_opcode_info *OpCode)
 static void
 AddI(disasm_opcode_info *OpCode)
 {
-    printf("addi %s, %s, 0x%04lX", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], OpCode->Immediate);
+    printf("addi %s, %s, 0x%04X", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], (u16)OpCode->Immediate);
 }
 
 static void
 DAddI(disasm_opcode_info *OpCode)
 {
-    printf("daddi %s, %s, 0x%04lX", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], OpCode->Immediate);
+    printf("daddi %s, %s, 0x%04X", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], (u16)OpCode->Immediate);
 }
 
 static void
@@ -266,74 +266,74 @@ DivU(disasm_opcode_info *OpCode)
 static void
 SW(disasm_opcode_info *OpCode)
 {
-    printf("sw %s, 0x%04lX(%s)", RNT[OpCode->RightValue], OpCode->Immediate, RNT[OpCode->LeftValue]);
+    printf("sw %s, 0x%04X(%s)", RNT[OpCode->RightValue], (u16)OpCode->Immediate, RNT[OpCode->LeftValue]);
 }
 
 static void
 SH(disasm_opcode_info *OpCode)
 {
-    printf("sh %s, 0x%04lX(%s)", RNT[OpCode->RightValue], OpCode->Immediate, RNT[OpCode->LeftValue]);
+    printf("sh %s, 0x%04X(%s)", RNT[OpCode->RightValue], (u16)OpCode->Immediate, RNT[OpCode->LeftValue]);
 }
 
 static void
 SB(disasm_opcode_info *OpCode)
 {
-    printf("sb %s, 0x%04lX(%s)", RNT[OpCode->RightValue], OpCode->Immediate, RNT[OpCode->LeftValue]);
+    printf("sb %s, 0x%04X(%s)", RNT[OpCode->RightValue], (u16)OpCode->Immediate, RNT[OpCode->LeftValue]);
 }
 
 //Load
 static void
 LUI(disasm_opcode_info *OpCode)
 {
-    printf("lui %s, 0x%04lX", RNT[OpCode->DestinationRegister], OpCode->Immediate);
+    printf("lui %s, 0x%04X", RNT[OpCode->DestinationRegister], (u16)OpCode->Immediate);
 }
 
 static void
 LW(disasm_opcode_info *OpCode)
 {
-    printf("lw %s, 0x%04lX(%s)", RNT[OpCode->DestinationRegister], OpCode->Immediate, RNT[OpCode->LeftValue]);
+    printf("lw %s, 0x%04X(%s)", RNT[OpCode->DestinationRegister], (u16)OpCode->Immediate, RNT[OpCode->LeftValue]);
 }
 
 static void
 LD(disasm_opcode_info *OpCode)
 {
-    printf("ld %s, 0x%04lX(%s)", RNT[OpCode->DestinationRegister], OpCode->Immediate, RNT[OpCode->LeftValue]);
+    printf("ld %s, 0x%04X(%s)", RNT[OpCode->DestinationRegister], (u16)OpCode->Immediate, RNT[OpCode->LeftValue]);
 }
 
 static void
 LDL(disasm_opcode_info *OpCode)
 {
-    printf("ldl %s, 0x%04lX(%s)", RNT[OpCode->DestinationRegister], OpCode->Immediate, RNT[OpCode->LeftValue]);
+    printf("ldl %s, 0x%04X(%s)", RNT[OpCode->DestinationRegister], (u16)OpCode->Immediate, RNT[OpCode->LeftValue]);
 }
 
 static void
 LDR(disasm_opcode_info *OpCode)
 {
-    printf("ldr %s, 0x%04lX(%s)", RNT[OpCode->DestinationRegister], OpCode->Immediate, RNT[OpCode->LeftValue]);
+    printf("ldr %s, 0x%04X(%s)", RNT[OpCode->DestinationRegister], (u16)OpCode->Immediate, RNT[OpCode->LeftValue]);
 }
 
 static void
 LBU(disasm_opcode_info *OpCode)
 {
-    printf("lbu %s, 0x%04lX(%s)", RNT[OpCode->DestinationRegister], OpCode->Immediate, RNT[OpCode->LeftValue]);
+    printf("lbu %s, 0x%04X(%s)", RNT[OpCode->DestinationRegister], (u16)OpCode->Immediate, RNT[OpCode->LeftValue]);
 }
 
 static void
 LHU(disasm_opcode_info *OpCode)
 {
-    printf("lhu %s, 0x%04lX(%s)", RNT[OpCode->DestinationRegister], OpCode->Immediate, RNT[OpCode->LeftValue]);
+    printf("lhu %s, 0x%04X(%s)", RNT[OpCode->DestinationRegister], (u16)OpCode->Immediate, RNT[OpCode->LeftValue]);
 }
 
 static void
 LB(disasm_opcode_info *OpCode)
 {
-    printf("lb %s, 0x%04lX(%s)", RNT[OpCode->DestinationRegister], OpCode->Immediate, RNT[OpCode->LeftValue]);
+    printf("lb %s, 0x%04X(%s)", RNT[OpCode->DestinationRegister], (u16)OpCode->Immediate, RNT[OpCode->LeftValue]);
 }
 
 static void
 LH(disasm_opcode_info *OpCode)
 {
-    printf("lh %s, 0x%04lX(%s)", RNT[OpCode->DestinationRegister], OpCode->Immediate, RNT[OpCode->LeftValue]);
+    printf("lh %s, 0x%04X(%s)", RNT[OpCode->DestinationRegister], (u16)OpCode->Immediate, RNT[OpCode->LeftValue]);
 }
 
 
@@ -341,13 +341,13 @@ LH(disasm_opcode_info *OpCode)
 static void
 J(disasm_opcode_info *OpCode)
 {
-    printf("j 0x%08lX", OpCode->Immediate * 4);
+    printf("j 0x%08lX", ((u32)OpCode->Immediate) * 4);
 }
 
 static void
 JAL(disasm_opcode_info *OpCode)
 {
-    printf("jal 0x%08lX", OpCode->Immediate * 4);
+    printf("jal 0x%08lX", ((u32)OpCode->Immediate) * 4);
 }
 
 static void
@@ -385,68 +385,68 @@ BranchZero(disasm_opcode_info *OpCode)
             printf("al");
         }
     }
-    printf(" %s, 0x%04lX", RNT[OpCode->LeftValue], OpCode->Immediate);
+    printf(" %s, 0x%04X", RNT[OpCode->LeftValue], (u16)OpCode->Immediate);
 }
 
 static void
 BEQ(disasm_opcode_info *OpCode)
 {
-    printf("beq %s, %s, 0x%08lX", RNT[OpCode->LeftValue], RNT[OpCode->RightValue], OpCode->CurrentAddress + 4 + OpCode->Immediate * 4);
+    printf("beq %s, %s, 0x%08llX", RNT[OpCode->LeftValue], RNT[OpCode->RightValue], OpCode->CurrentAddress + 4 + OpCode->Immediate * 4);
 }
 
 static void
 BEQL(disasm_opcode_info *OpCode)
 {
-    printf("beql %s, %s, 0x%08lX", RNT[OpCode->LeftValue], RNT[OpCode->RightValue], OpCode->CurrentAddress + 4 + OpCode->Immediate * 4);
+    printf("beql %s, %s, 0x%08llX", RNT[OpCode->LeftValue], RNT[OpCode->RightValue], OpCode->CurrentAddress + 4 + OpCode->Immediate * 4);
 }
 
 static void
 BNE(disasm_opcode_info *OpCode)
 {
-    printf("bne %s, %s, 0x%08lX", RNT[OpCode->LeftValue], RNT[OpCode->RightValue], OpCode->CurrentAddress + 4 + OpCode->Immediate * 4);
+    printf("bne %s, %s, 0x%08llX", RNT[OpCode->LeftValue], RNT[OpCode->RightValue], OpCode->CurrentAddress + 4 + OpCode->Immediate * 4);
 }
 
 static void
 BNEL(disasm_opcode_info *OpCode)
 {
-    printf("bnel %s, %s, 0x%08lX", RNT[OpCode->LeftValue], RNT[OpCode->RightValue], OpCode->CurrentAddress + 4 + OpCode->Immediate * 4);
+    printf("bnel %s, %s, 0x%08llX", RNT[OpCode->LeftValue], RNT[OpCode->RightValue], OpCode->CurrentAddress + 4 + OpCode->Immediate * 4);
 }
 
 static void
 BLEZ(disasm_opcode_info *OpCode)
 {
-    printf("blez %s, 0x%08lX", RNT[OpCode->LeftValue], OpCode->CurrentAddress + 4 + OpCode->Immediate * 4);
+    printf("blez %s, 0x%08llX", RNT[OpCode->LeftValue], OpCode->CurrentAddress + 4 + OpCode->Immediate * 4);
 }
 
 static void
 BLEZL(disasm_opcode_info *OpCode)
 {
-    printf("blezl %s, 0x%08lX", RNT[OpCode->LeftValue], OpCode->CurrentAddress + 4 + OpCode->Immediate * 4);
+    printf("blezl %s, 0x%08llX", RNT[OpCode->LeftValue], OpCode->CurrentAddress + 4 + OpCode->Immediate * 4);
 }
 
 static void
 BGTZ(disasm_opcode_info *OpCode)
 {
-    printf("bgtz %s, 0x%08lX", RNT[OpCode->LeftValue], OpCode->CurrentAddress + 4 + OpCode->Immediate * 4);
+    printf("bgtz %s, 0x%08llX", RNT[OpCode->LeftValue], OpCode->CurrentAddress + 4 + OpCode->Immediate * 4);
 }
 
 static void
 BGTZL(disasm_opcode_info *OpCode)
 {
-    printf("bgtzl %s, 0x%08lX", RNT[OpCode->LeftValue], OpCode->CurrentAddress + 4 + OpCode->Immediate * 4);
+    printf("bgtzl %s, 0x%08llX", RNT[OpCode->LeftValue], OpCode->CurrentAddress + 4 + OpCode->Immediate * 4);
 }
 
 //Logical
 static void
 AndI(disasm_opcode_info *OpCode)
 {
-    printf("andi %s, %s, 0x%04lX", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], OpCode->Immediate & 0xFFFF);
+    printf("andi %s, %s, 0x%04X", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], (u16)OpCode->Immediate);
 }
 
 static void
 OrI(disasm_opcode_info *OpCode)
 {
-    printf("ori %s, %s, 0x%04lX", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], OpCode->Immediate & 0xFFFF);
+    printf("ori %s, %s, 0x%04X", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], (u16)OpCode->Immediate);
 }
 
 static void
@@ -475,7 +475,7 @@ NOr(disasm_opcode_info *OpCode)
 static void
 XOrI(disasm_opcode_info *OpCode)
 {
-    printf("xori %s, %s, 0x%04lX", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], OpCode->Immediate & 0xFFFF);
+    printf("xori %s, %s, 0x%04X", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], (u16)OpCode->Immediate);
 }
 
 //shifts
@@ -502,7 +502,7 @@ SLL(disasm_opcode_info *OpCode)
 {
     if (OpCode->DestinationRegister | OpCode->RightValue | OpCode->Immediate)
     {
-        printf("sll %s, %s, 0x%02lX", RNT[OpCode->DestinationRegister], RNT[OpCode->RightValue], OpCode->Immediate);
+        printf("sll %s, %s, 0x%02X", RNT[OpCode->DestinationRegister], RNT[OpCode->RightValue], (u8)OpCode->Immediate);
     }
     else
     {
@@ -513,13 +513,13 @@ SLL(disasm_opcode_info *OpCode)
 static void
 SRL(disasm_opcode_info *OpCode)
 {
-    printf("srl %s, %s, 0x%02lX", RNT[OpCode->DestinationRegister], RNT[OpCode->RightValue], OpCode->Immediate);
+    printf("srl %s, %s, 0x%02X", RNT[OpCode->DestinationRegister], RNT[OpCode->RightValue], (u8)OpCode->Immediate);
 }
 
 static void
 SRA(disasm_opcode_info *OpCode)
 {
-    printf("sra %s, %s, 0x%02lX", RNT[OpCode->DestinationRegister], RNT[OpCode->RightValue], OpCode->Immediate);
+    printf("sra %s, %s, 0x%02X", RNT[OpCode->DestinationRegister], RNT[OpCode->RightValue], (u8)OpCode->Immediate);
 }
 
 // comparison
@@ -538,13 +538,13 @@ SLTU(disasm_opcode_info *OpCode)
 static void
 SLTI(disasm_opcode_info *OpCode)
 {
-    printf("slti %s, %s, 0x%04lX", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], OpCode->Immediate);
+    printf("slti %s, %s, 0x%04X", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], (u16)OpCode->Immediate);
 }
 
 static void
 SLTIU(disasm_opcode_info *OpCode)
 {
-    printf("sltiu %s, %s, 0x%04lX", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], OpCode->Immediate);
+    printf("sltiu %s, %s, 0x%04X", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], (u16)OpCode->Immediate);
 }
 
 
@@ -569,15 +569,15 @@ COP0(disasm_opcode_info *OpCode)
         {
             if (OpCode->RightValue)
             {
-                printf("bc0t 0x%04lX", OpCode->Immediate);
+                printf("bc0t 0x%04X", (u16)OpCode->Immediate);
             }
             else
             {
-                printf("bc0f 0x%04lX", OpCode->Immediate);
+                printf("bc0f 0x%04X", (u16)OpCode->Immediate);
             }
         } break;
         case 0b10000:
-            printf("cop0 0x%08lX", OpCode->Immediate);
+            printf("cop0 0x%08lX", (u32)OpCode->Immediate);
             break;
     }
 }
@@ -602,15 +602,15 @@ COP1(disasm_opcode_info *OpCode)
         {
             if (OpCode->RightValue)
             {
-                printf("bc1t 0x%04lX", OpCode->Immediate);
+                printf("bc1t 0x%04X", (u16)OpCode->Immediate);
             }
             else
             {
-                printf("bc1f 0x%04lX", OpCode->Immediate);
+                printf("bc1f 0x%04X", (u16)OpCode->Immediate);
             }
         } break;
         case 0b10000:
-            printf("cop1 0x%08lX", OpCode->Immediate);
+            printf("cop1 0x%08lX", (u32)OpCode->Immediate);
             break;
     }
 }
@@ -635,15 +635,15 @@ COP2(disasm_opcode_info *OpCode)
         {
             if (OpCode->RightValue)
             {
-                printf("bc2t 0x%04lX", OpCode->Immediate);
+                printf("bc2t 0x%04X", (u16)OpCode->Immediate);
             }
             else
             {
-                printf("bc2f 0x%04lX", OpCode->Immediate);
+                printf("bc2f 0x%04X", (u16)OpCode->Immediate);
             }
         } break;
         case 0b10000:
-            printf("cop2 0x%08lX", OpCode->Immediate);
+            printf("cop2 0x%08lX", (u32)OpCode->Immediate);
             break;
     }
 }
@@ -668,22 +668,22 @@ COP3(disasm_opcode_info *OpCode)
         {
             if (OpCode->RightValue)
             {
-                printf("bc3t 0x%04lX", OpCode->Immediate);
+                printf("bc3t 0x%04X", (u16)OpCode->Immediate);
             }
             else
             {
-                printf("bc3f 0x%04lX", OpCode->Immediate);
+                printf("bc3f 0x%04X", (u16)OpCode->Immediate);
             }
         } break;
         case 0b10000:
-            printf("cop3 0x%08lX", OpCode->Immediate);
+            printf("cop3 0x%08lX", (u32)OpCode->Immediate);
             break;
     }
 }
 
 
 void
-DisassemblerDecodeOpcode(disasm_opcode_info *OpCode, u32 Data, u32 IAddress)
+DisassemblerDecodeOpcode(disasm_opcode_info *OpCode, u32 Data, u64 IAddress)
 {
     OpCode->CurrentAddress = IAddress;
     OpCode->Select0 = (Data & PRIMARY_OP_MASK) >> 26;
@@ -768,7 +768,7 @@ DisassemblerDecodeOpcode(disasm_opcode_info *OpCode, u32 Data, u32 IAddress)
     {
         OpCode->LeftValue = rs;
         OpCode->FunctionSelect = rt;
-        OpCode->Immediate = SignExtend16((Data & IMM16_MASK) >> 0);
+        OpCode->Immediate = SignExtend16To64((Data & IMM16_MASK) >> 0);
         //destination registers set within function
     }
     //j/jal
@@ -784,21 +784,21 @@ DisassemblerDecodeOpcode(disasm_opcode_info *OpCode, u32 Data, u32 IAddress)
     {
         OpCode->LeftValue = rs;
         OpCode->RightValue = rt;
-        OpCode->Immediate = SignExtend16((Data & IMM16_MASK) >> 0);
+        OpCode->Immediate = SignExtend16To64((Data & IMM16_MASK) >> 0);
         //destination registers set within function
     }
     //blez/bgtz
     else if ((OpCode->Select0 & 0b111110) == 0b000110)
     {
         OpCode->LeftValue = rs;
-        OpCode->Immediate = SignExtend16((Data & IMM16_MASK) >> 0);
+        OpCode->Immediate = SignExtend16To64((Data & IMM16_MASK) >> 0);
         //destination registers set within function
     }
     //alu-imm
     else if ((OpCode->Select0 & 0b111000) == 0b001000)
     {
         OpCode->LeftValue = rs;
-        OpCode->Immediate = SignExtend16((Data & IMM16_MASK) >> 0);
+        OpCode->Immediate = SignExtend16To64((Data & IMM16_MASK) >> 0);
         OpCode->DestinationRegister = rt;
     }
     //lui-imm
@@ -844,7 +844,7 @@ DisassemblerDecodeOpcode(disasm_opcode_info *OpCode, u32 Data, u32 IAddress)
         else if (rs == 0b01000)
         {
             OpCode->RightValue = rt; // used as secondary function select
-            OpCode->Immediate = SignExtend16((Data & IMM16_MASK) >> 0);
+            OpCode->Immediate = SignExtend16To64((Data & IMM16_MASK) >> 0);
         }
         else if (rs & 0b10000)
         {
@@ -879,13 +879,13 @@ PrintSecondary(disasm_opcode_info *Op)
 void
 DisassemblerPrintOpCode(disasm_opcode_info *OpCode)
 {
-    printf("0x%08lX: ", OpCode->CurrentAddress);
+    printf("0x%08llX: ", OpCode->CurrentAddress);
     PrimaryJumpTable[OpCode->Select0](OpCode);
     printf("\n");
 }
 
 void
-DisassemblerPrintRange(MIPS_R3000 *Cpu, u32 Base, u32 Count, u32 PC)
+DisassemblerPrintRange(MIPS_R3000 *Cpu, u64 Base, u32 Count, u64 PC)
 {
     for (u32 i = 0; i < Count; ++i)
     {

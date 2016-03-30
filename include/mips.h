@@ -283,52 +283,45 @@ MapVirtualAddress(MIPS_R3000 *Cpu, u64 Address)
 }
 
 inline u64
-ReadMemDWordRaw(MIPS_R3000 *Cpu, u32 Address)
+ReadMemDWordRaw(MIPS_R3000 *Cpu, u64 Address)
 {
-    u32 Base = Address & 0x00FFFFFF;
-    return *((u64 *)((u8 *)MapVirtualAddress(Cpu, Base)));
+    return *((u64 *)((u8 *)MapVirtualAddress(Cpu, Address)));
 }
 
 inline u32
-ReadMemWordRaw(MIPS_R3000 *Cpu, u32 Address)
+ReadMemWordRaw(MIPS_R3000 *Cpu, u64 Address)
 {
-    u32 Base = Address & 0x00FFFFFF;
-    return *((u32 *)((u8 *)MapVirtualAddress(Cpu, Base)));
+    return *((u32 *)((u8 *)MapVirtualAddress(Cpu, Address)));
 }
 
 inline u8
-ReadMemByteRaw(MIPS_R3000 *Cpu, u32 Address)
+ReadMemByteRaw(MIPS_R3000 *Cpu, u64 Address)
 {
-    u32 Base = Address & 0x00FFFFFF;
-    return *((u8 *)MapVirtualAddress(Cpu, Base));
+    return *((u8 *)MapVirtualAddress(Cpu, Address));
 }
 
 inline u16
-ReadMemHalfWordRaw(MIPS_R3000 *Cpu, u32 Address)
+ReadMemHalfWordRaw(MIPS_R3000 *Cpu, u64 Address)
 {
-    u32 Base = Address & 0x00FFFFFF;
-    return *((u16 *)((u8 *)MapVirtualAddress(Cpu, Base)));
+    return *((u16 *)((u8 *)MapVirtualAddress(Cpu, Address)));
 }
 
 inline void
-WriteMemByteRaw(MIPS_R3000 *Cpu, u32 Address, u8 value)
+WriteMemByteRaw(MIPS_R3000 *Cpu, u64 Address, u8 value)
 {
-    u32 Base = Address & 0x00FFFFFF;
-    *((u8 *)MapVirtualAddress(Cpu, Base)) = value;
+    *((u8 *)MapVirtualAddress(Cpu, Address)) = value;
 }
 
 inline void
 WriteMemWordRaw(MIPS_R3000 *Cpu, u32 Address, u32 value)
 {
-    u32 Base = Address & 0x00FFFFFF;
-    *((u32 *)((u8 *)MapVirtualAddress(Cpu, Base))) = value;
+    *((u32 *)((u8 *)MapVirtualAddress(Cpu, Address))) = value;
 }
 
 inline void
 WriteMemHalfWordRaw(MIPS_R3000 *Cpu, u32 Address, u16 value)
 {
-    u32 Base = Address & 0x00FFFFFF;
-    *((u16 *)((u8 *)MapVirtualAddress(Cpu, Base))) = value;
+    *((u16 *)((u8 *)MapVirtualAddress(Cpu, Address))) = value;
 }
 
 inline u64
