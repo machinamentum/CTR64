@@ -28,7 +28,7 @@ Z64GetHeader(z64 *Z64, FILE *File)
     fread(StaleData, sizeof(z64_hdr), 1, File);
     if (Z64->Flags & Z64_FLAG_MIDDLE_ENDIAN)
     {
-        for (int i = 0; i < (sizeof(z64_hdr) / 4); ++i)
+        for (u32 i = 0; i < (sizeof(z64_hdr) / 4); ++i)
         {
             StaleData[i] = SwapME32(StaleData[i]);
         }
