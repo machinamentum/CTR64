@@ -120,10 +120,83 @@ GetDigitalSwitchesPlatform()
     return Value;
 }
 
+bool PlatformHasDebugger()
+{
+    return false;
+}
+
+void PlatformAttachDebugger(void *Cpu)
+{
+
+}
+
 #else
 #include <GLFW/glfw3.h>
+#include <stdarg.h>
+#include <cstdio>
+#include <cstring>
+#include "disasm.h"
+#include "stb_truetype.h"
+#include "crystal_font.h"
 
 static GLFWwindow *GfxHandle;
+static GLFWwindow *DebugWindow;
+
+static stbtt_bakedchar cdata[96]; // ASCII 32..126 is 95 glyphs
+static GLuint FontTexID;
+static float SavedXPos = 0;
+
+static MIPS_R3000 *DebugCpu = nullptr;
+
+static void InitFont(void)
+{
+
+    unsigned char *temp_bitmap = (unsigned char *)malloc(512*512);
+    stbtt_BakeFontBitmap(crystal_font,0, 16.0, temp_bitmap,512,512, 32,96, cdata);
+    glGenTextures(1, &FontTexID);
+    glBindTexture(GL_TEXTURE_2D, FontTexID);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, 512,512, 0, GL_ALPHA, GL_UNSIGNED_BYTE, temp_bitmap);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    free(temp_bitmap);
+}
+
+void PrintString(const char *text)
+{
+    float y = 0;
+    glEnable(GL_TEXTURE_2D);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glBindTexture(GL_TEXTURE_2D, FontTexID);
+    glBegin(GL_QUADS);
+    glColor3f(0, 0, 0);
+    while (*text) {
+        if (*text >= 32 && ((unsigned char)*text) < 128) {
+            stbtt_aligned_quad q;
+            stbtt_GetBakedQuad(cdata, 512,512, *text-32, &SavedXPos,&y,&q,1);//1=opengl & d3d10+,0=d3d9
+            glTexCoord2f(q.s0,q.t1); glVertex2f(q.x0,q.y1);
+            glTexCoord2f(q.s1,q.t1); glVertex2f(q.x1,q.y1);
+            glTexCoord2f(q.s1,q.t0); glVertex2f(q.x1,q.y0);
+            glTexCoord2f(q.s0,q.t0); glVertex2f(q.x0,q.y0);
+        }
+        ++text;
+    }
+    glEnd();
+    glColor3f(1, 1, 1);
+}
+
+static int
+DisassemblerPrintOverride(const char *fmt, ...)
+{
+    const int BufLen = 1024;
+    char Buffer[BufLen];
+    memset(Buffer, 0, BufLen);
+    va_list argp;
+    va_start(argp, fmt);
+    const int ret = vsnprintf(Buffer, BufLen, fmt, argp);
+    PrintString(Buffer);
+    va_end(argp);
+    return ret;
+}
 
 void
 InitPlatform(int argc, char **argv)
@@ -132,22 +205,57 @@ InitPlatform(int argc, char **argv)
     glfwInit();
 
     glfwWindowHint(GLFW_DOUBLEBUFFER, false);
-    GfxHandle = glfwCreateWindow(800, 480, "CTRX", NULL, NULL);
+    DebugWindow = glfwCreateWindow(800, 480, "CTR64 Debugger", NULL, NULL);
+    glfwMakeContextCurrent(DebugWindow);
+    InitFont();
+    GfxHandle = glfwCreateWindow(800, 480, "CTR64", NULL, NULL);
     glfwMakeContextCurrent(GfxHandle);
     glfwSwapInterval(0);
+    DisassemblerSetPrintFunction(DisassemblerPrintOverride);
 }
 
 void
 SwapBuffersPlatform()
 {
+    glfwMakeContextCurrent(DebugWindow);
+    glFlush();
+    glfwMakeContextCurrent(GfxHandle);
     glFlush();
     glfwSwapBuffers(GfxHandle);
+    glfwSwapBuffers(DebugWindow);
     glfwPollEvents();
+}
+
+static void PlatformDrawDebbuger()
+{
+    glfwMakeContextCurrent(DebugWindow);
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    glOrtho(0.0, 800, 480, 0.0, -1.0, 1.0);
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+    glClearColor(1, 1, 1, 1);
+    glClear(GL_COLOR_BUFFER_BIT);
+    SavedXPos = 0;
+    glTranslatef(4, 12, 0);
+    PrintString("Disassembly");
+    for (int i = 0; i < 32; ++i)
+    {
+        glTranslatef(0, 16, 0);
+        SavedXPos = 0;
+        u32 MachineCode = ReadMemWordRaw(DebugCpu, DebugCpu->pc + i * 4);
+        disasm_opcode_info OpCode;
+        DisassemblerDecodeOpcode(&OpCode, MachineCode, DebugCpu->pc + i * 4);
+        DisassemblerPrintOpCode(&OpCode);
+    }
+
+    glfwMakeContextCurrent(GfxHandle);
 }
 
 bool
 MainLoopPlatform()
 {
+    PlatformDrawDebbuger();
     return !glfwWindowShouldClose(GfxHandle);
 }
 
@@ -171,5 +279,19 @@ GetDigitalSwitchesPlatform()
     return Value;
 }
 
+bool PlatformHasDebugger()
+{
+    return true;
+}
+
+#include "mips.h"
+
+void PlatformAttachDebugger(void *Cpu)
+{
+    DebugCpu = (MIPS_R3000 *)Cpu;
+}
+
+#define STB_TRUETYPE_IMPLEMENTATION
+#include "stb_truetype.h"
 
 #endif

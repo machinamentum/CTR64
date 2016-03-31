@@ -270,6 +270,7 @@ void MapMemoryRegion(MIPS_R3000 *, mmm);
 inline void *
 MapVirtualAddress(MIPS_R3000 *Cpu, u64 Address)
 {
+    Address = Address & 0x1FFFFFFF;
     for (u32 i = 0; i < Cpu->NumMMM; ++i)
     {
         mmm *MMM = &Cpu->MemMappedMemRegions[i];

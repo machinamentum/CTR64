@@ -35,5 +35,7 @@ void ExitPlatform();
 void SwapBuffersPlatform();
 bool MainLoopPlatform();
 u32 GetDigitalSwitchesPlatform();
+bool PlatformHasDebugger();
+void PlatformAttachDebugger(void *);
 
 #endif
