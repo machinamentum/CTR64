@@ -14,7 +14,7 @@
 void
 PrintUsage()
 {
-    printf("ctrx_disasm <file[.exe]> (hex address) (number of instructions)\n");
+    printf("ctrx_disasm <file> (hex address) (number of instructions)\n");
 }
 
 int
@@ -39,7 +39,7 @@ main(int argc, char **argv)
     fread(ExeBuffer, fsize, 1, f);
     fclose(f);
 
-    LoadPsxExe(&DummyCpu, (psxexe_hdr *)ExeBuffer);
+    MapMemoryRegion(&DummyCpu, (mmm) {ExeBuffer, 0, (u32)fsize});
 
     u32 Address = DummyCpu.pc;
     if (argc > 2)

@@ -307,6 +307,18 @@ LW(disasm_opcode_info *OpCode)
 }
 
 static void
+LWL(disasm_opcode_info *OpCode)
+{
+    PrintFunction("lwl %s, 0x%04X(%s)", RNT[OpCode->DestinationRegister], (u16)OpCode->Immediate, RNT[OpCode->LeftValue]);
+}
+
+static void
+LWR(disasm_opcode_info *OpCode)
+{
+    PrintFunction("lwr %s, 0x%04X(%s)", RNT[OpCode->DestinationRegister], (u16)OpCode->Immediate, RNT[OpCode->LeftValue]);
+}
+
+static void
 LD(disasm_opcode_info *OpCode)
 {
     PrintFunction("ld %s, 0x%04X(%s)", RNT[OpCode->DestinationRegister], (u16)OpCode->Immediate, RNT[OpCode->LeftValue]);
@@ -973,11 +985,11 @@ InitJumpTables()
     PrimaryJumpTable[0x1B] = LDR;
     PrimaryJumpTable[0x20] = LB;
     PrimaryJumpTable[0x21] = LH;
-    //    PrimaryJumpTable[0x22] = LWL;
+    PrimaryJumpTable[0x22] = LWL;
     PrimaryJumpTable[0x23] = LW;
     PrimaryJumpTable[0x24] = LBU;
     PrimaryJumpTable[0x25] = LHU;
-    //    PrimaryJumpTable[0x26] = LWR;
+    PrimaryJumpTable[0x26] = LWR;
     PrimaryJumpTable[0x28] = SB;
     PrimaryJumpTable[0x29] = SH;
     //    PrimaryJumpTable[0x2A] = SWL;

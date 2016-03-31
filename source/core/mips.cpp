@@ -531,6 +531,34 @@ LW(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
 }
 
 static void
+LWL(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
+{
+    u32 rt = (Data & REG_RT_MASK) >> 16;
+    if (rt)
+    {
+        u32 rs = (Data & REG_RS_MASK) >> 21;
+        u64 Immediate = SignExtend16To64((Data & IMM16_MASK));
+        OpCode->MemAccessAddress = Cpu->GPR[rs] + Immediate;
+        OpCode->MemAccessValue = rt;
+        OpCode->MemAccessMode = MEM_ACCESS_READ | MEM_ACCESS_WORD | MEM_ACCESS_SIGNED | MEM_ACCESS_HIGH;
+    }
+}
+
+static void
+LWR(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
+{
+    u32 rt = (Data & REG_RT_MASK) >> 16;
+    if (rt)
+    {
+        u32 rs = (Data & REG_RS_MASK) >> 21;
+        u64 Immediate = SignExtend16To64((Data & IMM16_MASK));
+        OpCode->MemAccessAddress = Cpu->GPR[rs] + Immediate;
+        OpCode->MemAccessValue = rt;
+        OpCode->MemAccessMode = MEM_ACCESS_READ | MEM_ACCESS_WORD | MEM_ACCESS_SIGNED | MEM_ACCESS_LOW;
+    }
+}
+
+static void
 LD(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
 {
     u32 rt = (Data & REG_RT_MASK) >> 16;
@@ -1201,6 +1229,14 @@ MemoryAccess(MIPS_R3000 *Cpu, opcode *OpCode)
                 {
                     Value = SignExtend32To64(Value);
                 }
+                if (MemAccessMode & MEM_ACCESS_HIGH)
+                {
+                    Value = SignExtend32To64((Cpu->GPR[Register] & 0x0000FFFF) | (Value & 0xFFFF0000));
+                }
+                else if (MemAccessMode & MEM_ACCESS_LOW)
+                {
+                    Value = SignExtend32To64((Cpu->GPR[Register] & 0xFFFF0000) | (Value & 0x0000FFFF));
+                }
             }
 
             else if (MemAccessMode & MEM_ACCESS_DWORD)
@@ -1272,11 +1308,11 @@ StepCpu(MIPS_R3000 *Cpu, u32 Steps)
         &&_ReservedInstructionException,
         &&_LB,
         &&_LH,
-        &&_ReservedInstructionException, // &&_LWL,
+        &&_LWL,
         &&_LW,
         &&_LBU,
         &&_LHU,
-        &&_ReservedInstructionException, // &&_LWR,
+        &&_LWR,
         &&_ReservedInstructionException,
         &&_SB,
         &&_SH,
@@ -1471,12 +1507,16 @@ _LB:
     NEXT(LB);
 _LH:
     NEXT(LH);
+_LWL:
+    NEXT(LWL);
 _LW:
     NEXT(LW);
 _LBU:
     NEXT(LBU);
 _LHU:
     NEXT(LHU);
+_LWR:
+    NEXT(LWR);
 _SB:
     NEXT(SB);
 _SH:
