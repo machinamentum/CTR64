@@ -33,6 +33,7 @@ void DisassemblerPrintRange(MIPS_R3000 *Cpu, u64 Base, u32 Count, u64 PC);
 void DisassemblerDecodeOpcode(disasm_opcode_info *OpCode, u32 Data, u64 IAddress);
 void DisassemblerPrintOpCode(disasm_opcode_info *OpCode);
 void DisassemblerSetPrintFunction(int (*)(const char *, ...));
+const char *DisassemblerGetGPRName(u32 Reg);
 void DumpState(MIPS_R3000 *Cpu);
 void DumpC0State(Coprocessor *C0);
 

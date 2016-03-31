@@ -145,14 +145,16 @@ static GLFWwindow *DebugWindow;
 static stbtt_bakedchar cdata[96]; // ASCII 32..126 is 95 glyphs
 static GLuint FontTexID;
 static float SavedXPos = 0;
+static float FontHeight = 12.0f;
 
 static MIPS_R3000 *DebugCpu = nullptr;
 
-static void InitFont(void)
+static void
+InitFont(void)
 {
 
     unsigned char *temp_bitmap = (unsigned char *)malloc(512*512);
-    stbtt_BakeFontBitmap(crystal_font,0, 16.0, temp_bitmap,512,512, 32,96, cdata);
+    stbtt_BakeFontBitmap(crystal_font,0, FontHeight, temp_bitmap,512,512, 32,96, cdata);
     glGenTextures(1, &FontTexID);
     glBindTexture(GL_TEXTURE_2D, FontTexID);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, 512,512, 0, GL_ALPHA, GL_UNSIGNED_BYTE, temp_bitmap);
@@ -160,7 +162,8 @@ static void InitFont(void)
     free(temp_bitmap);
 }
 
-void PrintString(const char *text)
+static void
+PrintString(const char *text)
 {
     float y = 0;
     glEnable(GL_TEXTURE_2D);
@@ -226,7 +229,28 @@ SwapBuffersPlatform()
     glfwPollEvents();
 }
 
-static void PlatformDrawDebbuger()
+static void
+DebuggerDrawCpuRegisters()
+{
+    glLoadIdentity();
+    glTranslatef(600, 12, 0);
+    for (int i = 0; i < 32; ++i)
+    {
+        glTranslatef(0, FontHeight, 0);
+        SavedXPos = 0;
+        u32 Hi = (u32)((DebugCpu->GPR[i] & 0xFFFFFFFF00000000) >> 32);
+        u32 Lo = (u32)(DebugCpu->GPR[i] & 0xFFFFFFFF);
+        DisassemblerPrintOverride("%s: %08lX:%08lX", DisassemblerGetGPRName(i), Hi, Lo);
+    }
+    glTranslatef(0, FontHeight, 0);
+    SavedXPos = 0;
+    u32 Hi = (u32)((DebugCpu->pc & 0xFFFFFFFF00000000) >> 32);
+    u32 Lo = (u32)(DebugCpu->pc & 0xFFFFFFFF);
+    DisassemblerPrintOverride("pc: %08lX:%08lX", Hi, Lo);
+}
+
+static void
+PlatformDrawDebbuger()
 {
     glfwMakeContextCurrent(DebugWindow);
     glMatrixMode(GL_PROJECTION);
@@ -241,13 +265,15 @@ static void PlatformDrawDebbuger()
     PrintString("Disassembly");
     for (int i = 0; i < 32; ++i)
     {
-        glTranslatef(0, 16, 0);
+        glTranslatef(0, FontHeight, 0);
         SavedXPos = 0;
         u32 MachineCode = ReadMemWordRaw(DebugCpu, DebugCpu->pc + i * 4);
         disasm_opcode_info OpCode;
         DisassemblerDecodeOpcode(&OpCode, MachineCode, DebugCpu->pc + i * 4);
         DisassemblerPrintOpCode(&OpCode);
     }
+
+    DebuggerDrawCpuRegisters();
 
     glfwMakeContextCurrent(GfxHandle);
 }

@@ -92,6 +92,16 @@ static const char *C0RNT[17] =
     "prid",
 };
 
+const char *
+DisassemblerGetGPRName(u32 Reg)
+{
+    if (Reg >= 32)
+    {
+        return nullptr;
+    }
+    return RNT[Reg];
+}
+
 void
 DumpState(MIPS_R3000 *Cpu)
 {
