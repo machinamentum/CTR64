@@ -481,6 +481,30 @@ SW(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
 }
 
 static void
+SWL(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
+{
+    u64 Immediate = SignExtend16To64((Data & IMM16_MASK));
+    u32 rs = (Data & REG_RS_MASK) >> 21;
+    u32 rt = (Data & REG_RT_MASK) >> 16;
+
+    OpCode->MemAccessAddress = Cpu->GPR[rs] + Immediate;
+    OpCode->MemAccessValue = Cpu->GPR[rt];
+    OpCode->MemAccessMode = MEM_ACCESS_WORD | MEM_ACCESS_WRITE | MEM_ACCESS_HIGH;
+}
+
+static void
+SWR(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
+{
+    u64 Immediate = SignExtend16To64((Data & IMM16_MASK));
+    u32 rs = (Data & REG_RS_MASK) >> 21;
+    u32 rt = (Data & REG_RT_MASK) >> 16;
+
+    OpCode->MemAccessAddress = Cpu->GPR[rs] + Immediate;
+    OpCode->MemAccessValue = Cpu->GPR[rt];
+    OpCode->MemAccessMode = MEM_ACCESS_WORD | MEM_ACCESS_WRITE | MEM_ACCESS_LOW;
+}
+
+static void
 SH(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
 {
     u64 Immediate = SignExtend16To64((Data & IMM16_MASK));
@@ -1189,6 +1213,14 @@ MemoryAccess(MIPS_R3000 *Cpu, opcode *OpCode)
 
         else if (MemAccessMode & MEM_ACCESS_WORD)
         {
+            if (MemAccessMode & MEM_ACCESS_HIGH)
+            {
+                Value = (Value & 0xFF00) | (ReadMemWordRaw(Cpu, Address) & 0x00FF);
+            }
+            else if (MemAccessMode & MEM_ACCESS_LOW)
+            {
+                Value = (Value & 0x00FF) | (ReadMemWordRaw(Cpu, Address) & 0xFF00);
+            }
             WriteMemWord(Cpu, Address, (u32)Value);
         }
 
@@ -1316,11 +1348,11 @@ StepCpu(MIPS_R3000 *Cpu, u32 Steps)
         &&_ReservedInstructionException,
         &&_SB,
         &&_SH,
-        &&_ReservedInstructionException, // &&_SWL,
+        &&_SWL,
         &&_SW,
         &&_ReservedInstructionException,
         &&_ReservedInstructionException,
-        &&_ReservedInstructionException, // &&_SWR,
+        &&_SWR,
         &&_ReservedInstructionException,
         &&_ReservedInstructionException, // &&_LWC0,
         &&_ReservedInstructionException, // &&_LWC1,
@@ -1521,8 +1553,12 @@ _SB:
     NEXT(SB);
 _SH:
     NEXT(SH);
+_SWL:
+    NEXT(SWL);
 _SW:
     NEXT(SW);
+_SWR:
+    NEXT(SWR);
 _LD:
     NEXT(LD);
 
