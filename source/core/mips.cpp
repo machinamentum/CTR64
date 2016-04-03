@@ -555,6 +555,20 @@ LW(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
 }
 
 static void
+LWU(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
+{
+    u32 rt = (Data & REG_RT_MASK) >> 16;
+    if (rt)
+    {
+        u32 rs = (Data & REG_RS_MASK) >> 21;
+        u64 Immediate = SignExtend16To64((Data & IMM16_MASK));
+        OpCode->MemAccessAddress = Cpu->GPR[rs] + Immediate;
+        OpCode->MemAccessValue = rt;
+        OpCode->MemAccessMode = MEM_ACCESS_READ | MEM_ACCESS_WORD;
+    }
+}
+
+static void
 LWL(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
 {
     u32 rt = (Data & REG_RT_MASK) >> 16;
@@ -1345,7 +1359,7 @@ StepCpu(MIPS_R3000 *Cpu, u32 Steps)
         &&_LBU,
         &&_LHU,
         &&_LWR,
-        &&_ReservedInstructionException,
+        &&_LWU,
         &&_SB,
         &&_SH,
         &&_SWL,
@@ -1549,6 +1563,8 @@ _LHU:
     NEXT(LHU);
 _LWR:
     NEXT(LWR);
+_LWU:
+    NEXT(LWU);
 _SB:
     NEXT(SB);
 _SH:

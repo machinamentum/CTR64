@@ -331,6 +331,12 @@ LWR(disasm_opcode_info *OpCode)
 }
 
 static void
+LWU(disasm_opcode_info *OpCode)
+{
+    PrintFunction("lwu %s, 0x%04X(%s)", RNT[OpCode->DestinationRegister], (u16)OpCode->Immediate, RNT[OpCode->LeftValue]);
+}
+
+static void
 LD(disasm_opcode_info *OpCode)
 {
     PrintFunction("ld %s, 0x%04X(%s)", RNT[OpCode->DestinationRegister], (u16)OpCode->Immediate, RNT[OpCode->LeftValue]);
@@ -1002,6 +1008,7 @@ InitJumpTables()
     PrimaryJumpTable[0x24] = LBU;
     PrimaryJumpTable[0x25] = LHU;
     PrimaryJumpTable[0x26] = LWR;
+    PrimaryJumpTable[0x27] = LWU;
     PrimaryJumpTable[0x28] = SB;
     PrimaryJumpTable[0x29] = SH;
     PrimaryJumpTable[0x2A] = SWL;
