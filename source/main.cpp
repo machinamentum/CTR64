@@ -13,6 +13,7 @@
 #include "mips.h"
 #include "disasm.h"
 #include "joypad.h"
+#include "vi.h"
 
 void
 ResetCpu(MIPS_R3000 *Cpu)
@@ -41,6 +42,7 @@ int main(int argc, char **argv)
     MapMemoryRegion(&Cpu, (mmm) {RDRAM, 0x00000000, 0x400000});        // RDRAM
     MapMemoryRegion(&Cpu, (mmm) {BiosBuffer, 0x1FC00000, 0x07C0});     // PIF ROM
     MapMemoryRegion(&Cpu, (mmm) {linearAlloc(0x40), 0x1FC007C0, 0x40}); // PIF RAM
+    MapMemoryRegion(&Cpu, (mmm) {linearAlloc(sizeof(VideoInterface)), 0x04400000, sizeof(VideoInterface)}); // VI
 
     ResetCpu(&Cpu);
 
