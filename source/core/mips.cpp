@@ -1278,11 +1278,11 @@ MemoryAccess(MIPS_R3000 *Cpu, opcode *OpCode)
         {
             if (MemAccessMode & MEM_ACCESS_HIGH)
             {
-                Value = (Value & 0xFFFFFFFF00000000) | (ReadMemWordRaw(Cpu, Address) & 0x00000000FFFFFFFF);
+                Value = (Value & 0xFFFFFFFF00000000) | (ReadMemDWordRaw(Cpu, Address) & 0x00000000FFFFFFFF);
             }
             else if (MemAccessMode & MEM_ACCESS_LOW)
             {
-                Value = (Value & 0x00000000FFFFFFFF) | (ReadMemWordRaw(Cpu, Address) & 0xFFFFFFFF00000000);
+                Value = (Value & 0x00000000FFFFFFFF) | (ReadMemDWordRaw(Cpu, Address) & 0xFFFFFFFF00000000);
             }
             WriteMemDWord(Cpu, Address, Value);
         }
