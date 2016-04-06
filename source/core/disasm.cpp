@@ -967,7 +967,7 @@ void DisassemblerSetPrintFunction(int (*Func)(const char *, ...))
 static void __attribute__((constructor))
 InitJumpTables()
 {
-    for (int i = 0; i < 0x3F; ++i)
+    for (int i = 0; i <= 0x3F; ++i)
     {
         PrimaryJumpTable[i] = UnknownOpCode;
         SecondaryJumpTable[i] = UnknownOpCode;
