@@ -118,7 +118,7 @@ static char ScratchString[5];
 inline const char *
 C0Name(u32 Reg)
 {
-    if (Reg > C0_PRID)
+    if (Reg >= C0_PRID)
     {
         snprintf(ScratchString, 4, "r%lud",  Reg);
         return ScratchString;
