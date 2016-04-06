@@ -149,7 +149,7 @@ struct Coprocessor
             u64 bdam;
             u64 r10;
             u64 bpcm;
-            u64 sr;
+            u64 sr = C0_STATUS_RE;
             u64 cause;
             u64 epc;
             u64 prid = C0_PRID_VALUE;
@@ -286,13 +286,15 @@ MapVirtualAddress(MIPS_R3000 *Cpu, u64 Address)
 inline u64
 ReadMemDWordRaw(MIPS_R3000 *Cpu, u64 Address)
 {
-    return *((u64 *)((u8 *)MapVirtualAddress(Cpu, Address)));
+    u64 Value = *((u64 *)((u8 *)MapVirtualAddress(Cpu, Address)));
+    return ((Cpu->CP0.sr & C0_STATUS_RE) ? __builtin_bswap64(Value) : Value);
 }
 
 inline u32
 ReadMemWordRaw(MIPS_R3000 *Cpu, u64 Address)
 {
-    return *((u32 *)((u8 *)MapVirtualAddress(Cpu, Address)));
+    u32 Value = *((u32 *)((u8 *)MapVirtualAddress(Cpu, Address)));
+    return ((Cpu->CP0.sr & C0_STATUS_RE) ? __builtin_bswap32(Value) : Value);
 }
 
 inline u8
@@ -304,7 +306,8 @@ ReadMemByteRaw(MIPS_R3000 *Cpu, u64 Address)
 inline u16
 ReadMemHalfWordRaw(MIPS_R3000 *Cpu, u64 Address)
 {
-    return *((u16 *)((u8 *)MapVirtualAddress(Cpu, Address)));
+    u16 Value = *((u32 *)((u8 *)MapVirtualAddress(Cpu, Address)));
+    return ((Cpu->CP0.sr & C0_STATUS_RE) ? __builtin_bswap16(Value) : Value);
 }
 
 inline void
@@ -316,13 +319,13 @@ WriteMemByteRaw(MIPS_R3000 *Cpu, u64 Address, u8 value)
 inline void
 WriteMemWordRaw(MIPS_R3000 *Cpu, u32 Address, u32 value)
 {
-    *((u32 *)((u8 *)MapVirtualAddress(Cpu, Address))) = value;
+    *((u32 *)((u8 *)MapVirtualAddress(Cpu, Address))) = ((Cpu->CP0.sr & C0_STATUS_RE) ? __builtin_bswap32(value) : value);
 }
 
 inline void
 WriteMemHalfWordRaw(MIPS_R3000 *Cpu, u32 Address, u16 value)
 {
-    *((u16 *)((u8 *)MapVirtualAddress(Cpu, Address))) = value;
+    *((u16 *)((u8 *)MapVirtualAddress(Cpu, Address))) = ((Cpu->CP0.sr & C0_STATUS_RE) ? __builtin_bswap16(value) : value);
 }
 
 inline u64

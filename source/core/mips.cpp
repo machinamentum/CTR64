@@ -12,8 +12,8 @@
 inline u64
 ReadMemDWord(MIPS_R3000 *Cpu, u64 Address)
 {
-    u64 Base = Address;
-    u8 *VirtualAddress = (u8 *)MapVirtualAddress(Cpu, Base);
+    u64 Base = Address & 0x1FFFFFFF;
+    u8 *VirtualAddress = (u8 *)MapVirtualAddress(Cpu, Address);
     u32 Swap = Cpu->CP0.sr & C0_STATUS_RE;
     u64 Value = -1;
     if (!VirtualAddress)
@@ -39,8 +39,8 @@ ReadMemDWord(MIPS_R3000 *Cpu, u64 Address)
 inline u32
 ReadMemWord(MIPS_R3000 *Cpu, u64 Address)
 {
-    u32 Base = Address & 0x00FFFFFF;
-    u8 *VirtualAddress = (u8 *)MapVirtualAddress(Cpu, Base);
+    u32 Base = Address & 0x1FFFFFFF;
+    u8 *VirtualAddress = (u8 *)MapVirtualAddress(Cpu, Address);
     u32 Swap = Cpu->CP0.sr & C0_STATUS_RE;
     u32 Value = -1;
     if (!VirtualAddress)
@@ -64,8 +64,8 @@ ReadMemWord(MIPS_R3000 *Cpu, u64 Address)
 static void
 WriteMemByte(MIPS_R3000 *Cpu, u64 Address, u8 value)
 {
-    u32 Base = Address & 0x00FFFFFF;
-    u8 *VirtualAddress = (u8 *)MapVirtualAddress(Cpu, Base);
+    u32 Base = Address & 0x1FFFFFFF;
+    u8 *VirtualAddress = (u8 *)MapVirtualAddress(Cpu, Address);
     if (!VirtualAddress)
     {
         for (u32 i = 0; i < Cpu->NumMMR; ++i)
@@ -87,8 +87,8 @@ WriteMemByte(MIPS_R3000 *Cpu, u64 Address, u8 value)
 static void
 WriteMemDWord(MIPS_R3000 *Cpu, u64 Address, u64 Value)
 {
-    u32 Base = Address & 0x00FFFFFF;
-    u8 *VirtualAddress = (u8 *)MapVirtualAddress(Cpu, Base);
+    u32 Base = Address & 0x1FFFFFFF;
+    u8 *VirtualAddress = (u8 *)MapVirtualAddress(Cpu, Address);
     if (!VirtualAddress)
     {
         for (u32 i = 0; i < Cpu->NumMMR; ++i)
@@ -111,8 +111,8 @@ WriteMemDWord(MIPS_R3000 *Cpu, u64 Address, u64 Value)
 static void
 WriteMemWord(MIPS_R3000 *Cpu, u64 Address, u32 Value)
 {
-    u32 Base = Address & 0x00FFFFFF;
-    u8 *VirtualAddress = (u8 *)MapVirtualAddress(Cpu, Base);
+    u32 Base = Address & 0x1FFFFFFF;
+    u8 *VirtualAddress = (u8 *)MapVirtualAddress(Cpu, Address);
     if (!VirtualAddress)
     {
         for (u32 i = 0; i < Cpu->NumMMR; ++i)
@@ -134,8 +134,8 @@ WriteMemWord(MIPS_R3000 *Cpu, u64 Address, u32 Value)
 static void
 WriteMemHalfWord(MIPS_R3000 *Cpu, u64 Address, u16 Value)
 {
-    u32 Base = Address & 0x00FFFFFF;
-    u8 *VirtualAddress = (u8 *)MapVirtualAddress(Cpu, Base);
+    u32 Base = Address & 0x1FFFFFFF;
+    u8 *VirtualAddress = (u8 *)MapVirtualAddress(Cpu, Address);
     if (!VirtualAddress)
     {
         for (u32 i = 0; i < Cpu->NumMMR; ++i)
