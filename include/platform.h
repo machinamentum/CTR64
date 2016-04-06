@@ -9,6 +9,8 @@
 #ifndef PLATFORM_H
 #define PLATFORM_H
 
+#define PLATFORM_START (1 << 0)
+
 #ifdef _3DS
 #include <3ds.h>
 #include <3ds/types.h>

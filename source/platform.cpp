@@ -294,14 +294,8 @@ ExitPlatform()
 u32
 GetDigitalSwitchesPlatform()
 {
-    u32 Value;
-    Value = 0xFFFFFFFF;
-    int count;
-    const unsigned char* States = glfwGetJoystickButtons(GLFW_JOYSTICK_1, &count);
-    for (int i = 0; i < count && i < 15; ++i)
-    {
-        Value &= ~((States[i] == GLFW_PRESS) << i);
-    }
+    u32 Value = 0;
+    Value |= glfwGetKey(DebugWindow, GLFW_KEY_ENTER);
     return Value;
 }
 
