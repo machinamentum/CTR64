@@ -26,14 +26,14 @@ ReadMemDWord(MIPS_R3000 *Cpu, u64 Address)
                 // TODO read double from two 32-bit consecutive registers
                 // NOTE does R4300 support mapping 64 bit registers?
                 Value = MMR->RegisterReadFunc(MMR->Object, Address);
-                return (Swap ? __builtin_bswap64(Value) : Value);
+                return (Swap ? Value: __builtin_bswap64(Value));
             }
         }
 
         return Value;
     }
     Value = *((u64 *)VirtualAddress);
-    return (Swap ? __builtin_bswap64(Value) : Value);
+    return (Swap ? Value: __builtin_bswap64(Value));
 }
 
 inline u32
@@ -51,18 +51,18 @@ ReadMemWord(MIPS_R3000 *Cpu, u64 Address)
             if (Base == MMR->Address)
             {
                 Value = MMR->RegisterReadFunc(MMR->Object, Address);
-                return (Swap ? __builtin_bswap32(Value) : Value);
+                return (Swap ? Value: __builtin_bswap32(Value));
             }
         }
 
         return Value;
     }
     Value = *((u32 *)VirtualAddress);
-    return (Swap ? __builtin_bswap32(Value) : Value);
+    return (Swap ? Value: __builtin_bswap32(Value));
 }
 
 static void
-WriteMemByte(MIPS_R3000 *Cpu, u64 Address, u8 value)
+WriteMemByte(MIPS_R3000 *Cpu, u64 Address, u8 Value)
 {
     u32 Base = Address & 0x1FFFFFFF;
     u8 *VirtualAddress = (u8 *)MapVirtualAddress(Cpu, Address);
@@ -74,14 +74,14 @@ WriteMemByte(MIPS_R3000 *Cpu, u64 Address, u8 value)
             if (Base == MMR->Address)
             {
                 
-                MMR->RegisterWriteFunc(MMR->Object, value);
+                MMR->RegisterWriteFunc(MMR->Object, Value);
                 return;
             }
         }
 
         return;
     }
-    *((u8 *)VirtualAddress) = value;
+    *((u8 *)VirtualAddress) = Value;
 }
 
 static void
@@ -89,6 +89,7 @@ WriteMemDWord(MIPS_R3000 *Cpu, u64 Address, u64 Value)
 {
     u32 Base = Address & 0x1FFFFFFF;
     u8 *VirtualAddress = (u8 *)MapVirtualAddress(Cpu, Address);
+    u32 Swap = Cpu->CP0.sr & C0_STATUS_RE;
     if (!VirtualAddress)
     {
         for (u32 i = 0; i < Cpu->NumMMR; ++i)
@@ -97,15 +98,14 @@ WriteMemDWord(MIPS_R3000 *Cpu, u64 Address, u64 Value)
             if (Base == MMR->Address)
             {
                 // NOTE does R4300 support writing a single 64 bit register?
-                MMR->RegisterWriteFunc(MMR->Object, Value);
+                MMR->RegisterWriteFunc(MMR->Object, (Swap ? Value: __builtin_bswap64(Value)));
                 return;
             }
         }
 
         return;
     }
-    u32 Swap = Cpu->CP0.sr & C0_STATUS_RE;
-    *((u64 *)((u8 *)VirtualAddress)) = (Swap ? __builtin_bswap64(Value) : Value);
+    *((u64 *)((u8 *)VirtualAddress)) = (Swap ? Value: __builtin_bswap64(Value));
 }
 
 static void
@@ -113,6 +113,7 @@ WriteMemWord(MIPS_R3000 *Cpu, u64 Address, u32 Value)
 {
     u32 Base = Address & 0x1FFFFFFF;
     u8 *VirtualAddress = (u8 *)MapVirtualAddress(Cpu, Address);
+    u32 Swap = Cpu->CP0.sr & C0_STATUS_RE;
     if (!VirtualAddress)
     {
         for (u32 i = 0; i < Cpu->NumMMR; ++i)
@@ -120,15 +121,14 @@ WriteMemWord(MIPS_R3000 *Cpu, u64 Address, u32 Value)
             mmr *MMR = &Cpu->MemMappedRegisters[i];
             if (Base == MMR->Address)
             {
-                MMR->RegisterWriteFunc(MMR->Object, Value);
+                MMR->RegisterWriteFunc(MMR->Object, (Swap ? Value: __builtin_bswap32(Value)));
                 return;
             }
         }
 
         return;
     }
-    u32 Swap = Cpu->CP0.sr & C0_STATUS_RE;
-    *((u32 *)((u8 *)VirtualAddress)) = (Swap ? __builtin_bswap32(Value) : Value);
+    *((u32 *)((u8 *)VirtualAddress)) = (Swap ? Value: __builtin_bswap32(Value));
 }
 
 static void
@@ -136,6 +136,7 @@ WriteMemHalfWord(MIPS_R3000 *Cpu, u64 Address, u16 Value)
 {
     u32 Base = Address & 0x1FFFFFFF;
     u8 *VirtualAddress = (u8 *)MapVirtualAddress(Cpu, Address);
+    u32 Swap = Cpu->CP0.sr & C0_STATUS_RE;
     if (!VirtualAddress)
     {
         for (u32 i = 0; i < Cpu->NumMMR; ++i)
@@ -143,15 +144,14 @@ WriteMemHalfWord(MIPS_R3000 *Cpu, u64 Address, u16 Value)
             mmr *MMR = &Cpu->MemMappedRegisters[i];
             if (Base == MMR->Address)
             {
-                MMR->RegisterWriteFunc(MMR->Object, Value);
+                MMR->RegisterWriteFunc(MMR->Object, (Swap ? Value: __builtin_bswap16(Value)));
                 return;
             }
         }
 
         return;
     }
-    u32 Swap = Cpu->CP0.sr & C0_STATUS_RE;
-    *((u16 *)((u8 *)VirtualAddress)) = (Swap ? __builtin_bswap16(Value) : Value);
+    *((u16 *)((u8 *)VirtualAddress)) = (Swap ? Value: __builtin_bswap16(Value));
 }
 
 static void
