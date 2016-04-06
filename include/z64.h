@@ -46,11 +46,15 @@ struct z64
 {
     FILE *FileStream;
     int Flags;
-    z64_hdr Hdr;
 };
 
+void Z64GetHeader(z64 *Z64, z64_hdr *Hdr);
+void Z64Read(z64 *Z64, void *buffer, unsigned int bytes);
+void Z64Seek(z64 *Z64, unsigned int pos);
 void Z64Open(z64 *Z64, int Flags, const char *FileName);
 void Z64Close(z64 *Z64);
+unsigned int Z64GetCartSize(z64 *Z64);
+
 
 const char *Z64GetCountryString(u16 Country);
 const char *Z64GetManufacturerString(u16 ManufacturerID);

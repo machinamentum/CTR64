@@ -20,12 +20,12 @@ SwapME32(u32 Data)
     return Value;
 }
 
-static void
-Z64GetHeader(z64 *Z64, FILE *File)
+void
+Z64GetHeader(z64 *Z64, z64_hdr *Hdr)
 {
-    z64_hdr *Hdr = &Z64->Hdr;
-    u32 *StaleData = (u32 *)linearAlloc(sizeof(z64_hdr));
-    fread(StaleData, sizeof(z64_hdr), 1, File);
+    Z64Seek(Z64, 0);
+    u32 *StaleData = (u32 *)Hdr;
+    fread(StaleData, sizeof(z64_hdr), 1, Z64->FileStream);
     if (Z64->Flags & Z64_FLAG_MIDDLE_ENDIAN)
     {
         for (u32 i = 0; i < (sizeof(z64_hdr) / 4); ++i)
@@ -33,9 +33,6 @@ Z64GetHeader(z64 *Z64, FILE *File)
             StaleData[i] = SwapME32(StaleData[i]);
         }
     }
-
-    memcpy(Hdr, StaleData, sizeof(z64_hdr));
-    linearFree(StaleData);
 
     Hdr->ClockRate = __builtin_bswap32(Hdr->ClockRate);
     Hdr->PC = __builtin_bswap32(Hdr->PC);
@@ -53,17 +50,46 @@ Z64GetHeader(z64 *Z64, FILE *File)
 }
 
 void
+Z64Seek(z64 *Z64, unsigned int offset)
+{
+    fseek(Z64->FileStream, offset, SEEK_SET);
+}
+
+void
 Z64Open(z64 *Z64, int Flags, const char *FileName)
 {
     Z64->FileStream = fopen(FileName, "rb");
     Z64->Flags = Flags;
-    Z64GetHeader(Z64, Z64->FileStream);
+}
+
+void
+Z64Read(z64 *Z64, void *buffer, unsigned int bytes)
+{
+    fread(buffer, 1, bytes, Z64->FileStream);
+    u32 *StaleData = (u32 *)buffer;
+    if (Z64->Flags & Z64_FLAG_MIDDLE_ENDIAN)
+    {
+        for (u32 i = 0; i < (bytes / 4); ++i)
+        {
+            StaleData[i] = SwapME32(StaleData[i]);
+        }
+    }
 }
 
 void
 Z64Close(z64 *Z64)
 {
     fclose(Z64->FileStream);
+}
+
+unsigned int
+Z64GetCartSize(z64 *Z64)
+{
+    long int CurPos = ftell(Z64->FileStream);
+    fseek(Z64->FileStream, 0, SEEK_END);
+    long int fsize = ftell(Z64->FileStream);
+    fseek(Z64->FileStream, CurPos, SEEK_SET);
+    return fsize;
 }
 
 const char *

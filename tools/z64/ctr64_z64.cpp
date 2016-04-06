@@ -46,14 +46,16 @@ main(int argc, char **argv)
 
     z64 Z64;
     Z64Open(&Z64, Flags, argv[1]);
-    printf("Image name:   %.20s\n", Z64.Hdr.ImageName);
-    printf("Manufacturer: %s (%d)\n", Z64GetManufacturerString(Z64.Hdr.ManufacturerID), Z64.Hdr.ManufacturerID);
-    printf("Region:       %s (%d)\n", Z64GetCountryString(Z64.Hdr.Country), Z64.Hdr.Country);
+    z64_hdr Hdr;
+    Z64GetHeader(&Z64, &Hdr);
+    printf("Image name:   %.20s\n", Hdr.ImageName);
+    printf("Manufacturer: %s (%d)\n", Z64GetManufacturerString(Hdr.ManufacturerID), Hdr.ManufacturerID);
+    printf("Region:       %s (%d)\n", Z64GetCountryString(Hdr.Country), Hdr.Country);
     printf("Boot code:\n");
     MIPS_R3000 Dummy;
     void *RDRAM = linearAlloc(0x400000);
     MapMemoryRegion(&Dummy, (mmm) {RDRAM, 0x00000000, 0x400000});
-    memcpy(RDRAM, &Z64.Hdr.BootCode, 1008 * 4);
+    memcpy(RDRAM, &Hdr.BootCode, 1008 * 4);
     DisassemblerPrintRange(&Dummy, 0, 32, 0);
     Z64Close(&Z64);
     return 0;
