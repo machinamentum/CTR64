@@ -481,6 +481,42 @@ SW(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
 }
 
 static void
+SD(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
+{
+    u64 Immediate = SignExtend16To64((Data & IMM16_MASK));
+    u32 rs = (Data & REG_RS_MASK) >> 21;
+    u32 rt = (Data & REG_RT_MASK) >> 16;
+
+    OpCode->MemAccessAddress = Cpu->GPR[rs] + Immediate;
+    OpCode->MemAccessValue = Cpu->GPR[rt];
+    OpCode->MemAccessMode = MEM_ACCESS_DWORD | MEM_ACCESS_WRITE;
+}
+
+static void
+SDL(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
+{
+    u64 Immediate = SignExtend16To64((Data & IMM16_MASK));
+    u32 rs = (Data & REG_RS_MASK) >> 21;
+    u32 rt = (Data & REG_RT_MASK) >> 16;
+
+    OpCode->MemAccessAddress = Cpu->GPR[rs] + Immediate;
+    OpCode->MemAccessValue = Cpu->GPR[rt];
+    OpCode->MemAccessMode = MEM_ACCESS_DWORD | MEM_ACCESS_WRITE | MEM_ACCESS_HIGH;
+}
+
+static void
+SDR(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
+{
+    u64 Immediate = SignExtend16To64((Data & IMM16_MASK));
+    u32 rs = (Data & REG_RS_MASK) >> 21;
+    u32 rt = (Data & REG_RT_MASK) >> 16;
+
+    OpCode->MemAccessAddress = Cpu->GPR[rs] + Immediate;
+    OpCode->MemAccessValue = Cpu->GPR[rt];
+    OpCode->MemAccessMode = MEM_ACCESS_DWORD | MEM_ACCESS_WRITE | MEM_ACCESS_LOW;
+}
+
+static void
 SWL(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
 {
     u64 Immediate = SignExtend16To64((Data & IMM16_MASK));
@@ -1229,17 +1265,25 @@ MemoryAccess(MIPS_R3000 *Cpu, opcode *OpCode)
         {
             if (MemAccessMode & MEM_ACCESS_HIGH)
             {
-                Value = (Value & 0xFF00) | (ReadMemWordRaw(Cpu, Address) & 0x00FF);
+                Value = (Value & 0xFFFF0000) | (ReadMemWordRaw(Cpu, Address) & 0x0000FFFF);
             }
             else if (MemAccessMode & MEM_ACCESS_LOW)
             {
-                Value = (Value & 0x00FF) | (ReadMemWordRaw(Cpu, Address) & 0xFF00);
+                Value = (Value & 0x0000FFFF) | (ReadMemWordRaw(Cpu, Address) & 0xFFFF0000);
             }
             WriteMemWord(Cpu, Address, (u32)Value);
         }
 
         else if (MemAccessMode & MEM_ACCESS_DWORD)
         {
+            if (MemAccessMode & MEM_ACCESS_HIGH)
+            {
+                Value = (Value & 0xFFFFFFFF00000000) | (ReadMemWordRaw(Cpu, Address) & 0x00000000FFFFFFFF);
+            }
+            else if (MemAccessMode & MEM_ACCESS_LOW)
+            {
+                Value = (Value & 0x00000000FFFFFFFF) | (ReadMemWordRaw(Cpu, Address) & 0xFFFFFFFF00000000);
+            }
             WriteMemDWord(Cpu, Address, Value);
         }
     }
@@ -1364,8 +1408,8 @@ StepCpu(MIPS_R3000 *Cpu, u32 Steps)
         &&_SH,
         &&_SWL,
         &&_SW,
-        &&_ReservedInstructionException,
-        &&_ReservedInstructionException,
+        &&_SDL,
+        &&_SDR,
         &&_SWR,
         &&_ReservedInstructionException,
         &&_ReservedInstructionException, // &&_LWC0,
@@ -1383,7 +1427,7 @@ StepCpu(MIPS_R3000 *Cpu, u32 Steps)
         &&_ReservedInstructionException,
         &&_ReservedInstructionException,
         &&_ReservedInstructionException,
-        &&_ReservedInstructionException,
+        &&_SD,
     };
 
     void *FJTSecondary[0x40] =
@@ -1573,10 +1617,16 @@ _SWL:
     NEXT(SWL);
 _SW:
     NEXT(SW);
+_SDL:
+    NEXT(SDL);
+_SDR:
+    NEXT(SDR);
 _SWR:
     NEXT(SWR);
 _LD:
     NEXT(LD);
+_SD:
+    NEXT(SD);
 
 _SLL:
     NEXT(SLL);
