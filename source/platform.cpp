@@ -250,6 +250,10 @@ KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
         {
             DisassemblyAddress -= 4;
         }
+        if (key == GLFW_KEY_R && action == GLFW_PRESS)
+        {
+            DebugCpu->pc = RESET_VECTOR;
+        }
     }
 }
 
