@@ -274,7 +274,7 @@ MapVirtualAddress(MIPS_R3000 *Cpu, u64 Address)
     for (u32 i = 0; i < Cpu->NumMMM; ++i)
     {
         mmm *MMM = &Cpu->MemMappedMemRegions[i];
-        u64 Addr = MMM->VirtualAddress;
+        u64 Addr = MMM->VirtualAddress & 0x1FFFFFFF;
         u32 Size = MMM->Size;
         if ( (Address >= Addr) && (Address < (Addr + Size)) ) {
             return ((u8 *)MMM->Ptr) + (Address - Addr);

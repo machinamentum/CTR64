@@ -1296,7 +1296,7 @@ MemoryAccess(MIPS_R3000 *Cpu, opcode *OpCode)
             Value = ReadMemDWord(Cpu, Address);
             if (MemAccessMode & MEM_ACCESS_BYTE)
             {
-                Value &= 0xFF;
+                Value = (Value >> 56) & 0xFF;
                 if (Signed)
                 {
                     Value = SignExtend8To64(Value);
@@ -1305,7 +1305,7 @@ MemoryAccess(MIPS_R3000 *Cpu, opcode *OpCode)
 
             else if (MemAccessMode & MEM_ACCESS_HALF)
             {
-                Value &= 0xFFFF;
+                Value = (Value >> 48) & 0xFFFF;
                 if (Signed)
                 {
                     Value = SignExtend16To64(Value);
@@ -1314,7 +1314,7 @@ MemoryAccess(MIPS_R3000 *Cpu, opcode *OpCode)
 
             else if (MemAccessMode & MEM_ACCESS_WORD)
             {
-                Value &= 0xFFFFFFFF;
+                Value = (Value >> 32) & 0xFFFFFFFF;
                 if (Signed)
                 {
                     Value = SignExtend32To64(Value);
