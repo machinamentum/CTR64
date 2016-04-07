@@ -15,7 +15,7 @@ ReadMemDWord(MIPS_R3000 *Cpu, u64 Address)
     u64 Base = Address & 0x1FFFFFFF;
     u8 *VirtualAddress = (u8 *)MapVirtualAddress(Cpu, Address);
     u32 Swap = Cpu->CP0.sr & C0_STATUS_RE;
-    u64 Value = -1;
+    u64 Value = 0;
     if (!VirtualAddress)
     {
         for (u32 i = 0; i < Cpu->NumMMR; ++i)
@@ -42,7 +42,7 @@ ReadMemWord(MIPS_R3000 *Cpu, u64 Address)
     u32 Base = Address & 0x1FFFFFFF;
     u8 *VirtualAddress = (u8 *)MapVirtualAddress(Cpu, Address);
     u32 Swap = Cpu->CP0.sr & C0_STATUS_RE;
-    u32 Value = -1;
+    u32 Value = 0;
     if (!VirtualAddress)
     {
         for (u32 i = 0; i < Cpu->NumMMR; ++i)
