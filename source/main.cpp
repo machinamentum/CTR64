@@ -14,6 +14,7 @@
 #include "disasm.h"
 #include "joypad.h"
 #include "vi.h"
+#include "sp.h"
 #include "z64.h"
 
 void
@@ -29,6 +30,7 @@ int main(int argc, char **argv)
     InitPlatform(argc, argv);
 
     MIPS_R3000 Cpu;
+    SignalProcessor *SP = new SignalProcessor();
 
     FILE *f = fopen("n64_ipl.bin", "rb");
     fseek(f, 0, SEEK_END);
@@ -49,6 +51,7 @@ int main(int argc, char **argv)
     MapMemoryRegion(&Cpu, (mmm) {BiosBuffer, 0x1FC00000, 0x0800});     // PIF ROM/RAM
     MapMemoryRegion(&Cpu, (mmm) {linearAlloc(sizeof(VideoInterface)), 0x04400000, sizeof(VideoInterface)}); // VI
     MapMemoryRegion(&Cpu, (mmm) {CartBuffer, 0x10000000, 0x01000000});
+    MapMemoryRegion(&Cpu, (mmm) {SP, 0xA4040000, sizeof(SignalProcessor)});
 
     ResetCpu(&Cpu);
 
