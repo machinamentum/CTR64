@@ -56,7 +56,6 @@ int main(int argc, char **argv)
     int CyclesToRun = 10000;
     bool AutoStep = true;
     u32 IRQ0Steps = 0;
-    bool Down = false;
 
     if (PlatformHasDebugger())
     {
@@ -74,17 +73,6 @@ int main(int argc, char **argv)
             break;
 #endif
 
-
-        if (((GetDigitalSwitchesPlatform() & PLATFORM_START) == 0) && Down)
-        {
-            Step = true;
-            Down = false;
-        }
-
-        if (GetDigitalSwitchesPlatform() & PLATFORM_START)
-        {
-            Down = true;
-        }
 
         if (Step || AutoStep)
         {

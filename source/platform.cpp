@@ -135,6 +135,7 @@ void PlatformAttachDebugger(void *Cpu)
 #include <stdarg.h>
 #include <cstdio>
 #include <cstring>
+#include <string>
 #include "disasm.h"
 #include "stb_truetype.h"
 #include "crystal_font.h"
@@ -145,9 +146,13 @@ static GLFWwindow *DebugWindow;
 static stbtt_bakedchar cdata[96]; // ASCII 32..126 is 95 glyphs
 static GLuint FontTexID;
 static float SavedXPos = 0;
-static float FontHeight = 12.0f;
+static float FontHeight = 14.0f;
 
 static MIPS_R3000 *DebugCpu = nullptr;
+static struct {float r; float g; float b;} FontColor = {1, 1, 1};
+static u64 DisassemblyAddress;
+static std::string DebugTempStr;
+static bool GotoMode = false;
 
 static void
 InitFont(void)
@@ -171,7 +176,7 @@ PrintString(const char *text)
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glBindTexture(GL_TEXTURE_2D, FontTexID);
     glBegin(GL_QUADS);
-    glColor3f(0, 0, 0);
+    glColor3f(FontColor.r, FontColor.g, FontColor.b);
     while (*text) {
         if (*text >= 32 && ((unsigned char)*text) < 128) {
             stbtt_aligned_quad q;
@@ -201,6 +206,53 @@ DisassemblerPrintOverride(const char *fmt, ...)
     return ret;
 }
 
+static void
+KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
+{
+    if (window != DebugWindow) return;
+
+    if (GotoMode)
+    {
+        if (action != GLFW_PRESS) return;
+
+        if ((key >= GLFW_KEY_A && key <= GLFW_KEY_F) || (key >= GLFW_KEY_0 && key <= GLFW_KEY_9))
+        {
+            DebugTempStr += (unsigned char)key;
+        }
+
+        if (key == GLFW_KEY_BACKSPACE)
+        {
+            if (DebugTempStr.length()) DebugTempStr.pop_back();
+        }
+
+        if (key == GLFW_KEY_ENTER)
+        {
+            GotoMode = false;
+            DisassemblyAddress = strtoul(DebugTempStr.c_str(), nullptr, 16);
+        }
+    }
+    else
+    {
+        if (key == GLFW_KEY_ENTER && action == GLFW_PRESS)
+        {
+            StepCpu(DebugCpu, 1);
+            DisassemblyAddress = DebugCpu->pc;
+        }
+        if (key == GLFW_KEY_G && action == GLFW_PRESS)
+        {
+            GotoMode = true;
+        }
+        if (key == GLFW_KEY_DOWN && action == GLFW_PRESS)
+        {
+            DisassemblyAddress += 4;
+        }
+        if (key == GLFW_KEY_UP && action == GLFW_PRESS)
+        {
+            DisassemblyAddress -= 4;
+        }
+    }
+}
+
 void
 InitPlatform(int argc, char **argv)
 {
@@ -215,6 +267,7 @@ InitPlatform(int argc, char **argv)
     glfwMakeContextCurrent(GfxHandle);
     glfwSwapInterval(0);
     DisassemblerSetPrintFunction(DisassemblerPrintOverride);
+    glfwSetKeyCallback(DebugWindow, KeyCallback);
 }
 
 void
@@ -258,19 +311,39 @@ PlatformDrawDebbuger()
     glOrtho(0.0, 800, 480, 0.0, -1.0, 1.0);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
-    glClearColor(1, 1, 1, 1);
+    glClearColor(0, 0, 0, 1);
     glClear(GL_COLOR_BUFFER_BIT);
     SavedXPos = 0;
     glTranslatef(4, 12, 0);
     PrintString("Disassembly");
+    for (int i = -16; i < 16; ++i)
+    {
+        glTranslatef(0, FontHeight, 0);
+        SavedXPos = 0;
+        u32 MachineCode = ReadMemWordRaw(DebugCpu, DisassemblyAddress + i * 4);
+        disasm_opcode_info OpCode;
+        if ((DisassemblyAddress + i * 4) == DebugCpu->pc) FontColor = {1, 0, 1};
+        DisassemblerDecodeOpcode(&OpCode, MachineCode, DisassemblyAddress + i * 4);
+        DisassemblerPrintOpCode(&OpCode);
+        if ((DisassemblyAddress + i * 4) == DebugCpu->pc) FontColor = {1, 1, 1};
+    }
+    glLoadIdentity();
+    glTranslatef(404, 12, 0);
     for (int i = 0; i < 32; ++i)
     {
         glTranslatef(0, FontHeight, 0);
         SavedXPos = 0;
-        u32 MachineCode = ReadMemWordRaw(DebugCpu, DebugCpu->pc + i * 4);
+        u32 MachineCode = ReadMemWordRaw(DebugCpu, DisassemblyAddress + i * 4);
         disasm_opcode_info OpCode;
-        DisassemblerDecodeOpcode(&OpCode, MachineCode, DebugCpu->pc + i * 4);
-        DisassemblerPrintOpCode(&OpCode);
+        DisassemblerPrintOverride("%08lX", MachineCode);
+    }
+
+    if (GotoMode)
+    {
+        glLoadIdentity();
+        glTranslatef(150, 12, 0);
+        SavedXPos = 0;
+        DisassemblerPrintOverride("Go to: %s\n", DebugTempStr.c_str());
     }
 
     DebuggerDrawCpuRegisters();
@@ -309,6 +382,7 @@ bool PlatformHasDebugger()
 void PlatformAttachDebugger(void *Cpu)
 {
     DebugCpu = (MIPS_R3000 *)Cpu;
+    DisassemblyAddress = DebugCpu->pc;
 }
 
 #define STB_TRUETYPE_IMPLEMENTATION
