@@ -16,7 +16,7 @@ struct disasm_opcode_info
 {
     u32 Select0;
     u32 Select1;
-    u32 LeftValue = 0;
+    u32 LeftValue;
     u32 RightValue;
     u64 Immediate;
     u32 Result;
