@@ -214,6 +214,18 @@ AddI(disasm_opcode_info *OpCode)
 }
 
 static void
+DAdd(disasm_opcode_info *OpCode)
+{
+    PrintFunction("dadd %s, %s, %s", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], RNT[OpCode->RightValue]);
+}
+
+static void
+DAddU(disasm_opcode_info *OpCode)
+{
+    PrintFunction("daddu %s, %s, %s", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], RNT[OpCode->RightValue]);
+}
+
+static void
 DAddI(disasm_opcode_info *OpCode)
 {
     PrintFunction("daddi %s, %s, 0x%04X", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], (u16)OpCode->Immediate);
@@ -223,6 +235,18 @@ static void
 Sub(disasm_opcode_info *OpCode)
 {
     PrintFunction("sub %s, %s, %s", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], RNT[OpCode->RightValue]);
+}
+
+static void
+DSub(disasm_opcode_info *OpCode)
+{
+    PrintFunction("dsub %s, %s, %s", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], RNT[OpCode->RightValue]);
+}
+
+static void
+DSubU(disasm_opcode_info *OpCode)
+{
+    PrintFunction("dsub %s, %s, %s", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], RNT[OpCode->RightValue]);
 }
 
 //HI:LO operations
@@ -607,6 +631,42 @@ SLTIU(disasm_opcode_info *OpCode)
     PrintFunction("sltiu %s, %s, 0x%04X", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], (u16)OpCode->Immediate);
 }
 
+// traps
+static void
+TGE(disasm_opcode_info *OpCode)
+{
+    PrintFunction("tge %s, %s, 0x%03X", RNT[OpCode->LeftValue], RNT[OpCode->RightValue], (u16)OpCode->Immediate);
+}
+
+static void
+TGEU(disasm_opcode_info *OpCode)
+{
+    PrintFunction("tgeu %s, %s, 0x%03X", RNT[OpCode->LeftValue], RNT[OpCode->RightValue], (u16)OpCode->Immediate);
+}
+
+static void
+TLT(disasm_opcode_info *OpCode)
+{
+    PrintFunction("tlt %s, %s, 0x%03X", RNT[OpCode->LeftValue], RNT[OpCode->RightValue], (u16)OpCode->Immediate);
+}
+
+static void
+TLTU(disasm_opcode_info *OpCode)
+{
+    PrintFunction("tltu %s, %s, 0x%03X", RNT[OpCode->LeftValue], RNT[OpCode->RightValue], (u16)OpCode->Immediate);
+}
+
+static void
+TEQ(disasm_opcode_info *OpCode)
+{
+    PrintFunction("teq %s, %s, 0x%03X", RNT[OpCode->LeftValue], RNT[OpCode->RightValue], (u16)OpCode->Immediate);
+}
+
+static void
+TNE(disasm_opcode_info *OpCode)
+{
+    PrintFunction("tne %s, %s, 0x%03X", RNT[OpCode->LeftValue], RNT[OpCode->RightValue], (u16)OpCode->Immediate);
+}
 
 // coprocessor ops
 static void
@@ -750,7 +810,6 @@ DisassemblerDecodeOpcode(disasm_opcode_info *OpCode, u32 Data, u64 IAddress)
     OpCode->Select1 = (Data & SECONDARY_OP_MASK) >> 0;
     OpCode->MemAccessType = MEM_ACCESS_NONE;
     OpCode->MemAccessMode = MEM_ACCESS_WORD;
-    OpCode->WriteBackMode = WRITE_BACK_CPU;
     OpCode->LeftValue = 0;
     OpCode->RightValue = 0;
     OpCode->Immediate = 0;
@@ -815,11 +874,16 @@ DisassemblerDecodeOpcode(disasm_opcode_info *OpCode, u32 Data, u64 IAddress)
             OpCode->RightValue = rt;
         }
         //alu-reg
-        else if (OpCode->Select1 & 0b100000)
+        else if ((OpCode->Select1 & 0b111000) == 0b100000)
         {
             OpCode->LeftValue = rs;
             OpCode->RightValue = rt;
             OpCode->DestinationRegister = rd;
+        }
+        //trap-on-compare
+        else if ((OpCode->Select1 & 0b111000) == 0b110000)
+        {
+            OpCode->Immediate = (Data & CODE10_MASK) >> 6;
         }
 
     }
@@ -903,7 +967,6 @@ DisassemblerDecodeOpcode(disasm_opcode_info *OpCode, u32 Data, u64 IAddress)
         // mtc, ctc
         else if (rs < 0b01000)
         {
-            OpCode->WriteBackMode = OpCode->Select0 & 0b111;
             OpCode->DestinationRegister = rd + (rs & 0b00010 ? 32 : 0);
             OpCode->LeftValue = rt;
         }
@@ -921,7 +984,6 @@ DisassemblerDecodeOpcode(disasm_opcode_info *OpCode, u32 Data, u64 IAddress)
     //lwc
     else if ((OpCode->Select0 & 0b111000) == 0b110000)
     {
-        OpCode->WriteBackMode = OpCode->Select0 & 0b111;
         OpCode->LeftValue = rs;
         OpCode->DestinationRegister = rt;
         OpCode->Immediate = (Data & IMM16_MASK) >> 0;
@@ -1080,4 +1142,14 @@ InitJumpTables()
     SecondaryJumpTable[0x27] = NOr;
     SecondaryJumpTable[0x2A] = SLT;
     SecondaryJumpTable[0x2B] = SLTU;
+    SecondaryJumpTable[0x2C] = DAdd;
+    SecondaryJumpTable[0x2D] = DAddU;
+    SecondaryJumpTable[0x2E] = DSub;
+    SecondaryJumpTable[0x2F] = DSubU;
+    SecondaryJumpTable[0x30] = TGE;
+    SecondaryJumpTable[0x31] = TGEU;
+    SecondaryJumpTable[0x32] = TLT;
+    SecondaryJumpTable[0x33] = TLTU;
+    SecondaryJumpTable[0x34] = TEQ;
+    SecondaryJumpTable[0x36] = TNE;
 }
