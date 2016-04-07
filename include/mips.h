@@ -41,6 +41,9 @@
 #define REG_RD_MASK \
 (0b11111 << 11)
 
+#define CODE10_MASK \
+(0b1111111111 << 6)
+
 #define KUSEG (0x00000000)
 #define KSEG0 (0x80000000)
 #define KSEG1 (0xA0000000)
@@ -112,12 +115,6 @@
 #define MEM_ACCESS_SIGNED 64
 #define MEM_ACCESS_HIGH   128
 #define MEM_ACCESS_LOW    256
-
-#define WRITE_BACK_CPU    0
-#define WRITE_BACK_C0     1
-#define WRITE_BACK_C1     2
-#define WRITE_BACK_C2     3
-#define WRITE_BACK_C3     4
 
 struct MIPS_R3000;
 
@@ -325,7 +322,7 @@ ReadMemHalfWordRaw(MIPS_R3000 *Cpu, u64 Address)
     void *Addr = MapVirtualAddress(Cpu, Address);
     if (Addr)
     {
-        u16 Value = *((u32 *)((u8 *)Addr));
+        u16 Value = *((u16 *)((u8 *)Addr));
         return ((Cpu->CP0.sr & C0_STATUS_RE) ? Value: __builtin_bswap16(Value));
     }
     return 0;
