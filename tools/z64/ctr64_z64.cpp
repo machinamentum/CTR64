@@ -33,6 +33,7 @@ main(int argc, char **argv)
         printf("Could not open file: %s\n", argv[1]);
         return -1;
     }
+    fclose(File);
 
     int Flags = 0;
 
