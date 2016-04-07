@@ -847,6 +847,13 @@ DisassemblerDecodeOpcode(disasm_opcode_info *OpCode, u32 Data, u64 IAddress)
         OpCode->Immediate = SignExtend16To64((Data & IMM16_MASK) >> 0);
         //destination registers set within function
     }
+    //beql/bnel
+    else if ((OpCode->Select0 & 0b111110) == 0b010100)
+    {
+        OpCode->LeftValue = rs;
+        OpCode->RightValue = rt;
+        OpCode->Immediate = SignExtend16To64((Data & IMM16_MASK) >> 0);
+    }
     //blez/bgtz
     else if ((OpCode->Select0 & 0b111110) == 0b000110)
     {
