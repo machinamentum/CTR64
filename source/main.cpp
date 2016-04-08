@@ -52,6 +52,8 @@ int main(int argc, char **argv)
     MapMemoryRegion(&Cpu, (mmm) {linearAlloc(sizeof(VideoInterface)), 0x04400000, sizeof(VideoInterface)}); // VI
     MapMemoryRegion(&Cpu, (mmm) {CartBuffer, 0x10000000, 0x01000000});
     MapMemoryRegion(&Cpu, (mmm) {SP, 0xA4040000, sizeof(SignalProcessor)});
+    MapMemoryRegion(&Cpu, (mmm) {linearAlloc(0x1000), 0xA4000000, 0x1000}); // SP_DMEM
+    MapMemoryRegion(&Cpu, (mmm) {linearAlloc(0x1000), 0xA4001000, 0x1000}); // SP_IMEM
 
     ResetCpu(&Cpu);
 
