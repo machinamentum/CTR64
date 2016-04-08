@@ -11,7 +11,7 @@
 #include <string>
 #include <sstream>
 #include "asm.h"
-
+#include "lexer.h"
 
 void
 PrintUsage()
@@ -93,6 +93,47 @@ struct {const char *Name; u32 Select0;} Select0Table[0x2F] =
     {"sd", 0x3F},
 };
 
+struct {const char *Name; u32 Select1;} Select1Table[0x2F] =
+{
+    {"ssl", 0x00},
+    {"srl", 0x02},
+    {"sra", 0x03},
+    {"sllv", 0x04},
+    {"srav", 0x06},
+    {"jr", 0x08},
+    {"jalr", 0x09},
+    {"syscall", 0x0C},
+    {"break", 0x0D},
+    {"mfhi", 0x10},
+    {"mthi", 0x11},
+    {"mflo", 0x12},
+    {"mtlo", 0x13},
+    {"mult", 0x18},
+    {"multu", 0x19},
+    {"div", 0x1A},
+    {"divu", 0x1B},
+    {"add", 0x20},
+    {"addu", 0x21},
+    {"sub", 0x22},
+    {"subu", 0x23},
+    {"and", 0x24},
+    {"or", 0x25},
+    {"xor", 0x26},
+    {"nor", 0x27},
+    {"slt", 0x2A},
+    {"sltu", 0x2B},
+    {"dadd", 0x2C},
+    {"daddu", 0x2D},
+    {"dsub", 0x2E},
+    {"dsubu", 0x2F},
+    {"tge", 0x30},
+    {"tgeu", 0x31},
+    {"tlt", 0x32},
+    {"tltu", 0x33},
+    {"teq", 0x34},
+    {"tne", 0x36},
+};
+
 u32
 GetSelect0ForInstruction(std::string &str)
 {
@@ -107,33 +148,117 @@ GetSelect0ForInstruction(std::string &str)
     return 0;
 }
 
+u32
+GetSelect1ForInstruction(std::string &str)
+{
+    for (u32 i = 0; i < 0x2F; ++i)
+    {
+        if (str.compare(Select1Table[i].Name) == 0)
+        {
+            return Select1Table[i].Select1;
+        }
+    }
+
+    return 0;
+}
+
+enum
+{
+    FORM_BRANCH_ZERO = 0,
+    FORM_JUMP_IMM,
+    FORM_BRANCH_REG_COMP,
+    FORM_ALU_IMM,
+    FORM_LUI,
+    FORM_COPROCESSOR,
+    FORM_STORE_LOAD,
+    FORM_SHIFT_IMM,
+    FORM_ALU_REG,
+    FORM_JR,
+    FORM_JALR,
+    FORM_SYSCALL_BREAK,
+    FORM_MFHILO,
+    FORM_MTHILO,
+    FORM_MULT_DIV,
+    FORM_TRAP_REG
+};
+
+u32
+ParserGetInstructionForm(u32 Select0, u32 Select1)
+{
+    if (Select0)
+    {
+        if (Select0 == 0x01) return FORM_BRANCH_ZERO;
+        if (Select0 >= 0x02 && Select0 <= 0x03) return FORM_JUMP_IMM;
+        if (Select0 >= 0x04 && Select0 <= 0x07) return FORM_BRANCH_REG_COMP;
+        if (Select0 >= 0x08 && Select0 <= 0x0E) return FORM_ALU_IMM;
+        if (Select0 == 0x0F) return FORM_LUI;
+        if (Select0 >= 0x10 && Select0 <= 0x13) return FORM_COPROCESSOR;
+        if (Select0 >= 0x14 && Select0 <= 0x17) return FORM_BRANCH_REG_COMP;
+        if (Select0 >= 0x18 && Select0 <= 0x19) return FORM_ALU_IMM;
+        if (Select0 >= 0x1A && Select0 <= 0x3F) return FORM_STORE_LOAD;
+    }
+    else
+    {
+        if (Select1 <= 0x03) return FORM_SHIFT_IMM;
+        if (Select1 >= 0x04 && Select1 <= 0x07) return FORM_ALU_REG;
+        if (Select1 == 0x08) return FORM_JR;
+        if (Select1 == 0x09) return FORM_JALR;
+        if (Select1 >= 0x0C && Select1 <= 0x0D) return FORM_SYSCALL_BREAK;
+        if (Select1 == 0x10) return FORM_MFHILO;
+        if (Select1 == 0x11) return FORM_MTHILO;
+        if (Select1 == 0x12) return FORM_MFHILO;
+        if (Select1 == 0x13) return FORM_MTHILO;
+        if (Select1 >= 0x18 && Select1 <= 0x1B) return FORM_MULT_DIV;
+        if (Select1 >= 0x20 && Select1 <= 0x2F) return FORM_ALU_REG;
+        if (Select1 >= 0x30 && Select1 <= 0x36) return FORM_TRAP_REG;
+    }
+
+    return 0;
+}
+
+void
+ParseJumpImmForm(disasm_opcode_info *Info, LexerInstance* Lex)
+{
+    LexerToken Token = Lex->GetToken();
+    if (Token.Type != LexerToken::TOKEN_INT)
+    {
+        printf("Error: expected integer token for jump-immediate paramter.\n");
+        return;
+    }
+    Info->Immediate = Token.Int / 4;
+}
+
+u32
+ParseInstuctionLine(LexerInstance *Lex, LexerToken &Token)
+{
+    u32 Data = 0;
+    disasm_opcode_info Info;
+    Info.Select0 = GetSelect0ForInstruction(Token.String);
+    if (Info.Select0 == 0) Info.Select1 = GetSelect1ForInstruction(Token.String);
+    u32 Form = ParserGetInstructionForm(Info.Select0, Info.Select1);
+    switch (Form)
+    {
+        case FORM_JUMP_IMM: ParseJumpImmForm(&Info, Lex); break;
+    }
+    AssemblerTranslateOpCode(&Info, &Data);
+    return Data;
+}
+
 std::vector<u32>
 ParseAsmSource(std::string &Source)
 {
-    std::istringstream SS;
-    SS.str(Source);
-    std::string Line;
+    LexerInstance Lex(Source);
     std::vector<u32> DataArray;
-    while (std::getline(SS, Line))
+    LexerToken Token = Lex.GetToken();
+    while (Token.Type != LexerToken::TOKEN_EOF)
     {
-        if (Line.compare("") == 0) continue;
-        while (Line.find_first_of(',') != std::string::npos)
+        printf("Token type:%d string:%s\n", Token.Type, Token.String.c_str());
+        if (Token.Type == LexerToken::TOKEN_ID)
         {
-            Line.replace(Line.find_first_of(','), 1, " ");
+            u32 Data = ParseInstuctionLine(&Lex, Token);
+            DataArray.push_back(Data);
         }
-        while (Line.find("  ") != std::string::npos)
-        {
-            Line.replace(Line.find("  "), 2, " ");
-        }
-        if (Line.find_first_of(' ') == 0) Line.replace(Line.find_first_of(' '), 1, "");
-        std::vector<std::string> Tokens = split(Line, ' ');
-        if (Tokens.size() < 2) continue;
-        disasm_opcode_info Info = {0};
-        Info.Select0 = GetSelect0ForInstruction(Tokens.at(0));
-
-        u32 MachineCode = 0;
-        AssemblerTranslateOpCode(&Info, &MachineCode);
-        DataArray.push_back(MachineCode);
+        Token = Lex.GetToken();
     }
 
     return DataArray;
