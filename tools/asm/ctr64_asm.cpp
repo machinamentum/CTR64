@@ -216,17 +216,122 @@ ParserGetInstructionForm(u32 Select0, u32 Select1)
     return 0;
 }
 
-void
-ParseJumpImmForm(disasm_opcode_info *Info, LexerInstance* Lex)
+static const char *RNT[34] =
 {
-    LexerToken Token = Lex->GetToken();
+    "zr",
+    "at",
+
+    "v0",
+    "v1",
+
+    "a0",
+    "a1",
+    "a2",
+    "a3",
+
+    "t0",
+    "t1",
+    "t2",
+    "t3",
+    "t4",
+    "t5",
+    "t6",
+    "t7",
+
+    "s0",
+    "s1",
+    "s2",
+    "s3",
+    "s4",
+    "s5",
+    "s6",
+    "s7",
+    "t8",
+    "t9",
+
+    "k0",
+    "k1",
+
+    "gp",
+    "sp",
+    "fp",
+
+    "ra",
+    "pc",
+    
+    "hi:lo"
+};
+
+u32
+GetGPRIndexFromString(std::string Str)
+{
+    for (u32 i = 0; i < 34; ++i)
+    {
+        if (Str.compare(RNT[i]) == 0) return i;
+    }
+
+    if (Str[0] == 'r')
+    {
+        return strtoul(&Str[1], nullptr, 10);
+    }
+    printf("error: couldn't map register name '%s' to an index.\n", Str.c_str());
+    return -1;
+}
+
+void
+ParseJumpImmForm(disasm_opcode_info *Info, LexerInstance* Lex, LexerToken &Token)
+{
+    std::string OpName = Token.String;
+    Token = Lex->GetToken();
     if (Token.Type != LexerToken::TOKEN_INT)
     {
-        printf("Error: expected integer token for jump-immediate paramter.\n");
+        printf("error: expected integer token for %s paramter.\n", OpName.c_str());
         return;
     }
     Info->Immediate = Token.Int / 4;
 }
+
+void
+ParseALUImmForm(disasm_opcode_info *Info, LexerInstance* Lex, LexerToken &Token)
+{
+    std::string OpName = Token.String;
+    Token = Lex->GetToken();
+    if (Token.Type != LexerToken::TOKEN_ID)
+    {
+        printf("error: expected register name for %s paramter 1.\n", OpName.c_str());
+        return;
+    }
+    Info->DestinationRegister = GetGPRIndexFromString(Token.String);
+    std::string DestName = Token.String;
+    Token = Lex->GetToken();
+    if (Token.Type != ',')
+    {
+        printf("error: expected token ',' after identifier '%s'.\n", DestName.c_str());
+        return;
+    }
+    Token = Lex->GetToken();
+    if (Token.Type != LexerToken::TOKEN_ID)
+    {
+        printf("error: expected register name for %s paramter 2.\n", OpName.c_str());
+        return;
+    }
+    Info->LeftValue = GetGPRIndexFromString(Token.String);
+    DestName = Token.String;
+    Token = Lex->GetToken();
+    if (Token.Type != ',')
+    {
+        printf("error: expected token ',' after identifier '%s'.\n", DestName.c_str());
+        return;
+    }
+    Token = Lex->GetToken();
+    if (Token.Type != LexerToken::TOKEN_INT)
+    {
+        printf("error: expected 16-bit integer for %s paramter 3.\n", OpName.c_str());
+        return;
+    }
+    Info->Immediate = Token.Int;
+}
+
 
 u32
 ParseInstuctionLine(LexerInstance *Lex, LexerToken &Token)
@@ -238,7 +343,8 @@ ParseInstuctionLine(LexerInstance *Lex, LexerToken &Token)
     u32 Form = ParserGetInstructionForm(Info.Select0, Info.Select1);
     switch (Form)
     {
-        case FORM_JUMP_IMM: ParseJumpImmForm(&Info, Lex); break;
+        case FORM_JUMP_IMM: ParseJumpImmForm(&Info, Lex, Token); break;
+        case FORM_ALU_IMM: ParseALUImmForm(&Info, Lex, Token); break;
     }
     AssemblerTranslateOpCode(&Info, &Data);
     return Data;
@@ -252,7 +358,6 @@ ParseAsmSource(std::string &Source)
     LexerToken Token = Lex.GetToken();
     while (Token.Type != LexerToken::TOKEN_EOF)
     {
-        printf("Token type:%d string:%s\n", Token.Type, Token.String.c_str());
         if (Token.Type == LexerToken::TOKEN_ID)
         {
             u32 Data = ParseInstuctionLine(&Lex, Token);

@@ -68,7 +68,7 @@ LexerInstance::GetToken()
     if (((*SrcPtr >= 'A') && (*SrcPtr <= 'Z')) || ((*SrcPtr >= 'a') && (*SrcPtr <= 'z')))
     {
         char *StartPtr = SrcPtr;
-        while (!LexerIsWhiteSpace(*SrcPtr) && (SrcPtr + 1 < EndPtr))
+        while (!LexerIsWhiteSpace(*SrcPtr) && (SrcPtr + 1 < EndPtr) && (((*SrcPtr >= 'A') && (*SrcPtr <= 'Z')) || ((*SrcPtr >= 'a') && (*SrcPtr <= 'z')) || ((*SrcPtr >= '0') && (*SrcPtr <= '9'))))
         {
             ++SrcPtr;
         }
