@@ -93,9 +93,9 @@ struct {const char *Name; u32 Select0;} Select0Table[0x2F] =
     {"sd", 0x3F},
 };
 
-struct {const char *Name; u32 Select1;} Select1Table[0x2F] =
+struct {const char *Name; u32 Select1;} Select1Table[0x25] =
 {
-    {"ssl", 0x00},
+    {"sll", 0x00},
     {"srl", 0x02},
     {"sra", 0x03},
     {"sllv", 0x04},
@@ -151,7 +151,7 @@ GetSelect0ForInstruction(std::string &str)
 u32
 GetSelect1ForInstruction(std::string &str)
 {
-    for (u32 i = 0; i < 0x2F; ++i)
+    for (u32 i = 0; i < 0x25; ++i)
     {
         if (str.compare(Select1Table[i].Name) == 0)
         {
@@ -159,7 +159,7 @@ GetSelect1ForInstruction(std::string &str)
         }
     }
 
-    return 0;
+    return -1;
 }
 
 enum
@@ -279,6 +279,122 @@ GetGPRIndexFromString(std::string Str)
 }
 
 void
+ParseShiftImmForm(disasm_opcode_info *Info, LexerInstance* Lex, LexerToken &Token)
+{
+    std::string OpName = Token.String;
+    Token = Lex->GetToken();
+    if (Token.Type != LexerToken::TOKEN_ID)
+    {
+        printf("error: expected register name for %s paramter 1.\n", OpName.c_str());
+        return;
+    }
+    Info->DestinationRegister = GetGPRIndexFromString(Token.String);
+    std::string DestName = Token.String;
+    Token = Lex->GetToken();
+    if (Token.Type != ',')
+    {
+        printf("error: expected token ',' after identifier '%s'.\n", DestName.c_str());
+        return;
+    }
+    Token = Lex->GetToken();
+    if (Token.Type != LexerToken::TOKEN_ID)
+    {
+        printf("error: expected register name for %s paramter 2.\n", OpName.c_str());
+        return;
+    }
+    Info->RightValue = GetGPRIndexFromString(Token.String);
+    DestName = Token.String;
+    Token = Lex->GetToken();
+    if (Token.Type != ',')
+    {
+        printf("error: expected token ',' after identifier '%s'.\n", DestName.c_str());
+        return;
+    }
+    Token = Lex->GetToken();
+    if (Token.Type != LexerToken::TOKEN_INT)
+    {
+        printf("error: expected integer token for %s paramter 3.\n", OpName.c_str());
+        return;
+    }
+    Info->Immediate = Token.Int;
+}
+
+void
+ParseStoreLoadForm(disasm_opcode_info *Info, LexerInstance* Lex, LexerToken &Token)
+{
+    std::string OpName = Token.String;
+    Token = Lex->GetToken();
+    if (Token.Type != LexerToken::TOKEN_ID)
+    {
+        printf("error: expected register name for %s paramter 1.\n", OpName.c_str());
+        return;
+    }
+    Info->RightValue = GetGPRIndexFromString(Token.String);
+    std::string DestName = Token.String;
+    Token = Lex->GetToken();
+    if (Token.Type != ',')
+    {
+        printf("error: expected token ',' after identifier '%s'.\n", DestName.c_str());
+        return;
+    }
+    Token = Lex->GetToken();
+    if (Token.Type != LexerToken::TOKEN_INT)
+    {
+        printf("error: expected integer token for %s paramter 2.\n", OpName.c_str());
+        return;
+    }
+    Info->Immediate = Token.Int;
+    Token = Lex->GetToken();
+    if (Token.Type != '(')
+    {
+        printf("error: expected token '(' after integer token '%ld'.\n", Info->Immediate);
+        return;
+    }
+    Token = Lex->GetToken();
+    if (Token.Type != LexerToken::TOKEN_ID)
+    {
+        printf("error: expected register name for %s paramter 3.\n", OpName.c_str());
+        return;
+    }
+    Info->LeftValue = GetGPRIndexFromString(Token.String);
+    DestName = Token.String;
+    Token = Lex->GetToken();
+    if (Token.Type != ')')
+    {
+        printf("Token: %d\n", Token.Type);
+        printf("error: expected token ')' after identifier '%s'.\n", DestName.c_str());
+        return;
+    }
+}
+
+void
+ParseLUIForm(disasm_opcode_info *Info, LexerInstance* Lex, LexerToken &Token)
+{
+    std::string OpName = Token.String;
+    Token = Lex->GetToken();
+    if (Token.Type != LexerToken::TOKEN_ID)
+    {
+        printf("error: expected register name for %s paramter 1.\n", OpName.c_str());
+        return;
+    }
+    Info->DestinationRegister = GetGPRIndexFromString(Token.String);
+    std::string DestName = Token.String;
+    Token = Lex->GetToken();
+    if (Token.Type != ',')
+    {
+        printf("error: expected token ',' after identifier '%s'.\n", DestName.c_str());
+        return;
+    }
+    Token = Lex->GetToken();
+    if (Token.Type != LexerToken::TOKEN_INT)
+    {
+        printf("error: expected integer token for %s paramter.\n", OpName.c_str());
+        return;
+    }
+    Info->Immediate = Token.Int;
+}
+
+void
 ParseJumpImmForm(disasm_opcode_info *Info, LexerInstance* Lex, LexerToken &Token)
 {
     std::string OpName = Token.String;
@@ -339,12 +455,24 @@ ParseInstuctionLine(LexerInstance *Lex, LexerToken &Token)
     u32 Data = 0;
     disasm_opcode_info Info;
     Info.Select0 = GetSelect0ForInstruction(Token.String);
-    if (Info.Select0 == 0) Info.Select1 = GetSelect1ForInstruction(Token.String);
+    if (Info.Select0 == 0)
+    {
+        Info.Select1 = GetSelect1ForInstruction(Token.String);
+        if (Info.Select1 == -1)
+        {
+            printf("Unknown instruction: %s\n", Token.String.c_str());
+            return ASM_UNK_OP;
+        }
+    }
+
     u32 Form = ParserGetInstructionForm(Info.Select0, Info.Select1);
     switch (Form)
     {
         case FORM_JUMP_IMM: ParseJumpImmForm(&Info, Lex, Token); break;
         case FORM_ALU_IMM: ParseALUImmForm(&Info, Lex, Token); break;
+        case FORM_LUI: ParseLUIForm(&Info, Lex, Token); break;
+        case FORM_STORE_LOAD: ParseStoreLoadForm(&Info, Lex, Token); break;
+        case FORM_SHIFT_IMM: ParseShiftImmForm(&Info, Lex, Token); break;
     }
     AssemblerTranslateOpCode(&Info, &Data);
     return Data;

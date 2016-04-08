@@ -59,8 +59,8 @@ LexerInstance::LexerInstance(std::string &Str)
 LexerToken
 LexerInstance::GetToken()
 {
-    if (SrcPtr + 1 >= EndPtr) return MakeEOFToken();
-    while (LexerIsWhiteSpace(*SrcPtr) && (SrcPtr + 1 < EndPtr))
+    if (SrcPtr + 1 > EndPtr) return MakeEOFToken();
+    while (LexerIsWhiteSpace(*SrcPtr) && (SrcPtr < EndPtr))
     {
         ++SrcPtr;
     }
@@ -68,7 +68,7 @@ LexerInstance::GetToken()
     if (((*SrcPtr >= 'A') && (*SrcPtr <= 'Z')) || ((*SrcPtr >= 'a') && (*SrcPtr <= 'z')))
     {
         char *StartPtr = SrcPtr;
-        while (!LexerIsWhiteSpace(*SrcPtr) && (SrcPtr + 1 < EndPtr) && (((*SrcPtr >= 'A') && (*SrcPtr <= 'Z')) || ((*SrcPtr >= 'a') && (*SrcPtr <= 'z')) || ((*SrcPtr >= '0') && (*SrcPtr <= '9'))))
+        while (!LexerIsWhiteSpace(*SrcPtr) && (SrcPtr < EndPtr) && (((*SrcPtr >= 'A') && (*SrcPtr <= 'Z')) || ((*SrcPtr >= 'a') && (*SrcPtr <= 'z')) || ((*SrcPtr >= '0') && (*SrcPtr <= '9'))))
         {
             ++SrcPtr;
         }
@@ -76,7 +76,7 @@ LexerInstance::GetToken()
     }
     if (((*SrcPtr >= '0') && (*SrcPtr <= '9')))
     {
-        if (SrcPtr + 1 < EndPtr)
+        if (SrcPtr < EndPtr)
         {
             switch (*(SrcPtr + 1))
             {
