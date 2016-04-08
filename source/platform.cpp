@@ -136,6 +136,8 @@ void PlatformAttachDebugger(void *Cpu)
 #include <cstdio>
 #include <cstring>
 #include <string>
+#include <iomanip>
+#include <sstream>
 #include "disasm.h"
 #include "stb_truetype.h"
 #include "crystal_font.h"
@@ -151,8 +153,25 @@ static float FontHeight = 14.0f;
 static MIPS_R3000 *DebugCpu = nullptr;
 static struct {float r; float g; float b;} FontColor = {1, 1, 1};
 static u64 DisassemblyAddress;
+static u32 CyclesToStep = 1;
 static std::string DebugTempStr;
-static bool GotoMode = false;
+enum
+{
+    MODE_NORMAL = 0,
+    MODE_GOTO,
+    MODE_CYCLES_TO_STEP
+};
+static u32 ModeSelect = MODE_NORMAL;
+
+template< typename T >
+std::string int_to_hex( T i )
+{
+    std::stringstream stream;
+    stream << std::uppercase
+    << std::setfill ('0') << std::setw(8)
+    << std::hex << i;
+    return stream.str();
+}
 
 static void
 InitFont(void)
@@ -211,7 +230,7 @@ KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
     if (window != DebugWindow) return;
 
-    if (GotoMode)
+    if (ModeSelect == MODE_GOTO)
     {
         if (action != GLFW_PRESS) return;
 
@@ -227,26 +246,53 @@ KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
 
         if (key == GLFW_KEY_ENTER)
         {
-            GotoMode = false;
+            ModeSelect = MODE_NORMAL;
             DisassemblyAddress = strtoul(DebugTempStr.c_str(), nullptr, 16);
+        }
+    }
+    else if (ModeSelect == MODE_CYCLES_TO_STEP)
+    {
+        if (action != GLFW_PRESS) return;
+
+        if (key >= GLFW_KEY_0 && key <= GLFW_KEY_9)
+        {
+            DebugTempStr += (unsigned char)key;
+        }
+
+        if (key == GLFW_KEY_BACKSPACE)
+        {
+            if (DebugTempStr.length()) DebugTempStr.pop_back();
+        }
+
+        if (key == GLFW_KEY_ENTER)
+        {
+            ModeSelect = MODE_NORMAL;
+            CyclesToStep = strtoul(DebugTempStr.c_str(), nullptr, 10);
+            if (CyclesToStep < 1) CyclesToStep = 1;
         }
     }
     else
     {
-        if (key == GLFW_KEY_ENTER && action == GLFW_PRESS)
+        if (key == GLFW_KEY_ENTER && (action == GLFW_PRESS || action == GLFW_REPEAT))
         {
-            StepCpu(DebugCpu, 1);
+            StepCpu(DebugCpu, CyclesToStep);
             DisassemblyAddress = DebugCpu->pc;
         }
         if (key == GLFW_KEY_G && action == GLFW_PRESS)
         {
-            GotoMode = true;
+            ModeSelect = MODE_GOTO;
+            DebugTempStr = int_to_hex(DisassemblyAddress);
         }
-        if (key == GLFW_KEY_DOWN && action == GLFW_PRESS)
+        if (key == GLFW_KEY_C && action == GLFW_PRESS)
+        {
+            ModeSelect = MODE_CYCLES_TO_STEP;
+            DebugTempStr = std::to_string(CyclesToStep);
+        }
+        if (key == GLFW_KEY_DOWN && (action == GLFW_PRESS || action == GLFW_REPEAT))
         {
             DisassemblyAddress += 4;
         }
-        if (key == GLFW_KEY_UP && action == GLFW_PRESS)
+        if (key == GLFW_KEY_UP && (action == GLFW_PRESS || action == GLFW_REPEAT))
         {
             DisassemblyAddress -= 4;
         }
@@ -338,16 +384,23 @@ PlatformDrawDebbuger()
         glTranslatef(0, FontHeight, 0);
         SavedXPos = 0;
         u32 MachineCode = ReadMemWordRaw(DebugCpu, DisassemblyAddress + i * 4);
-        disasm_opcode_info OpCode;
         DisassemblerPrintOverride("%08lX", MachineCode);
     }
 
-    if (GotoMode)
+    if (ModeSelect == MODE_GOTO)
     {
         glLoadIdentity();
         glTranslatef(150, 12, 0);
         SavedXPos = 0;
         DisassemblerPrintOverride("Go to: %s\n", DebugTempStr.c_str());
+    }
+
+    if (ModeSelect == MODE_CYCLES_TO_STEP)
+    {
+        glLoadIdentity();
+        glTranslatef(150, 12, 0);
+        SavedXPos = 0;
+        DisassemblerPrintOverride("Set cycles to step: %s\n", DebugTempStr.c_str());
     }
 
     DebuggerDrawCpuRegisters();
