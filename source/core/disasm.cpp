@@ -357,67 +357,67 @@ LUI(disasm_opcode_info *OpCode)
 static void
 LW(disasm_opcode_info *OpCode)
 {
-    PrintFunction("lw %s, 0x%04X(%s)", RNT[OpCode->DestinationRegister], (u16)OpCode->Immediate, RNT[OpCode->LeftValue]);
+    PrintFunction("lw %s, 0x%04X(%s)", RNT[OpCode->RightValue], (u16)OpCode->Immediate, RNT[OpCode->LeftValue]);
 }
 
 static void
 LWL(disasm_opcode_info *OpCode)
 {
-    PrintFunction("lwl %s, 0x%04X(%s)", RNT[OpCode->DestinationRegister], (u16)OpCode->Immediate, RNT[OpCode->LeftValue]);
+    PrintFunction("lwl %s, 0x%04X(%s)", RNT[OpCode->RightValue], (u16)OpCode->Immediate, RNT[OpCode->LeftValue]);
 }
 
 static void
 LWR(disasm_opcode_info *OpCode)
 {
-    PrintFunction("lwr %s, 0x%04X(%s)", RNT[OpCode->DestinationRegister], (u16)OpCode->Immediate, RNT[OpCode->LeftValue]);
+    PrintFunction("lwr %s, 0x%04X(%s)", RNT[OpCode->RightValue], (u16)OpCode->Immediate, RNT[OpCode->LeftValue]);
 }
 
 static void
 LWU(disasm_opcode_info *OpCode)
 {
-    PrintFunction("lwu %s, 0x%04X(%s)", RNT[OpCode->DestinationRegister], (u16)OpCode->Immediate, RNT[OpCode->LeftValue]);
+    PrintFunction("lwu %s, 0x%04X(%s)", RNT[OpCode->RightValue], (u16)OpCode->Immediate, RNT[OpCode->LeftValue]);
 }
 
 static void
 LD(disasm_opcode_info *OpCode)
 {
-    PrintFunction("ld %s, 0x%04X(%s)", RNT[OpCode->DestinationRegister], (u16)OpCode->Immediate, RNT[OpCode->LeftValue]);
+    PrintFunction("ld %s, 0x%04X(%s)", RNT[OpCode->RightValue], (u16)OpCode->Immediate, RNT[OpCode->LeftValue]);
 }
 
 static void
 LDL(disasm_opcode_info *OpCode)
 {
-    PrintFunction("ldl %s, 0x%04X(%s)", RNT[OpCode->DestinationRegister], (u16)OpCode->Immediate, RNT[OpCode->LeftValue]);
+    PrintFunction("ldl %s, 0x%04X(%s)", RNT[OpCode->RightValue], (u16)OpCode->Immediate, RNT[OpCode->LeftValue]);
 }
 
 static void
 LDR(disasm_opcode_info *OpCode)
 {
-    PrintFunction("ldr %s, 0x%04X(%s)", RNT[OpCode->DestinationRegister], (u16)OpCode->Immediate, RNT[OpCode->LeftValue]);
+    PrintFunction("ldr %s, 0x%04X(%s)", RNT[OpCode->RightValue], (u16)OpCode->Immediate, RNT[OpCode->LeftValue]);
 }
 
 static void
 LBU(disasm_opcode_info *OpCode)
 {
-    PrintFunction("lbu %s, 0x%04X(%s)", RNT[OpCode->DestinationRegister], (u16)OpCode->Immediate, RNT[OpCode->LeftValue]);
+    PrintFunction("lbu %s, 0x%04X(%s)", RNT[OpCode->RightValue], (u16)OpCode->Immediate, RNT[OpCode->LeftValue]);
 }
 
 static void
 LHU(disasm_opcode_info *OpCode)
 {
-    PrintFunction("lhu %s, 0x%04X(%s)", RNT[OpCode->DestinationRegister], (u16)OpCode->Immediate, RNT[OpCode->LeftValue]);
+    PrintFunction("lhu %s, 0x%04X(%s)", RNT[OpCode->RightValue], (u16)OpCode->Immediate, RNT[OpCode->LeftValue]);
 }
 
 static void
 LB(disasm_opcode_info *OpCode)
 {
-    PrintFunction("lb %s, 0x%04X(%s)", RNT[OpCode->DestinationRegister], (u16)OpCode->Immediate, RNT[OpCode->LeftValue]);
+    PrintFunction("lb %s, 0x%04X(%s)", RNT[OpCode->RightValue], (u16)OpCode->Immediate, RNT[OpCode->LeftValue]);
 }
 
 static void
 LH(disasm_opcode_info *OpCode)
 {
-    PrintFunction("lh %s, 0x%04X(%s)", RNT[OpCode->DestinationRegister], (u16)OpCode->Immediate, RNT[OpCode->LeftValue]);
+    PrintFunction("lh %s, 0x%04X(%s)", RNT[OpCode->RightValue], (u16)OpCode->Immediate, RNT[OpCode->LeftValue]);
 }
 
 
@@ -443,7 +443,7 @@ JR(disasm_opcode_info *OpCode)
 static void
 JALR(disasm_opcode_info *OpCode)
 {
-    PrintFunction("jalr %s, %s", RNT[OpCode->RADestinationRegister], RNT[OpCode->LeftValue]);
+    PrintFunction("jalr %s, %s", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue]);
 }
 
 static void
@@ -808,14 +808,10 @@ DisassemblerDecodeOpcode(disasm_opcode_info *OpCode, u32 Data, u64 IAddress)
     OpCode->CurrentAddress = IAddress;
     OpCode->Select0 = (Data & PRIMARY_OP_MASK) >> 26;
     OpCode->Select1 = (Data & SECONDARY_OP_MASK) >> 0;
-    OpCode->MemAccessType = MEM_ACCESS_NONE;
-    OpCode->MemAccessMode = MEM_ACCESS_WORD;
     OpCode->LeftValue = 0;
     OpCode->RightValue = 0;
     OpCode->Immediate = 0;
-    OpCode->Result = 0;
     OpCode->DestinationRegister = 0;
-    OpCode->RADestinationRegister = 0;
     OpCode->FunctionSelect = 0;
     u32 rs = (Data & REG_RS_MASK) >> 21;
     u32 rt = (Data & REG_RT_MASK) >> 16;
@@ -842,15 +838,13 @@ DisassemblerDecodeOpcode(disasm_opcode_info *OpCode, u32 Data, u64 IAddress)
         {
             OpCode->LeftValue = rs;
             OpCode->DestinationRegister = REG_INDEX_PC;
-//            OpCode->MemAccessType = MEM_ACCESS_BRANCH;
         }
         //jalr
         else if (OpCode->Select1 == 0b001001)
         {
             OpCode->LeftValue = rs;
             OpCode->DestinationRegister = REG_INDEX_PC;
-            OpCode->RADestinationRegister = rd;
-//            OpCode->MemAccessType = MEM_ACCESS_BRANCH;
+            OpCode->DestinationRegister = rd;
         }
         //sys/brk
         else if ((OpCode->Select1 & 0b111110) == 0b001100)
@@ -900,8 +894,6 @@ DisassemblerDecodeOpcode(disasm_opcode_info *OpCode, u32 Data, u64 IAddress)
     {
         OpCode->Immediate = (Data & IMM26_MASK) >> 0;
         OpCode->DestinationRegister = REG_INDEX_PC;
-//        OpCode->MemAccessType = MEM_ACCESS_BRANCH;
-        //RADestinationRegister set within function
     }
     //beq/bne
     else if ((OpCode->Select0 & 0b111110) == 0b000100)
@@ -943,8 +935,7 @@ DisassemblerDecodeOpcode(disasm_opcode_info *OpCode, u32 Data, u64 IAddress)
     {
         OpCode->LeftValue = rs;
         OpCode->Immediate = (Data & IMM16_MASK) >> 0;
-        OpCode->DestinationRegister = rt;
-        OpCode->MemAccessType = MEM_ACCESS_READ;
+        OpCode->RightValue = rt;
     }
     //store
     else if ((OpCode->Select0 & 0b111000) == 0b101000)
@@ -952,7 +943,6 @@ DisassemblerDecodeOpcode(disasm_opcode_info *OpCode, u32 Data, u64 IAddress)
         OpCode->LeftValue = rs;
         OpCode->RightValue = rt;
         OpCode->Immediate = (Data & IMM16_MASK) >> 0;
-        OpCode->MemAccessType = MEM_ACCESS_WRITE;
     }
     // coprocessor main instruction decoding
     else if ((OpCode->Select0 & 0b010000) == 0b010000)
@@ -987,7 +977,6 @@ DisassemblerDecodeOpcode(disasm_opcode_info *OpCode, u32 Data, u64 IAddress)
         OpCode->LeftValue = rs;
         OpCode->DestinationRegister = rt;
         OpCode->Immediate = (Data & IMM16_MASK) >> 0;
-        OpCode->MemAccessType = MEM_ACCESS_READ;
     }
     //swc
     else if ((OpCode->Select0 & 0b111000) == 0b111000)
@@ -995,7 +984,6 @@ DisassemblerDecodeOpcode(disasm_opcode_info *OpCode, u32 Data, u64 IAddress)
         OpCode->LeftValue = rs;
         OpCode->RightValue = rt;
         OpCode->Immediate = (Data & IMM16_MASK) >> 0;
-        OpCode->MemAccessType = MEM_ACCESS_WRITE;
     }
 }
 

@@ -19,12 +19,8 @@ struct disasm_opcode_info
     u32 LeftValue;
     u32 RightValue;
     u64 Immediate;
-    u32 Result;
     u32 FunctionSelect;
-    u32 MemAccessType;
-    u32 MemAccessMode;
     u32 DestinationRegister;
-    u32 RADestinationRegister; // Used for return address writing
     u64 CurrentAddress;
 };
 

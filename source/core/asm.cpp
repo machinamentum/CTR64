@@ -82,7 +82,7 @@ JR(disasm_opcode_info *OpCode)
 static u32
 JALR(disasm_opcode_info *OpCode)
 {
-    return ASM_SELECT0(0) | ASM_RS(OpCode->LeftValue) | ASM_RD(OpCode->RADestinationRegister) | ASM_SELECT1(OpCode->Select1);
+    return ASM_SELECT0(0) | ASM_RS(OpCode->LeftValue) | ASM_RD(OpCode->DestinationRegister) | ASM_SELECT1(OpCode->Select1);
 }
 
 static u32
