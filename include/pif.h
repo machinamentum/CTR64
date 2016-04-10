@@ -23,6 +23,8 @@
 #define PIF_ERROR_BAD_TRANSFER_SIZE (0x40)
 #define PIF_ERROR_MISSING_DEVICE    (0x80)
 
+#define PIF_BUSY_BIT                (0x80)
+
 struct PIFConfig
 {
     u8 *RAM;

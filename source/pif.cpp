@@ -22,8 +22,13 @@ PIFUpdateRoutine()
     {
         u8 *RAM = Config->RAM;
         u8 Status = RAM[0x3F];
-        if (Status & 1)
+        if (Status & 0x20)
         {
+            RAM[0x3F] |= PIF_BUSY_BIT;
+        }
+        if (Status == 1)
+        {
+            RAM[0x3F] = PIF_BUSY_BIT;
             Config->ChannelCounter = 0;
             for (u32 i = 0; i < 0x3F; ++i)
             {
