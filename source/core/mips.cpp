@@ -9,13 +9,15 @@
 #include <cstdio>
 #include "mips.h"
 
+#define DEFAULT_UNMAPPED_ADDR_VALUE 0x00BABE00
+
 inline u64
 ReadMemDWord(MIPS_R3000 *Cpu, u64 Address)
 {
     u64 Base = Address & 0x1FFFFFFF;
     u8 *VirtualAddress = (u8 *)MapVirtualAddress(Cpu, Address);
     u32 Swap = Cpu->CP0.sr & C0_STATUS_RE;
-    u64 Value = 0;
+    u64 Value = DEFAULT_UNMAPPED_ADDR_VALUE;
     if (!VirtualAddress)
     {
         for (u32 i = 0; i < Cpu->NumMMR; ++i)
@@ -29,7 +31,7 @@ ReadMemDWord(MIPS_R3000 *Cpu, u64 Address)
                 return (Swap ? Value: __builtin_bswap64(Value));
             }
         }
-
+        printf("%08lX: Read dword from unmapped address: 0x%08lX\n", (u32)Cpu->pc - 8, (u32)Address);
         return Value;
     }
     Value = *((u64 *)VirtualAddress);
@@ -42,7 +44,7 @@ ReadMemWord(MIPS_R3000 *Cpu, u64 Address)
     u32 Base = Address & 0x1FFFFFFF;
     u8 *VirtualAddress = (u8 *)MapVirtualAddress(Cpu, Address);
     u32 Swap = Cpu->CP0.sr & C0_STATUS_RE;
-    u32 Value = 0;
+    u32 Value = DEFAULT_UNMAPPED_ADDR_VALUE;
     if (!VirtualAddress)
     {
         for (u32 i = 0; i < Cpu->NumMMR; ++i)
@@ -55,6 +57,7 @@ ReadMemWord(MIPS_R3000 *Cpu, u64 Address)
             }
         }
 
+        printf("%08lX: Read word from unmapped address: 0x%08lX\n", (u32)Cpu->pc - 8, (u32)Address);
         return Value;
     }
     Value = *((u32 *)VirtualAddress);
@@ -79,6 +82,7 @@ WriteMemByte(MIPS_R3000 *Cpu, u64 Address, u8 Value)
             }
         }
 
+        printf("%08lX: Write byte 0x%02X to unmapped address: 0x%08lX\n", (u32)Cpu->pc - 8, Value, (u32)Address);
         return;
     }
     *((u8 *)VirtualAddress) = Value;
@@ -103,6 +107,7 @@ WriteMemDWord(MIPS_R3000 *Cpu, u64 Address, u64 Value)
             }
         }
 
+        printf("%08lX: Write dword 0x%016llX to unmapped address: 0x%08lX\n", (u32)Cpu->pc - 8, Value, (u32)Address);
         return;
     }
     *((u64 *)((u8 *)VirtualAddress)) = (Swap ? Value: __builtin_bswap64(Value));
@@ -126,6 +131,7 @@ WriteMemWord(MIPS_R3000 *Cpu, u64 Address, u32 Value)
             }
         }
 
+        printf("%08lX: Write word 0x%08lX to unmapped address: 0x%08lX\n", (u32)Cpu->pc - 8, Value, (u32)Address);
         return;
     }
     *((u32 *)((u8 *)VirtualAddress)) = (Swap ? Value: __builtin_bswap32(Value));
@@ -149,6 +155,7 @@ WriteMemHalfWord(MIPS_R3000 *Cpu, u64 Address, u16 Value)
             }
         }
 
+        printf("%08lX: Write half-word 0x%04lX to unmapped address: 0x%08lX\n", (u32)Cpu->pc - 8, Value, (u32)Address);
         return;
     }
     *((u16 *)((u8 *)VirtualAddress)) = (Swap ? Value: __builtin_bswap16(Value));
@@ -735,14 +742,14 @@ LH(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
 static void
 J(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
 {
-    u64 Immediate = SignExtend16To64((Data & IMM16_MASK));
+    u64 Immediate = (Data & IMM26_MASK);
     Cpu->pc = (Cpu->pc & 0xF0000000) + (Immediate * 4);
 }
 
 static void
 JAL(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
 {
-    u64 Immediate = SignExtend16To64((Data & IMM16_MASK));
+    u32 Immediate = (Data & IMM26_MASK);
     Cpu->ra = OpCode->CurrentAddress + 8;
     Cpu->pc = (Cpu->pc & 0xF0000000) + (Immediate * 4);
 }
