@@ -39,5 +39,7 @@ bool MainLoopPlatform();
 u32 GetDigitalSwitchesPlatform();
 bool PlatformHasDebugger();
 void PlatformAttachDebugger(void *);
+void *PlatformCreateThread(void (*Thread)());
+void PlatformJoinThread(void *);
 
 #endif

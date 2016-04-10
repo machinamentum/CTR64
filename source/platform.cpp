@@ -138,6 +138,7 @@ void PlatformAttachDebugger(void *Cpu)
 #include <string>
 #include <iomanip>
 #include <sstream>
+#include <thread>
 #include "disasm.h"
 #include "stb_truetype.h"
 #include "crystal_font.h"
@@ -432,6 +433,24 @@ GetDigitalSwitchesPlatform()
 bool PlatformHasDebugger()
 {
     return true;
+}
+
+void *
+PlatformCreateThread(void (*Thread)())
+{
+    std::thread *Needle = new std::thread(Thread);
+    return Needle;
+}
+
+void
+PlatformJoinThread(void *ThreadHandle)
+{
+    std::thread *Needle = (std::thread *)ThreadHandle;
+    if (Needle)
+    {
+        Needle->join();
+        delete Needle;
+    }
 }
 
 #include "mips.h"

@@ -16,6 +16,7 @@
 #include "vi.h"
 #include "sp.h"
 #include "z64.h"
+#include "pif.h"
 
 void
 ResetCpu(MIPS_R3000 *Cpu)
@@ -54,6 +55,8 @@ int main(int argc, char **argv)
     MapMemoryRegion(&Cpu, (mmm) {SP, 0xA4040000, sizeof(SignalProcessor)});
     MapMemoryRegion(&Cpu, (mmm) {linearAlloc(0x1000), 0xA4000000, 0x1000}); // SP_DMEM
     MapMemoryRegion(&Cpu, (mmm) {linearAlloc(0x1000), 0xA4001000, 0x1000}); // SP_IMEM
+    PIFConfig PIF = {(u8 *)MapVirtualAddress(&Cpu, 0x1FC007C0), nullptr, 0};
+    PIFStartThread(&PIF);
 
     ResetCpu(&Cpu);
 
@@ -94,6 +97,7 @@ int main(int argc, char **argv)
 
         SwapBuffersPlatform();
     }
+    PIFCloseThread();
     ExitPlatform();
 
     return 0;
