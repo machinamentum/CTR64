@@ -315,7 +315,6 @@ InitPlatform(int argc, char **argv)
     glfwMakeContextCurrent(DebugWindow);
     InitFont();
     GfxHandle = glfwCreateWindow(800, 480, "CTR64", NULL, NULL);
-    glfwMakeContextCurrent(GfxHandle);
     glfwSwapInterval(0);
     DisassemblerSetPrintFunction(DisassemblerPrintOverride);
     glfwSetKeyCallback(DebugWindow, KeyCallback);
@@ -325,8 +324,6 @@ void
 SwapBuffersPlatform()
 {
     glfwMakeContextCurrent(DebugWindow);
-    glFlush();
-    glfwMakeContextCurrent(GfxHandle);
     glFlush();
     glfwSwapBuffers(GfxHandle);
     glfwSwapBuffers(DebugWindow);
@@ -380,7 +377,7 @@ PlatformDrawDebbuger()
     }
     glLoadIdentity();
     glTranslatef(404, 12, 0);
-    for (int i = 0; i < 32; ++i)
+    for (int i = -16; i < 16; ++i)
     {
         glTranslatef(0, FontHeight, 0);
         SavedXPos = 0;
@@ -405,8 +402,6 @@ PlatformDrawDebbuger()
     }
 
     DebuggerDrawCpuRegisters();
-
-    glfwMakeContextCurrent(GfxHandle);
 }
 
 bool
@@ -451,6 +446,18 @@ PlatformJoinThread(void *ThreadHandle)
         Needle->join();
         delete Needle;
     }
+}
+
+void *
+PlatformGetGfxContext()
+{
+    return GfxHandle;
+}
+
+void
+PlatformMakeContextCurrent(void *Handle)
+{
+    glfwMakeContextCurrent((GLFWwindow *)Handle);
 }
 
 #include "mips.h"

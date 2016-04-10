@@ -9,6 +9,8 @@
 #ifndef VI_H
 #define VI_H
 
+#include "mips.h"
+
 #define VI_COLOR_DEPTH(x)       (x & 0b0011)
 #define VI_GAMMA_DITHER         (1 << 2)
 #define VI_GAMMA_BOOST          (1 << 3)
@@ -61,5 +63,8 @@ struct VideoInterface
     u32 XScale;
     u32 YScale;
 };
+
+void VIStartThread(MIPS_R3000 *Cpu, VideoInterface *VI);
+void VICloseThread();
 
 #endif

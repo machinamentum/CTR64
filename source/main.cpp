@@ -17,6 +17,7 @@
 #include "sp.h"
 #include "z64.h"
 #include "pif.h"
+#include "pi.h"
 
 void
 ResetCpu(MIPS_R3000 *Cpu)
@@ -41,6 +42,7 @@ int main(int argc, char **argv)
     u8 *BiosBuffer = (u8 *)linearAlloc(0x800);
     fread(BiosBuffer, fsize, 1, f);
     fclose(f);
+    memset(BiosBuffer + 0x7C0, 0, 64);
 
     u8 *CartBuffer = (u8 *)linearAlloc(0x01000000);
     z64 Z64Cart;
@@ -55,8 +57,10 @@ int main(int argc, char **argv)
     MapMemoryRegion(&Cpu, (mmm) {SP, 0xA4040000, sizeof(SignalProcessor)});
     MapMemoryRegion(&Cpu, (mmm) {linearAlloc(0x1000), 0xA4000000, 0x1000}); // SP_DMEM
     MapMemoryRegion(&Cpu, (mmm) {linearAlloc(0x1000), 0xA4001000, 0x1000}); // SP_IMEM
+    MapMemoryRegion(&Cpu, (mmm) {linearAlloc(sizeof(PeripheralInterface)), 0x4600000, sizeof(PeripheralInterface)});
     PIFConfig PIF = {(u8 *)MapVirtualAddress(&Cpu, 0x1FC007C0), nullptr, 0};
     PIFStartThread(&PIF);
+    VIStartThread(&Cpu, (VideoInterface *)MapVirtualAddress(&Cpu, 0x04400000));
 
     ResetCpu(&Cpu);
 
@@ -97,6 +101,7 @@ int main(int argc, char **argv)
 
         SwapBuffersPlatform();
     }
+    VICloseThread();
     PIFCloseThread();
     ExitPlatform();
 

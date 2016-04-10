@@ -41,5 +41,7 @@ bool PlatformHasDebugger();
 void PlatformAttachDebugger(void *);
 void *PlatformCreateThread(void (*Thread)());
 void PlatformJoinThread(void *);
+void *PlatformGetGfxContext();
+void PlatformMakeContextCurrent(void *);
 
 #endif
