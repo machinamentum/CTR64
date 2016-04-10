@@ -21,23 +21,6 @@ PrintUsage()
     printf("                 --le    | Encode output in little-endian mode\n");
 }
 
-std::vector<std::string> &
-split(const std::string &s, char delim, std::vector<std::string> &elems) {
-    std::stringstream ss(s);
-    std::string item;
-    while (std::getline(ss, item, delim)) {
-        elems.push_back(item);
-    }
-    return elems;
-}
-
-std::vector<std::string>
-split(const std::string &s, char delim) {
-    std::vector<std::string> elems;
-    split(s, delim, elems);
-    return elems;
-}
-
 struct {const char *Name; u32 Select0;} Select0Table[0x2F] =
 {
     {"j", 0x02},
