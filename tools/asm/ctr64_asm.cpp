@@ -458,6 +458,126 @@ ParseMultDivForm(disasm_opcode_info *Info, LexerInstance* Lex, LexerToken &Token
     Info->RightValue = GetGPRIndexFromString(Token.String);
 }
 
+void
+ParseALURegForm(disasm_opcode_info *Info, LexerInstance *Lex, LexerToken &Token)
+{
+    std::string OpName = Token.String;
+    Token = Lex->GetToken();
+    if (Token.Type != LexerToken::TOKEN_ID)
+    {
+        printf("error: expected register name for %s paramter 1.\n", OpName.c_str());
+        return;
+    }
+    Info->DestinationRegister = GetGPRIndexFromString(Token.String);
+    std::string DestName = Token.String;
+    Token = Lex->GetToken();
+    if (Token.Type != ',')
+    {
+        printf("error: expected token ',' after identifier '%s'.\n", DestName.c_str());
+        return;
+    }
+    Token = Lex->GetToken();
+    if (Token.Type != LexerToken::TOKEN_ID)
+    {
+        printf("error: expected register name for %s paramter 2.\n", OpName.c_str());
+        return;
+    }
+    Info->LeftValue = GetGPRIndexFromString(Token.String);
+    DestName = Token.String;
+    Token = Lex->GetToken();
+    if (Token.Type != ',')
+    {
+        printf("error: expected token ',' after identifier '%s'.\n", DestName.c_str());
+        return;
+    }
+    Token = Lex->GetToken();
+    if (Token.Type != LexerToken::TOKEN_ID)
+    {
+        printf("error: expected register name for %s paramter 3.\n", OpName.c_str());
+        return;
+    }
+    Info->RightValue = GetGPRIndexFromString(Token.String);
+}
+
+void
+ParseJRForm(disasm_opcode_info *Info, LexerInstance *Lex, LexerToken &Token)
+{
+    std::string OpName = Token.String;
+    Token = Lex->GetToken();
+    if (Token.Type != LexerToken::TOKEN_ID)
+    {
+        printf("error: expected register name for %s paramter 1.\n", OpName.c_str());
+        return;
+    }
+    Info->LeftValue = GetGPRIndexFromString(Token.String);
+}
+
+void
+ParseJALRForm(disasm_opcode_info *Info, LexerInstance *Lex, LexerToken &Token)
+{
+    std::string OpName = Token.String;
+    Token = Lex->GetToken();
+    if (Token.Type != LexerToken::TOKEN_ID)
+    {
+        printf("error: expected register name for %s paramter 1.\n", OpName.c_str());
+        return;
+    }
+    Info->DestinationRegister = GetGPRIndexFromString(Token.String);
+    std::string DestName = Token.String;
+    Token = Lex->GetToken();
+    if (Token.Type != ',')
+    {
+        printf("error: expected token ',' after identifier '%s'.\n", DestName.c_str());
+        return;
+    }
+    Token = Lex->GetToken();
+    if (Token.Type != LexerToken::TOKEN_ID)
+    {
+        printf("error: expected register name for %s paramter 2.\n", OpName.c_str());
+        return;
+    }
+    Info->LeftValue = GetGPRIndexFromString(Token.String);
+}
+
+void
+ParseSyscallBreakForm(disasm_opcode_info *Info, LexerInstance *Lex, LexerToken &Token)
+{
+    std::string OpName = Token.String;
+    Token = Lex->GetToken();
+    if (Token.Type != LexerToken::TOKEN_INT)
+    {
+        printf("error: expected 20-bit integer for %s paramter 1.\n", OpName.c_str());
+        return;
+    }
+    Info->Immediate = Token.Int;
+}
+
+void
+ParseMFHILOForm(disasm_opcode_info *Info, LexerInstance *Lex, LexerToken &Token)
+{
+    std::string OpName = Token.String;
+    Token = Lex->GetToken();
+    if (Token.Type != LexerToken::TOKEN_ID)
+    {
+        printf("error: expected register name for %s paramter 1.\n", OpName.c_str());
+        return;
+    }
+    Info->DestinationRegister = GetGPRIndexFromString(Token.String);
+}
+
+void
+ParseMTHILOForm(disasm_opcode_info *Info, LexerInstance *Lex, LexerToken &Token)
+{
+    std::string OpName = Token.String;
+    Token = Lex->GetToken();
+    if (Token.Type != LexerToken::TOKEN_ID)
+    {
+        printf("error: expected register name for %s paramter 1.\n", OpName.c_str());
+        return;
+    }
+    Info->LeftValue = GetGPRIndexFromString(Token.String);
+}
+
 u32
 ParseInstuctionLine(LexerInstance *Lex, LexerToken &Token)
 {
@@ -483,6 +603,12 @@ ParseInstuctionLine(LexerInstance *Lex, LexerToken &Token)
         case FORM_STORE_LOAD: ParseStoreLoadForm(&Info, Lex, Token); break;
         case FORM_SHIFT_IMM: ParseShiftImmForm(&Info, Lex, Token); break;
         case FORM_MULT_DIV: ParseMultDivForm(&Info, Lex, Token); break;
+        case FORM_ALU_REG: ParseALURegForm(&Info, Lex, Token); break;
+        case FORM_JR: ParseJRForm(&Info, Lex, Token); break;
+        case FORM_JALR: ParseJALRForm(&Info, Lex, Token); break;
+        case FORM_SYSCALL_BREAK: ParseSyscallBreakForm(&Info, Lex, Token); break;
+        case FORM_MFHILO: ParseMFHILOForm(&Info, Lex, Token); break;
+        case FORM_MTHILO: ParseMTHILOForm(&Info, Lex, Token); break;
     }
     AssemblerTranslateOpCode(&Info, &Data);
     return Data;
