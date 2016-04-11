@@ -121,7 +121,7 @@ Coprocessor(disasm_opcode_info *OpCode)
 static u32
 TranslateSecondary(disasm_opcode_info *OpCode)
 {
-    return SecondaryJumpTable[OpCode->Select0](OpCode);
+    return SecondaryJumpTable[OpCode->Select1](OpCode);
 }
 
 void

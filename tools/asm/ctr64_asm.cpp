@@ -431,6 +431,32 @@ ParseALUImmForm(disasm_opcode_info *Info, LexerInstance* Lex, LexerToken &Token)
     Info->Immediate = Token.Int;
 }
 
+void
+ParseMultDivForm(disasm_opcode_info *Info, LexerInstance* Lex, LexerToken &Token)
+{
+    std::string OpName = Token.String;
+    Token = Lex->GetToken();
+    if (Token.Type != LexerToken::TOKEN_ID)
+    {
+        printf("error: expected register name for %s paramter 1.\n", OpName.c_str());
+        return;
+    }
+    Info->LeftValue = GetGPRIndexFromString(Token.String);
+    std::string DestName = Token.String;
+    Token = Lex->GetToken();
+    if (Token.Type != ',')
+    {
+        printf("error: expected token ',' after identifier '%s'.\n", DestName.c_str());
+        return;
+    }
+    Token = Lex->GetToken();
+    if (Token.Type != LexerToken::TOKEN_ID)
+    {
+        printf("error: expected register name for %s paramter 2.\n", OpName.c_str());
+        return;
+    }
+    Info->RightValue = GetGPRIndexFromString(Token.String);
+}
 
 u32
 ParseInstuctionLine(LexerInstance *Lex, LexerToken &Token)
@@ -456,6 +482,7 @@ ParseInstuctionLine(LexerInstance *Lex, LexerToken &Token)
         case FORM_LUI: ParseLUIForm(&Info, Lex, Token); break;
         case FORM_STORE_LOAD: ParseStoreLoadForm(&Info, Lex, Token); break;
         case FORM_SHIFT_IMM: ParseShiftImmForm(&Info, Lex, Token); break;
+        case FORM_MULT_DIV: ParseMultDivForm(&Info, Lex, Token); break;
     }
     AssemblerTranslateOpCode(&Info, &Data);
     return Data;
@@ -510,6 +537,13 @@ main(int argc, char **argv)
 
     std::vector<u32> DataArray = ParseAsmSource(SourceStr);
     std::ofstream OutputStream;
+    if (argc > 3 && std::string("--be").compare(argv[3]) == 0)
+    {
+        for (u32 i = 0; i < DataArray.size(); ++i)
+        {
+            DataArray[i] = __builtin_bswap32(DataArray[i]);
+        }
+    }
     OutputStream.open(argv[2], std::ofstream::binary);
     OutputStream.write((char *)&DataArray[0], DataArray.size() * sizeof(u32));
     OutputStream.close();
