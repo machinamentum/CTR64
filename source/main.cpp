@@ -61,6 +61,7 @@ int main(int argc, char **argv)
     PIFConfig PIF = {(u8 *)MapVirtualAddress(&Cpu, 0x1FC007C0), nullptr, 0};
     PIFStartThread(&PIF);
     VIStartThread(&Cpu, (VideoInterface *)MapVirtualAddress(&Cpu, 0x04400000));
+    PIStartThread((PeripheralInterface *)MapVirtualAddress(&Cpu, 0x04600000));
 
     ResetCpu(&Cpu);
 
@@ -101,6 +102,7 @@ int main(int argc, char **argv)
 
         SwapBuffersPlatform();
     }
+    PICloseThread();
     VICloseThread();
     PIFCloseThread();
     ExitPlatform();

@@ -37,4 +37,7 @@ struct PeripheralInterface
     u32 DOM2Release;
 };
 
+void PIStartThread(PeripheralInterface *PI);
+void PICloseThread();
+
 #endif
