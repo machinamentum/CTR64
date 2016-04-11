@@ -65,10 +65,10 @@ LexerInstance::GetToken()
         ++SrcPtr;
     }
 
-    if (((*SrcPtr >= 'A') && (*SrcPtr <= 'Z')) || ((*SrcPtr >= 'a') && (*SrcPtr <= 'z')))
+    if (((*SrcPtr >= 'A') && (*SrcPtr <= 'Z')) || ((*SrcPtr >= 'a') && (*SrcPtr <= 'z')) || (*SrcPtr == '_'))
     {
         char *StartPtr = SrcPtr;
-        while (!LexerIsWhiteSpace(*SrcPtr) && (SrcPtr < EndPtr) && (((*SrcPtr >= 'A') && (*SrcPtr <= 'Z')) || ((*SrcPtr >= 'a') && (*SrcPtr <= 'z')) || ((*SrcPtr >= '0') && (*SrcPtr <= '9'))))
+        while (!LexerIsWhiteSpace(*SrcPtr) && (SrcPtr < EndPtr) && (((*SrcPtr >= 'A') && (*SrcPtr <= 'Z')) || ((*SrcPtr >= 'a') && (*SrcPtr <= 'z')) || ((*SrcPtr >= '0') && (*SrcPtr <= '9')) || (*SrcPtr == '_')))
         {
             ++SrcPtr;
         }

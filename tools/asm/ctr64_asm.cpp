@@ -21,8 +21,12 @@ PrintUsage()
     printf("                 --le    | Encode output in little-endian mode\n");
 }
 
-struct {const char *Name; u32 Select0;} Select0Table[0x2F] =
+struct {const char *Name; u32 Select0;} Select0Table[0x33] =
 {
+    {"bgez", 0x01},
+    {"bgezal", 0x01},
+    {"bltz", 0x01},
+    {"bltzal", 0x01},
     {"j", 0x02},
     {"jal", 0x03},
     {"beq", 0x04},
@@ -117,10 +121,27 @@ struct {const char *Name; u32 Select1;} Select1Table[0x25] =
     {"tne", 0x36},
 };
 
+struct SymbolEntry {std::string Name; u32 Addr;};
+std::vector<SymbolEntry> SymbolTable;
+u32 CurrentAddress = 0;
+
+u32
+SymbolLookup(std::string &str)
+{
+    for (size_t i = 0; i < SymbolTable.size(); ++i)
+    {
+        if (SymbolTable[i].Name.compare(str) == 0)
+        {
+            return SymbolTable[i].Addr;
+        }
+    }
+    return -1;
+}
+
 u32
 GetSelect0ForInstruction(std::string &str)
 {
-    for (u32 i = 0; i < 0x2F; ++i)
+    for (u32 i = 0; i < 0x33; ++i)
     {
         if (str.compare(Select0Table[i].Name) == 0)
         {
@@ -384,10 +405,29 @@ ParseJumpImmForm(disasm_opcode_info *Info, LexerInstance* Lex, LexerToken &Token
     Token = Lex->GetToken();
     if (Token.Type != LexerToken::TOKEN_INT)
     {
-        printf("error: expected integer token for %s paramter.\n", OpName.c_str());
-        return;
+        if (Token.Type == LexerToken::TOKEN_ID)
+        {
+            u32 Addr = SymbolLookup(Token.String);
+            if (Addr != -1)
+            {
+                Info->Immediate = Addr / 4;
+            }
+            else
+            {
+                printf("error: invalid symbol '%s'\n", Token.String.c_str());
+                return;
+            }
+        }
+        else
+        {
+            printf("error: expected integer token for %s paramter.\n", OpName.c_str());
+            return;
+        }
     }
-    Info->Immediate = Token.Int / 4;
+    else
+    {
+        Info->Immediate = Token.Int / 4;
+    }
 }
 
 void
@@ -578,6 +618,64 @@ ParseMTHILOForm(disasm_opcode_info *Info, LexerInstance *Lex, LexerToken &Token)
     Info->LeftValue = GetGPRIndexFromString(Token.String);
 }
 
+void
+ParseBranchZeroForm(disasm_opcode_info *Info, LexerInstance *Lex, LexerToken &Token)
+{
+    std::string OpName = Token.String;
+    if (OpName.compare(0, 4, "bgez") == 0)
+    {
+        Info->RightValue = 1;
+    }
+    else if (OpName.compare(0, 4, "bltz") == 0)
+    {
+        Info->RightValue = 0;
+    }
+    if (OpName.compare(4, 2, "al") == 0)
+    {
+        Info->RightValue |= 0b10000;
+    }
+    Token = Lex->GetToken();
+    if (Token.Type != LexerToken::TOKEN_ID)
+    {
+        printf("error: expected register name for %s paramter 1.\n", OpName.c_str());
+        return;
+    }
+    Info->LeftValue = GetGPRIndexFromString(Token.String);
+    std::string DestName = Token.String;
+    Token = Lex->GetToken();
+    if (Token.Type != ',')
+    {
+        printf("error: expected token ',' after identifier '%s'.\n", DestName.c_str());
+        return;
+    }
+    Token = Lex->GetToken();
+    if (Token.Type != LexerToken::TOKEN_INT)
+    {
+        if (Token.Type == LexerToken::TOKEN_ID)
+        {
+            u32 Addr = SymbolLookup(Token.String);
+            if (Addr != -1)
+            {
+                Info->Immediate = ((s16)(Addr - CurrentAddress) - 4) / 4;
+            }
+            else
+            {
+                printf("error: invalid symbol '%s'\n", Token.String.c_str());
+                return;
+            }
+        }
+        else
+        {
+            printf("error: expected 16-bit integer for %s paramter 1.\n", OpName.c_str());
+            return;
+        }
+    }
+    else
+    {
+        Info->Immediate = ((s16)Token.Int - 4) / 4;
+    }
+}
+
 u32
 ParseInstuctionLine(LexerInstance *Lex, LexerToken &Token)
 {
@@ -589,7 +687,11 @@ ParseInstuctionLine(LexerInstance *Lex, LexerToken &Token)
         Info.Select1 = GetSelect1ForInstruction(Token.String);
         if (Info.Select1 == -1)
         {
-            printf("Unknown instruction: %s\n", Token.String.c_str());
+            Token = Lex->GetToken();
+            if (Token.Type != ':')
+            {
+                printf("Unknown instruction: %s\n", Token.String.c_str());
+            }
             return ASM_UNK_OP;
         }
     }
@@ -609,15 +711,58 @@ ParseInstuctionLine(LexerInstance *Lex, LexerToken &Token)
         case FORM_SYSCALL_BREAK: ParseSyscallBreakForm(&Info, Lex, Token); break;
         case FORM_MFHILO: ParseMFHILOForm(&Info, Lex, Token); break;
         case FORM_MTHILO: ParseMTHILOForm(&Info, Lex, Token); break;
+        case FORM_BRANCH_ZERO: ParseBranchZeroForm(&Info, Lex, Token); break;
     }
     AssemblerTranslateOpCode(&Info, &Data);
     return Data;
+}
+
+void
+ParseSymbols(LexerInstance *Lex)
+{
+    CurrentAddress = 0;
+    LexerToken Token = Lex->GetToken();
+    while (Token.Type != LexerToken::TOKEN_EOF)
+    {
+        if (Token.Type == LexerToken::TOKEN_ID)
+        {
+            std::string Name = Token.String;
+            u32 Select0 = GetSelect0ForInstruction(Name);
+            if (Select0 == 0)
+            {
+                Select0 = GetSelect1ForInstruction(Name);
+                if (Select0 == -1)
+                {
+                    Token = Lex->GetToken();
+                    if (Token.Type == ':')
+                    {
+                        SymbolTable.push_back({Name, CurrentAddress});
+                        continue;
+                    }
+                    else
+                    {
+                        printf("Unexpected token %d, \"%s\"\n", Token.Type, Token.String.c_str());
+                    }
+                }
+            }
+            while (Token.Type != '\n' && Token.Type != LexerToken::TOKEN_EOF)
+            {
+                Token = Lex->GetToken();
+            }
+            CurrentAddress += 4;
+        }
+
+        Token = Lex->GetToken();
+    }
+    Lex->SrcPtr = (char *)Lex->SrcStr.c_str();
+    CurrentAddress = 0;
 }
 
 std::vector<u32>
 ParseAsmSource(std::string &Source)
 {
     LexerInstance Lex(Source);
+    ParseSymbols(&Lex);
     std::vector<u32> DataArray;
     LexerToken Token = Lex.GetToken();
     while (Token.Type != LexerToken::TOKEN_EOF)
@@ -625,7 +770,11 @@ ParseAsmSource(std::string &Source)
         if (Token.Type == LexerToken::TOKEN_ID)
         {
             u32 Data = ParseInstuctionLine(&Lex, Token);
-            DataArray.push_back(Data);
+            if (Data != ASM_UNK_OP)
+            {
+                DataArray.push_back(Data);
+                CurrentAddress += 4;
+            }
         }
         Token = Lex.GetToken();
     }
