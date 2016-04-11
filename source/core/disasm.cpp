@@ -154,7 +154,6 @@ SysCall(disasm_opcode_info *OpCode)
     {
         PrintFunction(" 0x%08lX", Immediate);
     }
-    PrintFunction("\n");
 }
 
 static void
@@ -469,7 +468,7 @@ BranchZero(disasm_opcode_info *OpCode)
             PrintFunction("al");
         }
     }
-    PrintFunction(" %s, 0x%04X", RNT[OpCode->LeftValue], (u16)OpCode->Immediate);
+    PrintFunction(" %s, 0x%08llX", RNT[OpCode->LeftValue], OpCode->CurrentAddress + 4 + OpCode->Immediate * 4);
 }
 
 static void
@@ -885,7 +884,7 @@ DisassemblerDecodeOpcode(disasm_opcode_info *OpCode, u32 Data, u64 IAddress)
     else if (OpCode->Select0 == 0b000001)
     {
         OpCode->LeftValue = rs;
-        OpCode->FunctionSelect = rt;
+        OpCode->RightValue = rt;
         OpCode->Immediate = SignExtend16To64((Data & IMM16_MASK) >> 0);
         //destination registers set within function
     }
