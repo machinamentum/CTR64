@@ -10,6 +10,7 @@
 #define PI_H
 
 #include "platform.h"
+#include "mips.h"
 
 #define PI_ADDRESS24_BITS   (0xFFFFFF)
 #define PI_LATENCY_BITS     (0xFF)
@@ -37,7 +38,7 @@ struct PeripheralInterface
     u32 DOM2Release;
 };
 
-void PIStartThread(PeripheralInterface *PI);
+void PIStartThread(MIPS_R3000 *C, PeripheralInterface *PI);
 void PICloseThread();
 
 #endif

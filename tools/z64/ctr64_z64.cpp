@@ -52,11 +52,14 @@ main(int argc, char **argv)
     printf("Image name:   %.20s\n", Hdr.ImageName);
     printf("Manufacturer: %s (%d)\n", Z64GetManufacturerString(Hdr.ManufacturerID), Hdr.ManufacturerID);
     printf("Region:       %s (%d)\n", Z64GetCountryString(Hdr.Country), Hdr.Country);
+    printf("Entrypoint:   %08lX\n", Hdr.PC);
+    printf("CRC1:         %08lX\n", Hdr.CRC1);
+    printf("CRC2:         %08lX\n", Hdr.CRC2);
     printf("Boot code:\n");
     MIPS_R3000 Dummy;
     void *RDRAM = linearAlloc(0x400000);
-    MapMemoryRegion(&Dummy, (mmm) {RDRAM, 0x00000000, 0x400000});
-    memcpy(RDRAM, &Hdr.BootCode, 1008 * 4);
+    MapMemoryRegion(&Dummy, (mmm) {RDRAM, 0x00000000, 0x400000, MEM_REGION_RW});
+    memcpy(RDRAM, &Hdr.BootCode[0], 1008 * 4);
     DisassemblerPrintRange(&Dummy, 0, 32, 0);
     Z64Close(&Z64);
     return 0;

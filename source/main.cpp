@@ -62,7 +62,7 @@ int main(int argc, char **argv)
     PIFConfig PIF = {(u8 *)MapVirtualAddress(&Cpu, 0x1FC007C0, MEM_REGION_RW), nullptr, 0};
     PIFStartThread(&PIF);
     VIStartThread(&Cpu, (VideoInterface *)MapVirtualAddress(&Cpu, 0x04400000, MEM_REGION_RW));
-    PIStartThread((PeripheralInterface *)MapVirtualAddress(&Cpu, 0x04600000, MEM_REGION_RW));
+    PIStartThread(&Cpu, (PeripheralInterface *)MapVirtualAddress(&Cpu, 0x04600000, MEM_REGION_RW));
 
     ResetCpu(&Cpu);
 
