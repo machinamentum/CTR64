@@ -409,9 +409,9 @@ Mult(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
     u32 rs = (Data & REG_RS_MASK) >> 21;
     u32 rt = (Data & REG_RT_MASK) >> 16;
 
-    s64 Result = (s64)Cpu->GPR[rs] * (s64)Cpu->GPR[rt];
-    Cpu->hi = (Result >> 32) & 0xFFFFFFFF;
-    Cpu->lo = Result & 0xFFFFFFFF;
+    s64 Result = (s64)((Cpu->GPR[rs] & 0xFFFFFFFF) * (Cpu->GPR[rt] & 0xFFFFFFFF));
+    Cpu->hi = SignExtend32To64((Result >> 32) & 0xFFFFFFFF);
+    Cpu->lo = SignExtend32To64(Result & 0xFFFFFFFF);
 }
 
 static void
@@ -420,9 +420,9 @@ MultU(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
     u32 rs = (Data & REG_RS_MASK) >> 21;
     u32 rt = (Data & REG_RT_MASK) >> 16;
 
-    u64 Result = (u64)Cpu->GPR[rs] * (u64)Cpu->GPR[rt];
-    Cpu->hi = Result >> 32;
-    Cpu->lo = Result & 0xFFFFFFFF;
+    u64 Result = (u64)((Cpu->GPR[rs] & 0xFFFFFFFF) * (Cpu->GPR[rt] & 0xFFFFFFFF));
+    Cpu->hi = SignExtend32To64((Result >> 32) & 0xFFFFFFFF);
+    Cpu->lo = SignExtend32To64(Result & 0xFFFFFFFF);
 }
 
 static void
