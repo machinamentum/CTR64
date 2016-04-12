@@ -116,6 +116,10 @@
 #define MEM_ACCESS_HIGH   128
 #define MEM_ACCESS_LOW    256
 
+#define MEM_REGION_READ    (1 << 0)
+#define MEM_REGION_WRITE   (1 << 1)
+#define MEM_REGION_RW      (MEM_REGION_READ | MEM_REGION_WRITE)
+
 struct MIPS_R3000;
 
 struct opcode
@@ -169,6 +173,7 @@ struct mmm
     void *Ptr;
     u64 VirtualAddress;
     u32 Size;
+    u32 AccessFlag;
 };
 
 struct DMA
@@ -265,7 +270,7 @@ void C0GenerateException(MIPS_R3000 *, u8, u64);
 void MapMemoryRegion(MIPS_R3000 *, mmm);
 
 inline void *
-MapVirtualAddress(MIPS_R3000 *Cpu, u64 Address)
+MapVirtualAddress(MIPS_R3000 *Cpu, u64 Address, u32 AccessType)
 {
     Address = Address & 0x1FFFFFFF;
     for (u32 i = 0; i < Cpu->NumMMM; ++i)
@@ -273,7 +278,7 @@ MapVirtualAddress(MIPS_R3000 *Cpu, u64 Address)
         mmm *MMM = &Cpu->MemMappedMemRegions[i];
         u64 Addr = MMM->VirtualAddress & 0x1FFFFFFF;
         u32 Size = MMM->Size;
-        if ( (Address >= Addr) && (Address < (Addr + Size)) ) {
+        if ( (Address >= Addr) && (Address < (Addr + Size)) && (MMM->AccessFlag & AccessType)) {
             return ((u8 *)MMM->Ptr) + (Address - Addr);
         }
     }
@@ -283,7 +288,7 @@ MapVirtualAddress(MIPS_R3000 *Cpu, u64 Address)
 inline u64
 ReadMemDWordRaw(MIPS_R3000 *Cpu, u64 Address)
 {
-    void *Addr = MapVirtualAddress(Cpu, Address);
+    void *Addr = MapVirtualAddress(Cpu, Address, MEM_REGION_RW);
     if (Addr)
     {
         u64 Value = *((u64 *)((u8 *)Addr));
@@ -295,7 +300,7 @@ ReadMemDWordRaw(MIPS_R3000 *Cpu, u64 Address)
 inline u32
 ReadMemWordRaw(MIPS_R3000 *Cpu, u64 Address)
 {
-    void *Addr = MapVirtualAddress(Cpu, Address);
+    void *Addr = MapVirtualAddress(Cpu, Address, MEM_REGION_RW);
     if (Addr)
     {
         u32 Value = *((u32 *)((u8 *)Addr));
@@ -307,7 +312,7 @@ ReadMemWordRaw(MIPS_R3000 *Cpu, u64 Address)
 inline u8
 ReadMemByteRaw(MIPS_R3000 *Cpu, u64 Address)
 {
-    void *Addr = MapVirtualAddress(Cpu, Address);
+    void *Addr = MapVirtualAddress(Cpu, Address, MEM_REGION_RW);
     if (Addr)
     {
         return *((u8 *)Addr);
@@ -319,7 +324,7 @@ ReadMemByteRaw(MIPS_R3000 *Cpu, u64 Address)
 inline u16
 ReadMemHalfWordRaw(MIPS_R3000 *Cpu, u64 Address)
 {
-    void *Addr = MapVirtualAddress(Cpu, Address);
+    void *Addr = MapVirtualAddress(Cpu, Address, MEM_REGION_RW);
     if (Addr)
     {
         u16 Value = *((u16 *)((u8 *)Addr));
@@ -331,19 +336,19 @@ ReadMemHalfWordRaw(MIPS_R3000 *Cpu, u64 Address)
 inline void
 WriteMemByteRaw(MIPS_R3000 *Cpu, u64 Address, u8 Value)
 {
-    *((u8 *)MapVirtualAddress(Cpu, Address)) = Value;
+    *((u8 *)MapVirtualAddress(Cpu, Address, MEM_REGION_RW)) = Value;
 }
 
 inline void
 WriteMemWordRaw(MIPS_R3000 *Cpu, u32 Address, u32 Value)
 {
-    *((u32 *)((u8 *)MapVirtualAddress(Cpu, Address))) = ((Cpu->CP0.sr & C0_STATUS_RE) ? Value: __builtin_bswap32(Value));
+    *((u32 *)((u8 *)MapVirtualAddress(Cpu, Address, MEM_REGION_RW))) = ((Cpu->CP0.sr & C0_STATUS_RE) ? Value: __builtin_bswap32(Value));
 }
 
 inline void
 WriteMemHalfWordRaw(MIPS_R3000 *Cpu, u32 Address, u16 Value)
 {
-    *((u16 *)((u8 *)MapVirtualAddress(Cpu, Address))) = ((Cpu->CP0.sr & C0_STATUS_RE) ? Value: __builtin_bswap16(Value));
+    *((u16 *)((u8 *)MapVirtualAddress(Cpu, Address, MEM_REGION_RW))) = ((Cpu->CP0.sr & C0_STATUS_RE) ? Value: __builtin_bswap16(Value));
 }
 
 inline u64

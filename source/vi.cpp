@@ -34,7 +34,7 @@ VIUpdateRoutine()
     {
         glClearColor(1, 0, 0, 1);
         glClear(GL_COLOR_BUFFER_BIT);
-        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 640, 480, GL_RGBA, GL_UNSIGNED_BYTE, MapVirtualAddress(Cpu, VI->DRAMAddr));
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 640, 480, GL_RGBA, GL_UNSIGNED_BYTE, MapVirtualAddress(Cpu, __builtin_bswap32(VI->DRAMAddr), MEM_REGION_READ));
         glLoadIdentity();
         glTranslatef(-0.75f, -0.75f, 0);
         glBegin(GL_QUADS);

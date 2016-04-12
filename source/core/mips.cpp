@@ -15,7 +15,7 @@ inline u64
 ReadMemDWord(MIPS_R3000 *Cpu, u64 Address)
 {
     u64 Base = Address & 0x1FFFFFFF;
-    u8 *VirtualAddress = (u8 *)MapVirtualAddress(Cpu, Address);
+    u8 *VirtualAddress = (u8 *)MapVirtualAddress(Cpu, Address, MEM_REGION_READ);
     u32 Swap = Cpu->CP0.sr & C0_STATUS_RE;
     u64 Value = DEFAULT_UNMAPPED_ADDR_VALUE;
     if (!VirtualAddress)
@@ -42,7 +42,7 @@ inline u32
 ReadMemWord(MIPS_R3000 *Cpu, u64 Address)
 {
     u32 Base = Address & 0x1FFFFFFF;
-    u8 *VirtualAddress = (u8 *)MapVirtualAddress(Cpu, Address);
+    u8 *VirtualAddress = (u8 *)MapVirtualAddress(Cpu, Address, MEM_REGION_READ);
     u32 Swap = Cpu->CP0.sr & C0_STATUS_RE;
     u32 Value = DEFAULT_UNMAPPED_ADDR_VALUE;
     if (!VirtualAddress)
@@ -68,7 +68,7 @@ static void
 WriteMemByte(MIPS_R3000 *Cpu, u64 Address, u8 Value)
 {
     u32 Base = Address & 0x1FFFFFFF;
-    u8 *VirtualAddress = (u8 *)MapVirtualAddress(Cpu, Address);
+    u8 *VirtualAddress = (u8 *)MapVirtualAddress(Cpu, Address, MEM_REGION_WRITE);
     if (!VirtualAddress)
     {
         for (u32 i = 0; i < Cpu->NumMMR; ++i)
@@ -92,7 +92,7 @@ static void
 WriteMemDWord(MIPS_R3000 *Cpu, u64 Address, u64 Value)
 {
     u32 Base = Address & 0x1FFFFFFF;
-    u8 *VirtualAddress = (u8 *)MapVirtualAddress(Cpu, Address);
+    u8 *VirtualAddress = (u8 *)MapVirtualAddress(Cpu, Address, MEM_REGION_WRITE);
     u32 Swap = Cpu->CP0.sr & C0_STATUS_RE;
     if (!VirtualAddress)
     {
@@ -117,7 +117,7 @@ static void
 WriteMemWord(MIPS_R3000 *Cpu, u64 Address, u32 Value)
 {
     u32 Base = Address & 0x1FFFFFFF;
-    u8 *VirtualAddress = (u8 *)MapVirtualAddress(Cpu, Address);
+    u8 *VirtualAddress = (u8 *)MapVirtualAddress(Cpu, Address, MEM_REGION_WRITE);
     u32 Swap = Cpu->CP0.sr & C0_STATUS_RE;
     if (!VirtualAddress)
     {
@@ -141,7 +141,7 @@ static void
 WriteMemHalfWord(MIPS_R3000 *Cpu, u64 Address, u16 Value)
 {
     u32 Base = Address & 0x1FFFFFFF;
-    u8 *VirtualAddress = (u8 *)MapVirtualAddress(Cpu, Address);
+    u8 *VirtualAddress = (u8 *)MapVirtualAddress(Cpu, Address, MEM_REGION_WRITE);
     u32 Swap = Cpu->CP0.sr & C0_STATUS_RE;
     if (!VirtualAddress)
     {
