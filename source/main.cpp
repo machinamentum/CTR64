@@ -59,6 +59,10 @@ int main(int argc, char **argv)
     MapMemoryRegion(&Cpu, (mmm) {linearAlloc(0x1000), 0xA4000000, 0x1000, MEM_REGION_RW}); // SP_DMEM
     MapMemoryRegion(&Cpu, (mmm) {linearAlloc(0x1000), 0xA4001000, 0x1000, MEM_REGION_RW}); // SP_IMEM
     MapMemoryRegion(&Cpu, (mmm) {linearAlloc(sizeof(PeripheralInterface)), 0x4600000, sizeof(PeripheralInterface), MEM_REGION_RW});
+
+    WriteMemWordRaw(&Cpu, 0x10000000 + 0x40 + 0x062C, 0);
+    WriteMemWordRaw(&Cpu, 0x10000000 + 0x40 + 0x0638, 0);
+
     PIFConfig PIF = {(u8 *)MapVirtualAddress(&Cpu, 0x1FC007C0, MEM_REGION_RW), nullptr, 0};
     PIFStartThread(&PIF);
     VIStartThread(&Cpu, (VideoInterface *)MapVirtualAddress(&Cpu, 0x04400000, MEM_REGION_RW));
