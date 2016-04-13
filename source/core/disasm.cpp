@@ -92,6 +92,142 @@ static const char *C0RNT[17] =
     "prid",
 };
 
+static const char *Select0Table[0x40] =
+{
+    "unk_op0",
+    "unk_op0",
+    "j",
+    "jal",
+    "beq",
+    "bne",
+    "blez",
+    "bgtz",
+    "addi",
+    "addiu",
+    "slti",
+    "sltiu",
+    "andi",
+    "ori",
+    "xori",
+    "lui",
+    "cop0",
+    "cop1",
+    "cop2",
+    "cop3",
+    "beql",
+    "bnel",
+    "blezl",
+    "bgtzl",
+    "daddi",
+    "daddiu",
+    "ldl",
+    "ldr",
+    "unk_op0",
+    "unk_op0",
+    "unk_op0",
+    "unk_op0",
+    "lb",
+    "lh",
+    "lwl",
+    "lw",
+    "lbu",
+    "lhu",
+    "lwr",
+    "lwu",
+    "sb",
+    "sh",
+    "swl",
+    "sw",
+    "sdl",
+    "sdr",
+    "swr",
+    "cache",
+    "ll",
+    "lwc1",
+    "lwc2",
+    "lwc3",
+    "lld",
+    "ldc1",
+    "ldc2",
+    "ld",
+    "sc",
+    "swc1",
+    "swc2",
+    "swc3",
+    "scd",
+    "sdc1",
+    "sdc2",
+    "sd"
+};
+
+static const char *Select1Table[0x40] =
+{
+    "sll",
+    "unk_op1",
+    "srl",
+    "sra",
+    "sllv",
+    "unk_op1",
+    "srlv",
+    "srav",
+    "jr",
+    "jalr",
+    "unk_op1",
+    "unk_op1",
+    "syscall",
+    "break",
+    "unk_op1",
+    "sync",
+    "mfhi",
+    "mthi",
+    "mflo",
+    "mtlo",
+    "dsllv",
+    "unk_op1",
+    "dsrlv",
+    "dsrav",
+    "mult",
+    "multu",
+    "div",
+    "divu",
+    "dmult",
+    "dmultu",
+    "ddiv",
+    "ddivu",
+    "add",
+    "addu",
+    "sub",
+    "subu",
+    "and",
+    "or",
+    "xor",
+    "nor",
+    "unk_op1",
+    "unk_op1",
+    "slt",
+    "sltu",
+    "dadd",
+    "daddu",
+    "dsub",
+    "dsubu",
+    "tge",
+    "tgeu",
+    "tlt",
+    "tltu",
+    "teq",
+    "unk_op1",
+    "tne",
+    "unk_op1",
+    "dsll",
+    "unk_op1",
+    "dsrl",
+    "dsra",
+    "dsll32",
+    "unk_op1",
+    "dsrl32",
+    "dsra32"
+};
+
 const char *
 DisassemblerGetGPRName(u32 Reg)
 {
@@ -144,311 +280,111 @@ DumpC0State(Coprocessor *C0)
     }
 }
 
-//Exceptions
 static void
-SysCall(disasm_opcode_info *OpCode)
+SysCall_Break(disasm_opcode_info *OpCode)
 {
-    PrintFunction("syscall");
-    u32 Immediate = (u32)OpCode->Immediate;
-    if (Immediate)
-    {
-        PrintFunction(" 0x%08lX", Immediate);
-    }
+    PrintFunction("%s", Select1Table[OpCode->Select1]);
+    u32 Imm = (u16)((OpCode->Immediate & COMMENT20_MASK) >> 6);
+    if (Imm) PrintFunction(" 0x%08lX", Imm);
 }
 
 static void
-Break(disasm_opcode_info *OpCode)
+ALU_REG(disasm_opcode_info *OpCode)
 {
-    PrintFunction("break");
-    u32 Immediate = (u32)OpCode->Immediate;
-    if (Immediate)
-    {
-        PrintFunction(" 0x%08lX", Immediate);
-    }
-}
-
-//Arithmetic
-static void
-AddU(disasm_opcode_info *OpCode)
-{
-    if (OpCode->RightValue)
-    {
-        PrintFunction("addu %s, %s, %s", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], RNT[OpCode->RightValue]);
-    }
-    else
-    {
-        PrintFunction("move %s, %s", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue]);
-    }
-
+    PrintFunction("%s %s, %s, %s", Select1Table[OpCode->Select1], RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], RNT[OpCode->RightValue]);
 }
 
 static void
-AddIU(disasm_opcode_info *OpCode)
+ALU_IMM(disasm_opcode_info *OpCode)
 {
-    PrintFunction("addiu %s, %s, 0x%04X", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], (u16)OpCode->Immediate);
+    u16 Imm = OpCode->Immediate & IMM16_MASK;
+    PrintFunction("%s %s, %s, 0x%04X", Select0Table[OpCode->Select0], RNT[OpCode->RightValue], RNT[OpCode->LeftValue], Imm);
+}
+
+
+static void
+MFHILO(disasm_opcode_info *OpCode)
+{
+    PrintFunction("%s %s", Select1Table[OpCode->Select1], RNT[OpCode->DestinationRegister]);
 }
 
 static void
-DAddIU(disasm_opcode_info *OpCode)
+MTHILO(disasm_opcode_info *OpCode)
 {
-    PrintFunction("daddiu %s, %s, 0x%04X", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], (u16)OpCode->Immediate);
+
+    PrintFunction("%s %s", Select1Table[OpCode->Select1], RNT[OpCode->LeftValue]);
 }
 
 static void
-SubU(disasm_opcode_info *OpCode)
+Mult_Div(disasm_opcode_info *OpCode)
 {
-    PrintFunction("subu %s, %s, %s", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], RNT[OpCode->RightValue]);
+    PrintFunction("%s %s, %s", Select1Table[OpCode->Select1], RNT[OpCode->LeftValue], RNT[OpCode->RightValue]);
 }
 
-static void
-Add(disasm_opcode_info *OpCode)
-{
-    PrintFunction("add %s, %s, %s", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], RNT[OpCode->RightValue]);
-}
-
-static void
-AddI(disasm_opcode_info *OpCode)
-{
-    PrintFunction("addi %s, %s, 0x%04X", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], (u16)OpCode->Immediate);
-}
-
-static void
-DAdd(disasm_opcode_info *OpCode)
-{
-    PrintFunction("dadd %s, %s, %s", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], RNT[OpCode->RightValue]);
-}
-
-static void
-DAddU(disasm_opcode_info *OpCode)
-{
-    PrintFunction("daddu %s, %s, %s", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], RNT[OpCode->RightValue]);
-}
-
-static void
-DAddI(disasm_opcode_info *OpCode)
-{
-    PrintFunction("daddi %s, %s, 0x%04X", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], (u16)OpCode->Immediate);
-}
-
-static void
-Sub(disasm_opcode_info *OpCode)
-{
-    PrintFunction("sub %s, %s, %s", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], RNT[OpCode->RightValue]);
-}
-
-static void
-DSub(disasm_opcode_info *OpCode)
-{
-    PrintFunction("dsub %s, %s, %s", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], RNT[OpCode->RightValue]);
-}
-
-static void
-DSubU(disasm_opcode_info *OpCode)
-{
-    PrintFunction("dsub %s, %s, %s", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], RNT[OpCode->RightValue]);
-}
-
-//HI:LO operations
-static void
-MFHI(disasm_opcode_info *OpCode)
-{
-    PrintFunction("mfhi %s", RNT[OpCode->DestinationRegister]);
-}
-
-static void
-MFLO(disasm_opcode_info *OpCode)
-{
-    PrintFunction("mflo %s", RNT[OpCode->DestinationRegister]);
-}
-
-static void
-MTHI(disasm_opcode_info *OpCode)
-{
-    PrintFunction("mthi %s", RNT[OpCode->LeftValue]);
-}
-
-static void
-MTLO(disasm_opcode_info *OpCode)
-{
-    PrintFunction("mtlo %s", RNT[OpCode->LeftValue]);
-}
-
-static void
-Mult(disasm_opcode_info *OpCode)
-{
-    PrintFunction("mult %s, %s", RNT[OpCode->LeftValue], RNT[OpCode->RightValue]);
-}
-
-static void
-MultU(disasm_opcode_info *OpCode)
-{
-    PrintFunction("multu %s, %s", RNT[OpCode->LeftValue], RNT[OpCode->RightValue]);
-}
-
-static void
-Div(disasm_opcode_info *OpCode)
-{
-    PrintFunction("div %s, %s", RNT[OpCode->LeftValue], RNT[OpCode->RightValue]);
-}
-
-static void
-DivU(disasm_opcode_info *OpCode)
-{
-    PrintFunction("divu %s, %s", RNT[OpCode->LeftValue], RNT[OpCode->RightValue]);
-}
-
-//Store
-static void
-SW(disasm_opcode_info *OpCode)
-{
-    PrintFunction("sw %s, 0x%04X(%s)", RNT[OpCode->RightValue], (u16)OpCode->Immediate, RNT[OpCode->LeftValue]);
-}
-
-static void
-SWL(disasm_opcode_info *OpCode)
-{
-    PrintFunction("swl %s, 0x%04X(%s)", RNT[OpCode->RightValue], (u16)OpCode->Immediate, RNT[OpCode->LeftValue]);
-}
-
-static void
-SWR(disasm_opcode_info *OpCode)
-{
-    PrintFunction("swr %s, 0x%04X(%s)", RNT[OpCode->RightValue], (u16)OpCode->Immediate, RNT[OpCode->LeftValue]);
-}
-
-static void
-SD(disasm_opcode_info *OpCode)
-{
-    PrintFunction("sd %s, 0x%04X(%s)", RNT[OpCode->RightValue], (u16)OpCode->Immediate, RNT[OpCode->LeftValue]);
-}
-
-static void
-SDL(disasm_opcode_info *OpCode)
-{
-    PrintFunction("sdl %s, 0x%04X(%s)", RNT[OpCode->RightValue], (u16)OpCode->Immediate, RNT[OpCode->LeftValue]);
-}
-
-static void
-SDR(disasm_opcode_info *OpCode)
-{
-    PrintFunction("sdr %s, 0x%04X(%s)", RNT[OpCode->RightValue], (u16)OpCode->Immediate, RNT[OpCode->LeftValue]);
-}
-
-static void
-SH(disasm_opcode_info *OpCode)
-{
-    PrintFunction("sh %s, 0x%04X(%s)", RNT[OpCode->RightValue], (u16)OpCode->Immediate, RNT[OpCode->LeftValue]);
-}
-
-static void
-SB(disasm_opcode_info *OpCode)
-{
-    PrintFunction("sb %s, 0x%04X(%s)", RNT[OpCode->RightValue], (u16)OpCode->Immediate, RNT[OpCode->LeftValue]);
-}
-
-//Load
 static void
 LUI(disasm_opcode_info *OpCode)
 {
-    PrintFunction("lui %s, 0x%04X", RNT[OpCode->DestinationRegister], (u16)OpCode->Immediate);
+    u16 Imm = OpCode->Immediate & IMM16_MASK;
+    PrintFunction("%s %s, 0x%04X", Select0Table[OpCode->Select0], RNT[OpCode->RightValue], Imm);
 }
 
 static void
-LW(disasm_opcode_info *OpCode)
+Jump_Imm(disasm_opcode_info *OpCode)
 {
-    PrintFunction("lw %s, 0x%04X(%s)", RNT[OpCode->RightValue], (u16)OpCode->Immediate, RNT[OpCode->LeftValue]);
-}
-
-static void
-LWL(disasm_opcode_info *OpCode)
-{
-    PrintFunction("lwl %s, 0x%04X(%s)", RNT[OpCode->RightValue], (u16)OpCode->Immediate, RNT[OpCode->LeftValue]);
-}
-
-static void
-LWR(disasm_opcode_info *OpCode)
-{
-    PrintFunction("lwr %s, 0x%04X(%s)", RNT[OpCode->RightValue], (u16)OpCode->Immediate, RNT[OpCode->LeftValue]);
-}
-
-static void
-LWU(disasm_opcode_info *OpCode)
-{
-    PrintFunction("lwu %s, 0x%04X(%s)", RNT[OpCode->RightValue], (u16)OpCode->Immediate, RNT[OpCode->LeftValue]);
-}
-
-static void
-LD(disasm_opcode_info *OpCode)
-{
-    PrintFunction("ld %s, 0x%04X(%s)", RNT[OpCode->RightValue], (u16)OpCode->Immediate, RNT[OpCode->LeftValue]);
-}
-
-static void
-LDL(disasm_opcode_info *OpCode)
-{
-    PrintFunction("ldl %s, 0x%04X(%s)", RNT[OpCode->RightValue], (u16)OpCode->Immediate, RNT[OpCode->LeftValue]);
-}
-
-static void
-LDR(disasm_opcode_info *OpCode)
-{
-    PrintFunction("ldr %s, 0x%04X(%s)", RNT[OpCode->RightValue], (u16)OpCode->Immediate, RNT[OpCode->LeftValue]);
-}
-
-static void
-LBU(disasm_opcode_info *OpCode)
-{
-    PrintFunction("lbu %s, 0x%04X(%s)", RNT[OpCode->RightValue], (u16)OpCode->Immediate, RNT[OpCode->LeftValue]);
-}
-
-static void
-LHU(disasm_opcode_info *OpCode)
-{
-    PrintFunction("lhu %s, 0x%04X(%s)", RNT[OpCode->RightValue], (u16)OpCode->Immediate, RNT[OpCode->LeftValue]);
-}
-
-static void
-LB(disasm_opcode_info *OpCode)
-{
-    PrintFunction("lb %s, 0x%04X(%s)", RNT[OpCode->RightValue], (u16)OpCode->Immediate, RNT[OpCode->LeftValue]);
-}
-
-static void
-LH(disasm_opcode_info *OpCode)
-{
-    PrintFunction("lh %s, 0x%04X(%s)", RNT[OpCode->RightValue], (u16)OpCode->Immediate, RNT[OpCode->LeftValue]);
-}
-
-
-// Jump/Call
-static void
-J(disasm_opcode_info *OpCode)
-{
-    PrintFunction("j 0x%08lX", ((u32)OpCode->Immediate) * 4);
-}
-
-static void
-JAL(disasm_opcode_info *OpCode)
-{
-    PrintFunction("jal 0x%08lX", ((u32)OpCode->Immediate) * 4);
+    PrintFunction("%s 0x%08lX", Select0Table[OpCode->Select0], ((u32)OpCode->Immediate & IMM26_MASK) * 4);
 }
 
 static void
 JR(disasm_opcode_info *OpCode)
 {
-    PrintFunction("jr %s", RNT[OpCode->LeftValue]);
+    PrintFunction("%s %s", Select1Table[OpCode->Select1], RNT[OpCode->LeftValue]);
 }
 
 static void
 JALR(disasm_opcode_info *OpCode)
 {
-    PrintFunction("jalr %s, %s", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue]);
+    PrintFunction("%s %s, %s", Select1Table[OpCode->Select1], RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue]);
+}
+
+static void
+BranchRegCompare(disasm_opcode_info *OpCode)
+{
+    u16 Imm = OpCode->Immediate & IMM16_MASK;
+    PrintFunction("%s %s, %s, 0x%08llX", Select0Table[OpCode->Select0], RNT[OpCode->LeftValue], RNT[OpCode->RightValue], OpCode->CurrentAddress + 4 + SignExtend16To64(Imm) * 4);
+}
+
+static void
+Shift_Imm(disasm_opcode_info *OpCode)
+{
+    u8 Imm = (u8)((OpCode->Immediate & IMM5_MASK) >> 6);
+    if (OpCode->DestinationRegister | OpCode->RightValue | Imm)
+    {
+        PrintFunction("%s %s, %s, 0x%02X", Select1Table[OpCode->Select1], RNT[OpCode->DestinationRegister], RNT[OpCode->RightValue], Imm);
+    }
+    else
+    {
+        PrintFunction("nop");
+    }
+}
+
+static void
+TRAP_REG(disasm_opcode_info *OpCode)
+{
+    u16 Imm = (u16)((OpCode->Immediate & CODE10_MASK) >> 6);
+    PrintFunction("%s %s, %s, 0x%03X", Select1Table[OpCode->Select1], RNT[OpCode->LeftValue], RNT[OpCode->RightValue], Imm);
+}
+
+static void
+Store_Load(disasm_opcode_info *OpCode)
+{
+    PrintFunction("%s %s, 0x%04X(%s)", Select0Table[OpCode->Select0], RNT[OpCode->RightValue], (u16)OpCode->Immediate, RNT[OpCode->LeftValue]);
 }
 
 static void
 BranchZero(disasm_opcode_info *OpCode)
 {
     //bltz, bgez, bltzal, bgezal
+    s16 Imm = SignExtend16To64(OpCode->Immediate & IMM16_MASK);
     u32 type = OpCode->RightValue;
     if (type & 0b00001)
     {
@@ -468,203 +404,7 @@ BranchZero(disasm_opcode_info *OpCode)
             PrintFunction("al");
         }
     }
-    PrintFunction(" %s, 0x%08llX", RNT[OpCode->LeftValue], OpCode->CurrentAddress + 4 + OpCode->Immediate * 4);
-}
-
-static void
-BEQ(disasm_opcode_info *OpCode)
-{
-    PrintFunction("beq %s, %s, 0x%08llX", RNT[OpCode->LeftValue], RNT[OpCode->RightValue], OpCode->CurrentAddress + 4 + OpCode->Immediate * 4);
-}
-
-static void
-BEQL(disasm_opcode_info *OpCode)
-{
-    PrintFunction("beql %s, %s, 0x%08llX", RNT[OpCode->LeftValue], RNT[OpCode->RightValue], OpCode->CurrentAddress + 4 + OpCode->Immediate * 4);
-}
-
-static void
-BNE(disasm_opcode_info *OpCode)
-{
-    PrintFunction("bne %s, %s, 0x%08llX", RNT[OpCode->LeftValue], RNT[OpCode->RightValue], OpCode->CurrentAddress + 4 + OpCode->Immediate * 4);
-}
-
-static void
-BNEL(disasm_opcode_info *OpCode)
-{
-    PrintFunction("bnel %s, %s, 0x%08llX", RNT[OpCode->LeftValue], RNT[OpCode->RightValue], OpCode->CurrentAddress + 4 + OpCode->Immediate * 4);
-}
-
-static void
-BLEZ(disasm_opcode_info *OpCode)
-{
-    PrintFunction("blez %s, 0x%08llX", RNT[OpCode->LeftValue], OpCode->CurrentAddress + 4 + OpCode->Immediate * 4);
-}
-
-static void
-BLEZL(disasm_opcode_info *OpCode)
-{
-    PrintFunction("blezl %s, 0x%08llX", RNT[OpCode->LeftValue], OpCode->CurrentAddress + 4 + OpCode->Immediate * 4);
-}
-
-static void
-BGTZ(disasm_opcode_info *OpCode)
-{
-    PrintFunction("bgtz %s, 0x%08llX", RNT[OpCode->LeftValue], OpCode->CurrentAddress + 4 + OpCode->Immediate * 4);
-}
-
-static void
-BGTZL(disasm_opcode_info *OpCode)
-{
-    PrintFunction("bgtzl %s, 0x%08llX", RNT[OpCode->LeftValue], OpCode->CurrentAddress + 4 + OpCode->Immediate * 4);
-}
-
-//Logical
-static void
-AndI(disasm_opcode_info *OpCode)
-{
-    PrintFunction("andi %s, %s, 0x%04X", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], (u16)OpCode->Immediate);
-}
-
-static void
-OrI(disasm_opcode_info *OpCode)
-{
-    PrintFunction("ori %s, %s, 0x%04X", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], (u16)OpCode->Immediate);
-}
-
-static void
-And(disasm_opcode_info *OpCode)
-{
-    PrintFunction("and %s, %s, %s", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], RNT[OpCode->RightValue]);
-}
-
-static void
-Or(disasm_opcode_info *OpCode)
-{
-    PrintFunction("or %s, %s, %s", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], RNT[OpCode->RightValue]);
-}
-
-static void
-XOr(disasm_opcode_info *OpCode)
-{
-    PrintFunction("xor %s, %s, %s", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], RNT[OpCode->RightValue]);
-}
-static void
-NOr(disasm_opcode_info *OpCode)
-{
-    PrintFunction("nor %s, %s, %s", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], RNT[OpCode->RightValue]);
-}
-
-static void
-XOrI(disasm_opcode_info *OpCode)
-{
-    PrintFunction("xori %s, %s, 0x%04X", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], (u16)OpCode->Immediate);
-}
-
-//shifts
-static void
-SLLV(disasm_opcode_info *OpCode)
-{
-    PrintFunction("sllv %s, %s, %s", RNT[OpCode->DestinationRegister], RNT[OpCode->RightValue], RNT[OpCode->LeftValue]);
-}
-
-static void
-SRLV(disasm_opcode_info *OpCode)
-{
-    PrintFunction("srlv %s, %s, %s", RNT[OpCode->DestinationRegister], RNT[OpCode->RightValue], RNT[OpCode->LeftValue]);
-}
-
-static void
-SRAV(disasm_opcode_info *OpCode)
-{
-    PrintFunction("srav %s, %s, %s", RNT[OpCode->DestinationRegister], RNT[OpCode->RightValue], RNT[OpCode->LeftValue]);
-}
-
-static void
-SLL(disasm_opcode_info *OpCode)
-{
-    if (OpCode->DestinationRegister | OpCode->RightValue | OpCode->Immediate)
-    {
-        PrintFunction("sll %s, %s, 0x%02X", RNT[OpCode->DestinationRegister], RNT[OpCode->RightValue], (u8)OpCode->Immediate);
-    }
-    else
-    {
-        PrintFunction("nop");
-    }
-}
-
-static void
-SRL(disasm_opcode_info *OpCode)
-{
-    PrintFunction("srl %s, %s, 0x%02X", RNT[OpCode->DestinationRegister], RNT[OpCode->RightValue], (u8)OpCode->Immediate);
-}
-
-static void
-SRA(disasm_opcode_info *OpCode)
-{
-    PrintFunction("sra %s, %s, 0x%02X", RNT[OpCode->DestinationRegister], RNT[OpCode->RightValue], (u8)OpCode->Immediate);
-}
-
-// comparison
-static void
-SLT(disasm_opcode_info *OpCode)
-{
-    PrintFunction("slt %s, %s, %s", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], RNT[OpCode->RightValue]);
-}
-
-static void
-SLTU(disasm_opcode_info *OpCode)
-{
-    PrintFunction("sltu %s, %s, %s", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], RNT[OpCode->RightValue]);
-}
-
-static void
-SLTI(disasm_opcode_info *OpCode)
-{
-    PrintFunction("slti %s, %s, 0x%04X", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], (u16)OpCode->Immediate);
-}
-
-static void
-SLTIU(disasm_opcode_info *OpCode)
-{
-    PrintFunction("sltiu %s, %s, 0x%04X", RNT[OpCode->DestinationRegister], RNT[OpCode->LeftValue], (u16)OpCode->Immediate);
-}
-
-// traps
-static void
-TGE(disasm_opcode_info *OpCode)
-{
-    PrintFunction("tge %s, %s, 0x%03X", RNT[OpCode->LeftValue], RNT[OpCode->RightValue], (u16)OpCode->Immediate);
-}
-
-static void
-TGEU(disasm_opcode_info *OpCode)
-{
-    PrintFunction("tgeu %s, %s, 0x%03X", RNT[OpCode->LeftValue], RNT[OpCode->RightValue], (u16)OpCode->Immediate);
-}
-
-static void
-TLT(disasm_opcode_info *OpCode)
-{
-    PrintFunction("tlt %s, %s, 0x%03X", RNT[OpCode->LeftValue], RNT[OpCode->RightValue], (u16)OpCode->Immediate);
-}
-
-static void
-TLTU(disasm_opcode_info *OpCode)
-{
-    PrintFunction("tltu %s, %s, 0x%03X", RNT[OpCode->LeftValue], RNT[OpCode->RightValue], (u16)OpCode->Immediate);
-}
-
-static void
-TEQ(disasm_opcode_info *OpCode)
-{
-    PrintFunction("teq %s, %s, 0x%03X", RNT[OpCode->LeftValue], RNT[OpCode->RightValue], (u16)OpCode->Immediate);
-}
-
-static void
-TNE(disasm_opcode_info *OpCode)
-{
-    PrintFunction("tne %s, %s, 0x%03X", RNT[OpCode->LeftValue], RNT[OpCode->RightValue], (u16)OpCode->Immediate);
+    PrintFunction(" %s, 0x%08llX", RNT[OpCode->LeftValue], OpCode->CurrentAddress + 4 + Imm * 4);
 }
 
 // coprocessor ops
@@ -807,144 +547,17 @@ DisassemblerDecodeOpcode(disasm_opcode_info *OpCode, u32 Data, u64 IAddress)
     OpCode->CurrentAddress = IAddress;
     OpCode->Select0 = (Data & PRIMARY_OP_MASK) >> 26;
     OpCode->Select1 = (Data & SECONDARY_OP_MASK) >> 0;
-    OpCode->LeftValue = 0;
-    OpCode->RightValue = 0;
-    OpCode->Immediate = 0;
-    OpCode->DestinationRegister = 0;
+    OpCode->LeftValue = (Data & REG_RS_MASK) >> 21;
+    OpCode->RightValue = (Data & REG_RT_MASK) >> 16;
+    OpCode->Immediate = Data;
+    OpCode->DestinationRegister = (Data & REG_RD_MASK) >> 11;
     OpCode->FunctionSelect = 0;
     u32 rs = (Data & REG_RS_MASK) >> 21;
     u32 rt = (Data & REG_RT_MASK) >> 16;
     u32 rd = (Data & REG_RD_MASK) >> 11;
 
-    if (OpCode->Select0 == 0)
-    {
-        //shift-imm
-        if ((OpCode->Select1 & 0b111100) == 0)
-        {
-            OpCode->Immediate = (Data & IMM5_MASK) >> 6;
-            OpCode->RightValue = rt;
-            OpCode->DestinationRegister = rd;
-        }
-        //shift-reg
-        else if ((OpCode->Select1 & 0b111000) == 0)
-        {
-            OpCode->LeftValue = rs;
-            OpCode->RightValue = rt;
-            OpCode->DestinationRegister = rd;
-        }
-        //jr
-        else if (OpCode->Select1 == 0b001000)
-        {
-            OpCode->LeftValue = rs;
-            OpCode->DestinationRegister = REG_INDEX_PC;
-        }
-        //jalr
-        else if (OpCode->Select1 == 0b001001)
-        {
-            OpCode->LeftValue = rs;
-            OpCode->DestinationRegister = REG_INDEX_PC;
-            OpCode->DestinationRegister = rd;
-        }
-        //sys/brk
-        else if ((OpCode->Select1 & 0b111110) == 0b001100)
-        {
-            OpCode->Immediate = (Data & COMMENT20_MASK) >> 6;
-        }
-        //mfhi/mflo
-        else if ((OpCode->Select1 & 0b111101) == 0b010000)
-        {
-            OpCode->DestinationRegister = rd;
-        }
-        //mthi/mtlo
-        else if ((OpCode->Select1 & 0b111101) == 0b010001)
-        {
-            OpCode->LeftValue = rs;
-        }
-        //mul/div
-        else if ((OpCode->Select1 & 0b111100) == 0b011000)
-        {
-            OpCode->LeftValue = rs;
-            OpCode->RightValue = rt;
-        }
-        //alu-reg
-        else if ((OpCode->Select1 & 0b111000) == 0b100000)
-        {
-            OpCode->LeftValue = rs;
-            OpCode->RightValue = rt;
-            OpCode->DestinationRegister = rd;
-        }
-        //trap-on-compare
-        else if ((OpCode->Select1 & 0b111000) == 0b110000)
-        {
-            OpCode->Immediate = (Data & CODE10_MASK) >> 6;
-        }
-
-    }
-    //bltz, bgez, bltzal bgezal
-    else if (OpCode->Select0 == 0b000001)
-    {
-        OpCode->LeftValue = rs;
-        OpCode->RightValue = rt;
-        OpCode->Immediate = SignExtend16To64((Data & IMM16_MASK) >> 0);
-        //destination registers set within function
-    }
-    //j/jal
-    else if ((OpCode->Select0 & 0b111110) == 0b000010)
-    {
-        OpCode->Immediate = (Data & IMM26_MASK) >> 0;
-        OpCode->DestinationRegister = REG_INDEX_PC;
-    }
-    //beq/bne
-    else if ((OpCode->Select0 & 0b111110) == 0b000100)
-    {
-        OpCode->LeftValue = rs;
-        OpCode->RightValue = rt;
-        OpCode->Immediate = SignExtend16To64((Data & IMM16_MASK) >> 0);
-        //destination registers set within function
-    }
-    //beql/bnel
-    else if ((OpCode->Select0 & 0b111110) == 0b010100)
-    {
-        OpCode->LeftValue = rs;
-        OpCode->RightValue = rt;
-        OpCode->Immediate = SignExtend16To64((Data & IMM16_MASK) >> 0);
-    }
-    //blez/bgtz
-    else if ((OpCode->Select0 & 0b111110) == 0b000110)
-    {
-        OpCode->LeftValue = rs;
-        OpCode->Immediate = SignExtend16To64((Data & IMM16_MASK) >> 0);
-        //destination registers set within function
-    }
-    //alu-imm
-    else if ((OpCode->Select0 & 0b111000) == 0b001000)
-    {
-        OpCode->LeftValue = rs;
-        OpCode->Immediate = SignExtend16To64((Data & IMM16_MASK) >> 0);
-        OpCode->DestinationRegister = rt;
-    }
-    //lui-imm
-    else if (OpCode->Select0 == 0b001111)
-    {
-        OpCode->Immediate = (Data & IMM16_MASK) >> 0;
-        OpCode->DestinationRegister = rt;
-    }
-    //load
-    else if ((OpCode->Select0 & 0b111000) == 0b100000)
-    {
-        OpCode->LeftValue = rs;
-        OpCode->Immediate = (Data & IMM16_MASK) >> 0;
-        OpCode->RightValue = rt;
-    }
-    //store
-    else if ((OpCode->Select0 & 0b111000) == 0b101000)
-    {
-        OpCode->LeftValue = rs;
-        OpCode->RightValue = rt;
-        OpCode->Immediate = (Data & IMM16_MASK) >> 0;
-    }
     // coprocessor main instruction decoding
-    else if ((OpCode->Select0 & 0b010000) == 0b010000)
+    if ((OpCode->Select0 & 0b111111) == 0b010000)
     {
         OpCode->FunctionSelect = rs;
         // mfc, cfc
@@ -969,20 +582,6 @@ DisassemblerDecodeOpcode(disasm_opcode_info *OpCode, u32 Data, u64 IAddress)
         {
             OpCode->Immediate = (Data & IMM25_MASK) >> 0;
         }
-    }
-    //lwc
-    else if ((OpCode->Select0 & 0b111000) == 0b110000)
-    {
-        OpCode->LeftValue = rs;
-        OpCode->DestinationRegister = rt;
-        OpCode->Immediate = (Data & IMM16_MASK) >> 0;
-    }
-    //swc
-    else if ((OpCode->Select0 & 0b111000) == 0b111000)
-    {
-        OpCode->LeftValue = rs;
-        OpCode->RightValue = rt;
-        OpCode->Immediate = (Data & IMM16_MASK) >> 0;
     }
 }
 
@@ -1049,94 +648,94 @@ InitJumpTables()
 
     PrimaryJumpTable[0x00] = PrintSecondary;
     PrimaryJumpTable[0x01] = BranchZero;
-    PrimaryJumpTable[0x02] = J;
-    PrimaryJumpTable[0x03] = JAL;
-    PrimaryJumpTable[0x04] = BEQ;
-    PrimaryJumpTable[0x05] = BNE;
-    PrimaryJumpTable[0x06] = BLEZ;
-    PrimaryJumpTable[0x07] = BGTZ;
-    PrimaryJumpTable[0x08] = AddI;
-    PrimaryJumpTable[0x09] = AddIU;
-    PrimaryJumpTable[0x0A] = SLTI;
-    PrimaryJumpTable[0x0B] = SLTIU;
-    PrimaryJumpTable[0x0C] = AndI;
-    PrimaryJumpTable[0x0D] = OrI;
-    PrimaryJumpTable[0x0E] = XOrI;
+    PrimaryJumpTable[0x02] = Jump_Imm;
+    PrimaryJumpTable[0x03] = Jump_Imm;
+    PrimaryJumpTable[0x04] = BranchRegCompare;
+    PrimaryJumpTable[0x05] = BranchRegCompare;
+    PrimaryJumpTable[0x06] = BranchRegCompare;
+    PrimaryJumpTable[0x07] = BranchRegCompare;
+    PrimaryJumpTable[0x08] = ALU_IMM;
+    PrimaryJumpTable[0x09] = ALU_IMM;
+    PrimaryJumpTable[0x0A] = ALU_IMM;
+    PrimaryJumpTable[0x0B] = ALU_IMM;
+    PrimaryJumpTable[0x0C] = ALU_IMM;
+    PrimaryJumpTable[0x0D] = ALU_IMM;
+    PrimaryJumpTable[0x0E] = ALU_IMM;
     PrimaryJumpTable[0x0F] = LUI;
     PrimaryJumpTable[0x10] = COP0;
     PrimaryJumpTable[0x11] = COP1;
     PrimaryJumpTable[0x12] = COP2;
     PrimaryJumpTable[0x13] = COP3;
-    PrimaryJumpTable[0x14] = BEQL;
-    PrimaryJumpTable[0x15] = BNEL;
-    PrimaryJumpTable[0x16] = BLEZL;
-    PrimaryJumpTable[0x17] = BGTZL;
-    PrimaryJumpTable[0x18] = DAddI;
-    PrimaryJumpTable[0x19] = DAddIU;
-    PrimaryJumpTable[0x1A] = LDL;
-    PrimaryJumpTable[0x1B] = LDR;
-    PrimaryJumpTable[0x20] = LB;
-    PrimaryJumpTable[0x21] = LH;
-    PrimaryJumpTable[0x22] = LWL;
-    PrimaryJumpTable[0x23] = LW;
-    PrimaryJumpTable[0x24] = LBU;
-    PrimaryJumpTable[0x25] = LHU;
-    PrimaryJumpTable[0x26] = LWR;
-    PrimaryJumpTable[0x27] = LWU;
-    PrimaryJumpTable[0x28] = SB;
-    PrimaryJumpTable[0x29] = SH;
-    PrimaryJumpTable[0x2A] = SWL;
-    PrimaryJumpTable[0x2B] = SW;
-    PrimaryJumpTable[0x2C] = SDL;
-    PrimaryJumpTable[0x2D] = SDR;
-    PrimaryJumpTable[0x2E] = SWR;
+    PrimaryJumpTable[0x14] = BranchRegCompare;
+    PrimaryJumpTable[0x15] = BranchRegCompare;
+    PrimaryJumpTable[0x16] = BranchRegCompare;
+    PrimaryJumpTable[0x17] = BranchRegCompare;
+    PrimaryJumpTable[0x18] = ALU_IMM;
+    PrimaryJumpTable[0x19] = ALU_IMM;
+    PrimaryJumpTable[0x1A] = Store_Load;
+    PrimaryJumpTable[0x1B] = Store_Load;
+    PrimaryJumpTable[0x20] = Store_Load;
+    PrimaryJumpTable[0x21] = Store_Load;
+    PrimaryJumpTable[0x22] = Store_Load;
+    PrimaryJumpTable[0x23] = Store_Load;
+    PrimaryJumpTable[0x24] = Store_Load;
+    PrimaryJumpTable[0x25] = Store_Load;
+    PrimaryJumpTable[0x26] = Store_Load;
+    PrimaryJumpTable[0x27] = Store_Load;
+    PrimaryJumpTable[0x28] = Store_Load;
+    PrimaryJumpTable[0x29] = Store_Load;
+    PrimaryJumpTable[0x2A] = Store_Load;
+    PrimaryJumpTable[0x2B] = Store_Load;
+    PrimaryJumpTable[0x2C] = Store_Load;
+    PrimaryJumpTable[0x2D] = Store_Load;
+    PrimaryJumpTable[0x2E] = Store_Load;
     //    PrimaryJumpTable[0x30] = LWC0;
     //    PrimaryJumpTable[0x31] = LWC1;
     //    PrimaryJumpTable[0x32] = LWC2;
     //    PrimaryJumpTable[0x33] = LWC3;
-    PrimaryJumpTable[0x37] = LD;
+    PrimaryJumpTable[0x37] = Store_Load;
     //    PrimaryJumpTable[0x38] = SWC0;
     //    PrimaryJumpTable[0x39] = SWC1;
     //    PrimaryJumpTable[0x3A] = SWC2;
     //    PrimaryJumpTable[0x3B] = SWC3;
-    PrimaryJumpTable[0x3F] = SD;
+    PrimaryJumpTable[0x3F] = Store_Load;
 
-    SecondaryJumpTable[0x00] = SLL;
-    SecondaryJumpTable[0x02] = SRL;
-    SecondaryJumpTable[0x03] = SRA;
-    SecondaryJumpTable[0x04] = SLLV;
-    SecondaryJumpTable[0x06] = SRLV;
-    SecondaryJumpTable[0x07] = SRAV;
+    SecondaryJumpTable[0x00] = Shift_Imm;
+    SecondaryJumpTable[0x02] = Shift_Imm;
+    SecondaryJumpTable[0x03] = Shift_Imm;
+    SecondaryJumpTable[0x04] = ALU_REG;
+    SecondaryJumpTable[0x06] = ALU_REG;
+    SecondaryJumpTable[0x07] = ALU_REG;
     SecondaryJumpTable[0x08] = JR;
     SecondaryJumpTable[0x09] = JALR;
-    SecondaryJumpTable[0x0C] = SysCall;
-    SecondaryJumpTable[0x0D] = Break;
-    SecondaryJumpTable[0x10] = MFHI;
-    SecondaryJumpTable[0x11] = MTHI;
-    SecondaryJumpTable[0x12] = MFLO;
-    SecondaryJumpTable[0x13] = MTLO;
-    SecondaryJumpTable[0x18] = Mult;
-    SecondaryJumpTable[0x19] = MultU;
-    SecondaryJumpTable[0x1A] = Div;
-    SecondaryJumpTable[0x1B] = DivU;
-    SecondaryJumpTable[0x20] = Add;
-    SecondaryJumpTable[0x21] = AddU;
-    SecondaryJumpTable[0x22] = Sub;
-    SecondaryJumpTable[0x23] = SubU;
-    SecondaryJumpTable[0x24] = And;
-    SecondaryJumpTable[0x25] = Or;
-    SecondaryJumpTable[0x26] = XOr;
-    SecondaryJumpTable[0x27] = NOr;
-    SecondaryJumpTable[0x2A] = SLT;
-    SecondaryJumpTable[0x2B] = SLTU;
-    SecondaryJumpTable[0x2C] = DAdd;
-    SecondaryJumpTable[0x2D] = DAddU;
-    SecondaryJumpTable[0x2E] = DSub;
-    SecondaryJumpTable[0x2F] = DSubU;
-    SecondaryJumpTable[0x30] = TGE;
-    SecondaryJumpTable[0x31] = TGEU;
-    SecondaryJumpTable[0x32] = TLT;
-    SecondaryJumpTable[0x33] = TLTU;
-    SecondaryJumpTable[0x34] = TEQ;
-    SecondaryJumpTable[0x36] = TNE;
+    SecondaryJumpTable[0x0C] = SysCall_Break;
+    SecondaryJumpTable[0x0D] = SysCall_Break;
+    SecondaryJumpTable[0x10] = MFHILO;
+    SecondaryJumpTable[0x11] = MTHILO;
+    SecondaryJumpTable[0x12] = MFHILO;
+    SecondaryJumpTable[0x13] = MTHILO;
+    SecondaryJumpTable[0x18] = Mult_Div;
+    SecondaryJumpTable[0x19] = Mult_Div;
+    SecondaryJumpTable[0x1A] = Mult_Div;
+    SecondaryJumpTable[0x1B] = Mult_Div;
+    SecondaryJumpTable[0x20] = ALU_REG;
+    SecondaryJumpTable[0x21] = ALU_REG;
+    SecondaryJumpTable[0x22] = ALU_REG;
+    SecondaryJumpTable[0x23] = ALU_REG;
+    SecondaryJumpTable[0x24] = ALU_REG;
+    SecondaryJumpTable[0x25] = ALU_REG;
+    SecondaryJumpTable[0x26] = ALU_REG;
+    SecondaryJumpTable[0x27] = ALU_REG;
+    SecondaryJumpTable[0x2A] = ALU_REG;
+    SecondaryJumpTable[0x2B] = ALU_REG;
+    SecondaryJumpTable[0x2C] = ALU_REG;
+    SecondaryJumpTable[0x2D] = ALU_REG;
+    SecondaryJumpTable[0x2E] = ALU_REG;
+    SecondaryJumpTable[0x2F] = ALU_REG;
+    SecondaryJumpTable[0x30] = TRAP_REG;
+    SecondaryJumpTable[0x31] = TRAP_REG;
+    SecondaryJumpTable[0x32] = TRAP_REG;
+    SecondaryJumpTable[0x33] = TRAP_REG;
+    SecondaryJumpTable[0x34] = TRAP_REG;
+    SecondaryJumpTable[0x36] = TRAP_REG;
 }

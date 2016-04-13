@@ -21,7 +21,7 @@ PrintUsage()
     printf("                 --le    | Encode output in little-endian mode\n");
 }
 
-struct {const char *Name; u32 Select0;} Select0Table[0x33] =
+static struct {const char *Name; u32 Select0;} Select0Table[0x33] =
 {
     {"bgez", 0x01},
     {"bgezal", 0x01},
@@ -80,7 +80,7 @@ struct {const char *Name; u32 Select0;} Select0Table[0x33] =
     {"sd", 0x3F},
 };
 
-struct {const char *Name; u32 Select1;} Select1Table[0x25] =
+static struct {const char *Name; u32 Select1;} Select1Table[0x25] =
 {
     {"sll", 0x00},
     {"srl", 0x02},

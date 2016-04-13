@@ -39,7 +39,7 @@ main(int argc, char **argv)
     fread(ExeBuffer, fsize, 1, f);
     fclose(f);
 
-    MapMemoryRegion(&DummyCpu, (mmm) {ExeBuffer, 0, (u32)fsize});
+    MapMemoryRegion(&DummyCpu, (mmm) {ExeBuffer, 0, (u32)fsize, MEM_REGION_RW});
 
     u32 Address = DummyCpu.pc;
     if (argc > 2)
