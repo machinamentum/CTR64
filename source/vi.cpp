@@ -12,7 +12,6 @@
 #else
 #include <GLFW/glfw3.h>
 #endif
-#include <thread>
 
 static VideoInterface *VI;
 static MIPS_R3000 *Cpu;
@@ -49,7 +48,7 @@ VIUpdateRoutine()
         glEnd();
 
         glFlush();
-        std::this_thread::sleep_for(std::chrono::seconds(1));
+        PlatformSleepThread(PLATFORM_SLEEP_SECONDS(1));
     }
 }
 

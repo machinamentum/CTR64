@@ -34,6 +34,8 @@ PIUpdateRoutine()
             PI->WriteLen = 0;
             PI->Status &= ~__builtin_bswap32(PI_STATUS_DMA_BUSY);
         }
+
+        PlatformSleepThread(PLATFORM_SLEEP_SECONDS(1));
     }
 }
 

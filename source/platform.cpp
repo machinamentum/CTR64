@@ -448,6 +448,12 @@ PlatformJoinThread(void *ThreadHandle)
     }
 }
 
+void
+PlatformSleepThread(s64 nano)
+{
+    std::this_thread::sleep_for(std::chrono::nanoseconds(nano));
+}
+
 void *
 PlatformGetGfxContext()
 {

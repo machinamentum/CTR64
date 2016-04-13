@@ -11,6 +11,8 @@
 
 #define PLATFORM_START (1 << 0)
 
+#define PLATFORM_SLEEP_SECONDS(x) (x * 1000000000)
+
 #ifdef _3DS
 #include <3ds.h>
 #include <3ds/types.h>
@@ -43,5 +45,6 @@ void *PlatformCreateThread(void (*Thread)());
 void PlatformJoinThread(void *);
 void *PlatformGetGfxContext();
 void PlatformMakeContextCurrent(void *);
+void PlatformSleepThread(s64);
 
 #endif
