@@ -284,8 +284,8 @@ static void
 SysCall_Break(disasm_opcode_info *OpCode)
 {
     PrintFunction("%s", Select1Table[OpCode->Select1]);
-    u32 Imm = (u16)((OpCode->Immediate & COMMENT20_MASK) >> 6);
-    if (Imm) PrintFunction(" 0x%08lX", Imm);
+    u32 Imm = (u32)((OpCode->Immediate & COMMENT20_MASK) >> 6);
+    if (Imm) PrintFunction(" 0x%05lX", Imm);
 }
 
 static void
