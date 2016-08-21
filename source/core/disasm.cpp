@@ -474,9 +474,30 @@ COP1(disasm_opcode_info *OpCode)
     }
 }
 
+static const char *vec_opcode_names[] = {
+    "vmulf", "vmulu", "vrndp", "vmulq", "vmudl", "vmudm", "vmudn", "vmudh",
+    "vmacf", "vmacu", "vrndn", "vmacq", "vmadl", "vmadm", "vmadn", "vmadh",
+    "vadd", "vsub", "vsut", "vabs", "vaddc", "vsubc", "vaddb", "vsubb",
+    "vaccb", "vsucb", "vsad", "vsac", "vsum", "vsaw", "", "",
+    "vlt", "veq", "vne", "vge", "vcl", "vch", "vcr", "vmrg",
+    "vand", "vnand", "vor", "vnor", "vnxor", "", "", "",
+    "", "", "", "", "", "", "", "",
+    "vexit", "vextq", "vextn", "vinst", "vinsq", "vinsn", "", ""
+};
+
 static void
 COP2(disasm_opcode_info *OpCode)
 {
+    if (OpCode->LeftValue == 0b10000) { // Vector unit instructions
+        u32 Data = (u32)OpCode->Immediate;
+        u32 rt = (Data & REG_RT_MASK) >> 16;
+        u32 rd = (Data & REG_RD_MASK) >> 11;
+        u32 sa = (Data >> 6) & 0b11111;
+        u32 op = Data & 0b111111;
+        PrintFunction("%s $v%d, $v%d, $v%d", vec_opcode_names[op], sa, rd, rt);
+        return;
+    }
+
     switch (OpCode->FunctionSelect) {
         case 0b00000:
             PrintFunction("mfc2 %s, %s", RNT[OpCode->DestinationRegister], CNName(OpCode->LeftValue));
@@ -557,7 +578,7 @@ DisassemblerDecodeOpcode(disasm_opcode_info *OpCode, u32 Data, u64 IAddress)
     u32 rd = (Data & REG_RD_MASK) >> 11;
 
     // coprocessor main instruction decoding
-    if ((OpCode->Select0 & 0b111111) == 0b010000)
+    if ((OpCode->Select0 & 0b111100) == 0b010000)
     {
         OpCode->FunctionSelect = rs;
         // mfc, cfc
