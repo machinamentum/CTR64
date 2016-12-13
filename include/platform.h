@@ -14,8 +14,17 @@
 #define PLATFORM_SLEEP_SECONDS(x) (x * 1000000000)
 
 #ifdef _3DS
-#include <3ds.h>
+
 #include <3ds/types.h>
+// sigh, we have to dp this since including 3ds.h includes pxidev.h and -that- header generates tons of -Wconversion warnings. 
+#ifdef __cplusplus
+extern "C" {
+#endif
+#include <3ds/allocator/linear.h>
+#ifdef __cplusplus
+}
+#endif
+
 #else
 #include <stdint.h>
 

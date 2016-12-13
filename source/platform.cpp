@@ -11,7 +11,18 @@
 #include <unistd.h>
 
 #ifdef _3DS
-#include <3ds.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#include <3ds/sdmc.h>
+#include <3ds/console.h>
+#include <3ds/services/hid.h>
+#include <3ds/services/apt.h>
+
+#ifdef __cplusplus
+}
+#endif
 
 static void *GfxHandle;
 

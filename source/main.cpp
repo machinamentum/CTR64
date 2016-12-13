@@ -35,6 +35,10 @@ int main(int argc, char **argv)
     SignalProcessor *SP = new SignalProcessor();
 
     FILE *f = fopen("n64_ipl.bin", "rb");
+    if (!f) {
+        printf("Could not find n64_ipl.bin\n");
+        return -1;
+    }
     fseek(f, 0, SEEK_END);
     long fsize = ftell(f);
     fseek(f, 0, SEEK_SET);
@@ -85,10 +89,11 @@ int main(int argc, char **argv)
     while (MainLoopPlatform())
     {
 #ifdef _3DS
-        u32 KeysDown = hidKeysDown();
+        // @TODO this should be moved out to the platform layer until we develop a proper UI and way to exit
+        // u32 KeysDown = hidKeysDown();
 
-        if (KeysDown & KEY_START)
-            break;
+        // if (KeysDown & KEY_START)
+        //     break;
 #endif
 
 
@@ -97,12 +102,12 @@ int main(int argc, char **argv)
             Step = false;
             StepCpu(&Cpu, CyclesToRun);
             IRQ0Steps += CyclesToRun;
-            if (IRQ0Steps >= 50000)
-            {
-                C0GenerateException(&Cpu, C0_CAUSE_INT, Cpu.pc - 4);
-                IRQ0Steps = 0;
-                InterruptMask |= 1;
-            }
+//            if (IRQ0Steps >= 50000)
+//            {
+//                C0GenerateException(&Cpu, C0_CAUSE_INT, Cpu.pc - 4);
+//                IRQ0Steps = 0;
+//                InterruptMask |= 1;
+//            }
         }
 
         SwapBuffersPlatform();
