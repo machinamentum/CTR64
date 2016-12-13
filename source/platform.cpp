@@ -12,7 +12,6 @@
 
 #ifdef _3DS
 #include <3ds.h>
-#include <gfx_device.h>
 
 static void *GfxHandle;
 
@@ -25,8 +24,7 @@ InitPlatform(int argc, char **argv)
     hidInit();
     consoleInit(GFX_BOTTOM, NULL);
 
-    GfxHandle = gfxCreateDevice(240, 400, 0);
-    gfxMakeCurrent(GfxHandle);
+    // @TODO graphics lib init
 }
 
 void
@@ -40,7 +38,8 @@ ExitPlatform()
 void
 SwapBuffersPlatform()
 {
-    gfxFlush(gfxGetFramebuffer(GFX_TOP, GFX_LEFT, NULL, NULL), 240, 400, GX_TRANSFER_FMT_RGB8);
+
+    // @TODO graphics library flush to framebuffer
     gfxSwapBuffersGpu();
     hidScanInput();
 }

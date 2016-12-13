@@ -8,7 +8,7 @@
  */
 #include "vi.h"
 #ifdef _3DS
-#include <GL/gl.h>
+// @TODO include graphics lib header
 #else
 #include <GLFW/glfw3.h>
 #endif
@@ -18,11 +18,19 @@ static MIPS_R3000 *Cpu;
 static bool KeepThreadActive;
 static void *ThreadHandle;
 
+// @FixMe @Refactor we're no longer going to rely solely on OpenGL for graphics rendering. Replace with jrh3d or other, and factor GL code into desktop/platform stuff.
+// @FixMe @Refactor we're no longer going to rely solely on OpenGL for graphics rendering. Replace with jrh3d or other, and factor GL code into desktop/platform stuff.
+// @FixMe @Refactor we're no longer going to rely solely on OpenGL for graphics rendering. Replace with jrh3d or other, and factor GL code into desktop/platform stuff.
+// @FixMe @Refactor we're no longer going to rely solely on OpenGL for graphics rendering. Replace with jrh3d or other, and factor GL code into desktop/platform stuff.
+// @FixMe @Refactor we're no longer going to rely solely on OpenGL for graphics rendering. Replace with jrh3d or other, and factor GL code into desktop/platform stuff.
+
+
 static void
 VIUpdateRoutine()
 {
     void *GfxHandle = PlatformGetGfxContext();
     PlatformMakeContextCurrent(GfxHandle);
+    #ifndef _3DS
     GLuint MainWindowTex;
     glGenTextures(1, &MainWindowTex);
     glBindTexture(GL_TEXTURE_2D, MainWindowTex);
@@ -50,6 +58,7 @@ VIUpdateRoutine()
         glFlush();
         PlatformSleepThread(PLATFORM_SLEEP_SECONDS(1));
     }
+    #endif
 }
 
 
