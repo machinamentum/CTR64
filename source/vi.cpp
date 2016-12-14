@@ -30,17 +30,23 @@ static void *ThreadHandle;
 static void
 VIUpdateRoutine()
 {
+    Mutex *Mtx = PlatformGetGfxMutex();
     void *GfxHandle = PlatformGetGfxContext();
-    PlatformMakeContextCurrent(GfxHandle);
     #ifndef _3DS
+    PlatformLockMutex(Mtx);
+    PlatformMakeContextCurrent(GfxHandle);
     GLuint MainWindowTex;
     glGenTextures(1, &MainWindowTex);
     glBindTexture(GL_TEXTURE_2D, MainWindowTex);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 640, 480, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glEnable(GL_TEXTURE_2D);
+    PlatformUnLockMutex(Mtx);
     while (KeepThreadActive)
     {
+        PlatformLockMutex(Mtx);
+        PlatformMakeContextCurrent(GfxHandle);
+
         glClearColor(1, 0, 0, 1);
         glClear(GL_COLOR_BUFFER_BIT);
         void *Addr = MapVirtualAddress(Cpu, __builtin_bswap32(VI->DRAMAddr), MEM_REGION_READ);
@@ -62,6 +68,7 @@ VIUpdateRoutine()
         glEnd();
 
         glFlush();
+        PlatformUnLockMutex(Mtx);
         PlatformSleepThread(PLATFORM_SLEEP_SECONDS(1));
     }
     #endif

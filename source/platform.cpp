@@ -149,12 +149,20 @@ void PlatformAttachDebugger(void *Cpu)
 #include <iomanip>
 #include <sstream>
 #include <thread>
+#include <mutex>
 #include "disasm.h"
 #include "stb_truetype.h"
 #include "crystal_font.h"
 
+struct Mutex
+{
+    std::mutex PlatformMutex;
+};
+
 static GLFWwindow *GfxHandle;
 static GLFWwindow *DebugWindow;
+
+static Mutex GfxMutex;
 
 static stbtt_bakedchar cdata[96]; // ASCII 32..126 is 95 glyphs
 static GLuint FontTexID;
@@ -320,10 +328,11 @@ InitPlatform(int argc, char **argv)
     if (argc > 1) chdir(argv[1]);
     glfwInit();
 
-    glfwWindowHint(GLFW_DOUBLEBUFFER, false);
+    glfwWindowHint(GLFW_DOUBLEBUFFER, true);
     DebugWindow = glfwCreateWindow(800, 480, "CTR64 Debugger", NULL, NULL);
     glfwMakeContextCurrent(DebugWindow);
     InitFont();
+    glfwWindowHint(GLFW_DOUBLEBUFFER, false);
     GfxHandle = glfwCreateWindow(800, 480, "CTR64", NULL, NULL);
     glfwSwapInterval(0);
     DisassemblerSetPrintFunction(DisassemblerPrintOverride);
@@ -331,13 +340,30 @@ InitPlatform(int argc, char **argv)
 }
 
 void
+PlatformLockMutex(Mutex *Mtx)
+{
+    Mtx->PlatformMutex.lock();
+}
+
+void
+PlatformUnLockMutex(Mutex *Mtx)
+{
+    Mtx->PlatformMutex.unlock();
+}
+
+Mutex *PlatformGetGfxMutex() {
+    return &GfxMutex;
+}
+
+void
 SwapBuffersPlatform()
 {
-    glfwMakeContextCurrent(DebugWindow);
-    glFlush();
-    glfwSwapBuffers(GfxHandle);
+    PlatformLockMutex(&GfxMutex);
+    glfwMakeContextCurrent(nullptr);
     glfwSwapBuffers(DebugWindow);
+    glfwSwapBuffers(GfxHandle);
     glfwPollEvents();
+    PlatformUnLockMutex(&GfxMutex);
 }
 
 static void
@@ -363,6 +389,7 @@ DebuggerDrawCpuRegisters()
 static void
 PlatformDrawDebbuger()
 {
+    PlatformLockMutex(&GfxMutex);
     glfwMakeContextCurrent(DebugWindow);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
@@ -412,6 +439,8 @@ PlatformDrawDebbuger()
     }
 
     DebuggerDrawCpuRegisters();
+    glFlush();
+    PlatformUnLockMutex(&GfxMutex);
 }
 
 bool
@@ -424,9 +453,9 @@ MainLoopPlatform()
 void
 ExitPlatform()
 {
-    // glfwMakeContextCurrent(nullptr);
-    // glfwDestroyWindow(GfxHandle);
-    // glfwDestroyWindow(DebugWindow);
+    glfwMakeContextCurrent(nullptr);
+    glfwDestroyWindow(GfxHandle);
+    glfwDestroyWindow(DebugWindow);
     glfwTerminate();
 }
 

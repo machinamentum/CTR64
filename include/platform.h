@@ -60,4 +60,9 @@ void *PlatformGetGfxContext();
 void PlatformMakeContextCurrent(void *);
 void PlatformSleepThread(s64);
 
+struct Mutex;
+void PlatformLockMutex(Mutex *);
+void PlatformUnLockMutex(Mutex *);
+Mutex *PlatformGetGfxMutex();
+
 #endif
