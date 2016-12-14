@@ -50,7 +50,10 @@ int main(int argc, char **argv)
 
     u8 *CartBuffer = (u8 *)linearAlloc(0x01000000);
     z64 Z64Cart;
-    Z64Open(&Z64Cart, Z64_FLAG_MIDDLE_ENDIAN, "cart.v64");
+    if (!Z64Open(&Z64Cart, Z64_FLAG_MIDDLE_ENDIAN, "cart.v64")) {
+        printf("Couldn't open cart.v64");
+        return -1;
+    }
     Z64Read(&Z64Cart, CartBuffer, Z64GetCartSize(&Z64Cart));
     Z64Close(&Z64Cart);
 
@@ -76,7 +79,7 @@ int main(int argc, char **argv)
 
     bool Step = false;
     int CyclesToRun = 10000;
-    bool AutoStep = true;
+    bool AutoStep = false;
     u32 IRQ0Steps = 0;
 
     if (PlatformHasDebugger())
@@ -112,6 +115,7 @@ int main(int argc, char **argv)
 
         SwapBuffersPlatform();
     }
+
     PICloseThread();
     VICloseThread();
     PIFCloseThread();

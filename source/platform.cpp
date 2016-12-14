@@ -424,6 +424,9 @@ MainLoopPlatform()
 void
 ExitPlatform()
 {
+    // glfwMakeContextCurrent(nullptr);
+    // glfwDestroyWindow(GfxHandle);
+    // glfwDestroyWindow(DebugWindow);
     glfwTerminate();
 }
 

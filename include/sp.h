@@ -13,7 +13,7 @@
 
 #define SP_STATUS_HALT (1 << 0)
 
-struct SignalProcessor
+struct PACKED SignalProcessor
 {
     u32 MemAddr;
     u32 DRAMAddr;

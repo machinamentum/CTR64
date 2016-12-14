@@ -11,7 +11,7 @@
 
 #include "mips.h"
 
-struct psxexe_hdr
+struct PACKED psxexe_hdr
 {
     char AsciiID[8];
     u8 pad[8];

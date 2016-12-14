@@ -17,6 +17,8 @@ static VideoInterface *VI;
 static MIPS_R3000 *Cpu;
 static bool KeepThreadActive;
 static void *ThreadHandle;
+#include <cstdio>
+#include <cstring>
 
 // @FixMe @Refactor we're no longer going to rely solely on OpenGL for graphics rendering. Replace with jrh3d or other, and factor GL code into desktop/platform stuff.
 // @FixMe @Refactor we're no longer going to rely solely on OpenGL for graphics rendering. Replace with jrh3d or other, and factor GL code into desktop/platform stuff.
@@ -41,7 +43,11 @@ VIUpdateRoutine()
     {
         glClearColor(1, 0, 0, 1);
         glClear(GL_COLOR_BUFFER_BIT);
-        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 640, 480, GL_RGBA, GL_UNSIGNED_BYTE, MapVirtualAddress(Cpu, __builtin_bswap32(VI->DRAMAddr), MEM_REGION_READ));
+        void *Addr = MapVirtualAddress(Cpu, __builtin_bswap32(VI->DRAMAddr), MEM_REGION_READ);
+        if (!Addr) {
+            printf("Could not map DRAMAddr at %llX\n", VI->DRAMAddr);
+        }
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 640, 480, GL_RGBA, GL_UNSIGNED_BYTE, Addr);
         glLoadIdentity();
         glTranslatef(-0.75f, -0.75f, 0);
         glBegin(GL_QUADS);
@@ -68,6 +74,7 @@ VIStartThread(MIPS_R3000 *C, VideoInterface *V)
     VI = V;
     Cpu = C;
     KeepThreadActive = true;
+    memset(V, 0, sizeof(VideoInterface));
     ThreadHandle = PlatformCreateThread(VIUpdateRoutine);
 }
 

@@ -13,6 +13,10 @@
 
 #define PLATFORM_SLEEP_SECONDS(x) (x * 1000000000)
 
+#include <assert.h>
+
+#define PACKED __attribute__((packed))
+
 #ifdef _3DS
 
 #include <3ds/types.h>

@@ -46,7 +46,7 @@
 #define VI_V_SCALE(x)           (x & 0xFFF)
 #define VI_V_SUBPIXEL_OFFSET(x) (x & (0xFFF << 16) >> 16)
 
-struct VideoInterface
+struct PACKED VideoInterface
 {
     u32 Control;
     u32 DRAMAddr;

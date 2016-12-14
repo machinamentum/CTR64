@@ -55,11 +55,12 @@ Z64Seek(z64 *Z64, unsigned int offset)
     fseek(Z64->FileStream, offset, SEEK_SET);
 }
 
-void
+int
 Z64Open(z64 *Z64, int Flags, const char *FileName)
 {
     Z64->FileStream = fopen(FileName, "rb");
     Z64->Flags = Flags;
+    return Z64->FileStream ? 1 : 0;
 }
 
 void

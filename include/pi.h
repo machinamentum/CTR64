@@ -21,7 +21,7 @@
 #define PI_STATUS_IO_BUSY   (1 << 1)
 #define PI_STATUS_ERROR     (1 << 2)
 
-struct PeripheralInterface
+struct PACKED PeripheralInterface
 {
     u32 DRAMAddr;
     u32 CartAddr;
