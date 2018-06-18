@@ -12,6 +12,7 @@
 #define PLATFORM_START (1 << 0)
 
 #define PLATFORM_SLEEP_SECONDS(x) (x * 1000000000)
+#define PLATFORM_SLEEP_MILLISECONDS(x) (x * 1000000)
 
 #include <assert.h>
 

@@ -32,6 +32,7 @@ int main(int argc, char **argv)
     InitPlatform(argc, argv);
 
     MIPS_R3000 Cpu;
+    memset(&Cpu.CP0, 0, sizeof(Coprocessor));
     SignalProcessor *SP = new SignalProcessor();
 
     FILE *f = fopen("n64_ipl.bin", "rb");

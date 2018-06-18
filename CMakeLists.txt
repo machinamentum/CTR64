@@ -1,7 +1,6 @@
 cmake_minimum_required (VERSION 2.8.11)
 project (CTR64)
 
-find_package (glfw3 3.2 REQUIRED)
 find_package (OpenGL REQUIRED)
 find_package (Threads)
 
@@ -11,6 +10,8 @@ file(GLOB ctr64_SRC
     "source/core/*.cpp"
     "source/*.cpp"
 )
+
+add_subdirectory(glfw)
 
 add_executable (ctr64 ${ctr64_SRC})
 target_include_directories (ctr64 PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include ${OPENGL_INCLUDE_DIR})

@@ -69,7 +69,7 @@ VIUpdateRoutine()
 
         glFlush();
         PlatformUnLockMutex(Mtx);
-        PlatformSleepThread(PLATFORM_SLEEP_SECONDS(1));
+        PlatformSleepThread(PLATFORM_SLEEP_MILLISECONDS(16));
     }
     #endif
 }
