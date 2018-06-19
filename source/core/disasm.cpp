@@ -72,24 +72,40 @@ static const char *RNT[34] =
     "hi:lo"
 };
 
-static const char *C0RNT[17] =
+static const char *C0RNT[32] =
 {
-    "r0",
-    "r1",
-    "r2",
-    "bpc",
-    "r4",
-    "bda",
-    "jumpdest",
-    "dcic",
-    "bva",
-    "bdam",
-    "r10",
-    "bpcm",
-    "sr",
-    "cause",
-    "epc",
-    "prid",
+    "Index",
+    "Random",
+    "EntryLo0",
+    "EntryLo1",
+    "Context",
+    "PageMask",
+    "Wired",
+    "r7",
+    "BadVAddr",
+    "Count",
+    "EntryHi",
+    "Compare",
+    "SR",
+    "Cause",
+    "EPC",
+    "PRID",
+    "Config",
+    "LLAddr",
+    "WatchLo",
+    "WatchHi",
+    "XContext",
+    "r21",
+    "r22",
+    "r23",
+    "r24",
+    "r25",
+    "PErr",
+    "CacheErr",
+    "TagLo",
+    "TagHi",
+    "ErrorEPC",
+    "r31",
 };
 
 static const char *Select0Table[0x40] =
@@ -254,19 +270,17 @@ static char ScratchString[5];
 inline const char *
 C0Name(u32 Reg)
 {
-    if (Reg >= C0_PRID)
-    {
-        snprintf(ScratchString, 4, "r%lud",  Reg);
+    if (Reg >= 32) {
+        snprintf(ScratchString, sizeof(ScratchString), "r%lud",  Reg);
         return ScratchString;
     }
-
     return C0RNT[Reg];
 }
 
 inline const char *
 CNName(u32 Reg)
 {
-    snprintf(ScratchString, 3, "r%lud",  Reg);
+    snprintf(ScratchString, sizeof(ScratchString), "r%lud",  Reg);
     return ScratchString;
 }
 

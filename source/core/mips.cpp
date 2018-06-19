@@ -16,7 +16,11 @@ ReadMemDWord(MIPS_R3000 *Cpu, u64 Address)
 {
     u64 Base = Address & 0x1FFFFFFF;
     u8 *VirtualAddress = (u8 *)MapVirtualAddress(Cpu, Address, MEM_REGION_READ);
-    u32 Swap = Cpu->CP0.sr & C0_STATUS_RE;
+    // u32 Swap = Cpu->CP0.SR & C0_STATUS_RE;
+    // @TODO detect byte-order swapping for user mode only!
+    // @TODO is the CPU supposed to support executing instructions
+    // in reverse endian mode?
+    u32 Swap = 0;
     u64 Value = DEFAULT_UNMAPPED_ADDR_VALUE;
     if (!VirtualAddress)
     {
@@ -43,7 +47,11 @@ ReadMemWord(MIPS_R3000 *Cpu, u64 Address)
 {
     u32 Base = Address & 0x1FFFFFFF;
     u8 *VirtualAddress = (u8 *)MapVirtualAddress(Cpu, Address, MEM_REGION_READ);
-    u32 Swap = Cpu->CP0.sr & C0_STATUS_RE;
+    // u32 Swap = Cpu->CP0.SR & C0_STATUS_RE;
+    // @TODO detect byte-order swapping for user mode only!
+    // @TODO is the CPU supposed to support executing instructions
+    // in reverse endian mode?
+    u32 Swap = 0;
     u32 Value = DEFAULT_UNMAPPED_ADDR_VALUE;
     if (!VirtualAddress)
     {
@@ -93,7 +101,11 @@ WriteMemDWord(MIPS_R3000 *Cpu, u64 Address, u64 Value)
 {
     u32 Base = Address & 0x1FFFFFFF;
     u8 *VirtualAddress = (u8 *)MapVirtualAddress(Cpu, Address, MEM_REGION_WRITE);
-    u32 Swap = Cpu->CP0.sr & C0_STATUS_RE;
+    // u32 Swap = Cpu->CP0.SR & C0_STATUS_RE;
+    // @TODO detect byte-order swapping for user mode only!
+    // @TODO is the CPU supposed to support executing instructions
+    // in reverse endian mode?
+    u32 Swap = 0;
     if (!VirtualAddress)
     {
         for (u32 i = 0; i < Cpu->NumMMR; ++i)
@@ -118,7 +130,11 @@ WriteMemWord(MIPS_R3000 *Cpu, u64 Address, u32 Value)
 {
     u32 Base = Address & 0x1FFFFFFF;
     u8 *VirtualAddress = (u8 *)MapVirtualAddress(Cpu, Address, MEM_REGION_WRITE);
-    u32 Swap = Cpu->CP0.sr & C0_STATUS_RE;
+    // u32 Swap = Cpu->CP0.SR & C0_STATUS_RE;
+    // @TODO detect byte-order swapping for user mode only!
+    // @TODO is the CPU supposed to support executing instructions
+    // in reverse endian mode?
+    u32 Swap = 0;
     if (!VirtualAddress)
     {
         for (u32 i = 0; i < Cpu->NumMMR; ++i)
@@ -142,7 +158,11 @@ WriteMemHalfWord(MIPS_R3000 *Cpu, u64 Address, u16 Value)
 {
     u32 Base = Address & 0x1FFFFFFF;
     u8 *VirtualAddress = (u8 *)MapVirtualAddress(Cpu, Address, MEM_REGION_WRITE);
-    u32 Swap = Cpu->CP0.sr & C0_STATUS_RE;
+    // u32 Swap = Cpu->CP0.SR & C0_STATUS_RE;
+    // @TODO detect byte-order swapping for user mode only!
+    // @TODO is the CPU supposed to support executing instructions
+    // in reverse endian mode?
+    u32 Swap = 0;
     if (!VirtualAddress)
     {
         for (u32 i = 0; i < Cpu->NumMMR; ++i)
@@ -176,7 +196,7 @@ MIPS_R3000()
 inline void
 C0ExceptionPushSRBits(Coprocessor *CP0)
 {
-    u64 SR = CP0->sr;
+    u64 SR = CP0->SR;
     u32 IEp = (SR >> 2) & 1;
     u32 KUp = (SR >> 3) & 1;
     u32 IEc = (SR) & 1;
@@ -185,13 +205,13 @@ C0ExceptionPushSRBits(Coprocessor *CP0)
     SR ^= (-KUp ^ SR) & (1 << 5);
     SR ^= (-IEc ^ SR) & (1 << 2);
     SR ^= (-KUc ^ SR) & (1 << 3);
-    CP0->sr = SR;
+    CP0->SR = SR;
 }
 
 inline void
 C0ExceptionPopSRBits(Coprocessor *CP0)
 {
-    u64 SR = CP0->sr;
+    u64 SR = CP0->SR;
     u32 IEp = (SR >> 2) & 1;
     u32 KUp = (SR >> 3) & 1;
     u32 IEo = (SR >> 4) & 1;
@@ -200,19 +220,19 @@ C0ExceptionPopSRBits(Coprocessor *CP0)
     SR ^= (-KUp ^ SR) & (1 << 1);
     SR ^= (-IEo ^ SR) & (1 << 2);
     SR ^= (-KUo ^ SR) & (1 << 3);
-    CP0->sr = SR;
+    CP0->SR = SR;
 }
 
 void
 C0GenerateException(MIPS_R3000 *Cpu, u8 Cause, u64 EPC)
 {
-    if (Cpu->CP0.sr & C0_STATUS_IEc)
+    if (Cpu->CP0.SR & C0_STATUS_IEc)
     {
-        Cpu->CP0.cause = (Cause << 2) & C0_CAUSE_MASK;
-        Cpu->CP0.epc = EPC;
+        Cpu->CP0.Cause = (Cause << 2) & C0_CAUSE_MASK;
+        Cpu->CP0.EPC = EPC;
         C0ExceptionPushSRBits(&Cpu->CP0);
-        Cpu->CP0.sr &= ~C0_STATUS_KUc;
-        Cpu->CP0.sr &= ~C0_STATUS_IEc;
+        Cpu->CP0.SR &= ~C0_STATUS_KUc;
+        Cpu->CP0.SR &= ~C0_STATUS_IEc;
         Cpu->pc = GNRAL_VECTOR;
     }
 }
@@ -220,11 +240,11 @@ C0GenerateException(MIPS_R3000 *Cpu, u8 Cause, u64 EPC)
 static void
 C0GenerateSoftwareException(MIPS_R3000 *Cpu, u8 Cause, u64 EPC)
 {
-    Cpu->CP0.cause = (Cause << 2) & C0_CAUSE_MASK;
-    Cpu->CP0.epc = EPC;
+    Cpu->CP0.Cause = (Cause << 2) & C0_CAUSE_MASK;
+    Cpu->CP0.EPC = EPC;
     C0ExceptionPushSRBits(&Cpu->CP0);
-    Cpu->CP0.sr &= ~C0_STATUS_KUc;
-    Cpu->CP0.sr &= ~C0_STATUS_IEc;
+    Cpu->CP0.SR &= ~C0_STATUS_KUc;
+    Cpu->CP0.SR &= ~C0_STATUS_IEc;
     Cpu->pc = GNRAL_VECTOR;
 }
 
@@ -1164,14 +1184,14 @@ COP0(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
             u64 Immediate = SignExtend16To64((Data & IMM16_MASK));
             if (rt)
             {
-                if (CP0->sr & C0_STATUS_CU0)
+                if (CP0->SR & C0_STATUS_CU0)
                 {
                     Cpu->pc = OpCode->CurrentAddress + Immediate;
                 }
             }
             else
             {
-                if ((CP0->sr & C0_STATUS_CU0) == 0)
+                if ((CP0->SR & C0_STATUS_CU0) == 0)
                 {
                     Cpu->pc = OpCode->CurrentAddress + Immediate;
                 }
@@ -1214,14 +1234,14 @@ COP2(MIPS_R3000 *Cpu, opcode *OpCode, u32 Data)
             u64 Immediate = SignExtend16To64((Data & IMM16_MASK));
             if (rt)
             {
-                if (Cpu->CP0.sr & C0_STATUS_CU2)
+                if (Cpu->CP0.SR & C0_STATUS_CU2)
                 {
                     Cpu->pc = OpCode->CurrentAddress + Immediate;
                 }
             }
             else
             {
-                if ((Cpu->CP0.sr & C0_STATUS_CU2) == 0)
+                if ((Cpu->CP0.SR & C0_STATUS_CU2) == 0)
                 {
                     Cpu->pc = OpCode->CurrentAddress + Immediate;
                 }
@@ -1268,6 +1288,7 @@ MemoryAccess(MIPS_R3000 *Cpu, opcode *OpCode)
             WriteMemHalfWord(Cpu, Address, (u16)Value);
         }
 
+        // @TODO why are these calling ReadMemWordRaw? You may want to read from memory mapped IO with this mode!
         else if (MemAccessMode & MEM_ACCESS_WORD)
         {
             if (MemAccessMode & MEM_ACCESS_HIGH)

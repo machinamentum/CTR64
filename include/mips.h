@@ -57,12 +57,6 @@
 
 #define C0_PRID_VALUE  (0x00000002)
 
-#define C0_BVA    9
-#define C0_STATUS 13
-#define C0_CAUSE  14
-#define C0_EPC    15
-#define C0_PRID   16
-
 #define C0_STATUS_IEc    (1 << 0)
 #define C0_STATUS_KUc    (1 << 1)
 #define C0_STATUS_IEp    (1 << 2)
@@ -138,25 +132,41 @@ struct Coprocessor
         u64 registers[64];
         struct
         {
-            u64 r0;
-            u64 r1;
-            u64 r2;
-            u64 bpc;
-            u64 r4;
-            u64 bda;
-            u64 jumpdest;
-            u64 dcic;
-            u64 bva;
-            u64 bdam;
-            u64 r10;
-            u64 bpcm;
-            u64 sr;
-            u64 cause;
-            u64 epc;
-            u64 prid = C0_PRID_VALUE;
+            u64 Index;
+            u64 Random;
+            u64 EntryLo0;
+            u64 EntryLo1;
+            u64 Context;
+            u64 PageMask;
+            u64 Wired;
+            u64 r7; // unused
+            u64 BadVAddr;
+            u64 Count;
+            u64 EntryHi;
+            u64 Compare;
+            u64 SR;
+            u64 Cause;
+            u64 EPC;
+            u64 PRID = C0_PRID_VALUE;
+            u64 Config;
+            u64 LLAddr;
+            u64 WatchLo;
+            u64 WatchHi;
+            u64 XContext;
+            u64 r21; // unused
+            u64 r22; // unused
+            u64 r23; // unused
+            u64 r24; // unused
+            u64 r25; // unused
+            u64 PErr;
+            u64 CacheErr;
+            u64 TagLo;
+            u64 TagHi;
+            u64 ErrorEPC;
+            u64 r31; // unused
         };
     };
-    Coprocessor() {}
+
     void (*ExecuteOperation)(Coprocessor *Cp, u32 FunctionCode) = nullptr;
 };
 
@@ -292,7 +302,7 @@ ReadMemDWordRaw(MIPS_R3000 *Cpu, u64 Address)
     if (Addr)
     {
         u64 Value = *((u64 *)((u8 *)Addr));
-        return ((Cpu->CP0.sr & C0_STATUS_RE) ? Value : __builtin_bswap64(Value));
+        return __builtin_bswap64(Value);
     }
     return 0;
 }
@@ -304,7 +314,7 @@ ReadMemWordRaw(MIPS_R3000 *Cpu, u64 Address)
     if (Addr)
     {
         u32 Value = *((u32 *)((u8 *)Addr));
-        return ((Cpu->CP0.sr & C0_STATUS_RE) ? Value : __builtin_bswap32(Value));
+        return __builtin_bswap32(Value);
     }
     return 0;
 }
@@ -328,7 +338,7 @@ ReadMemHalfWordRaw(MIPS_R3000 *Cpu, u64 Address)
     if (Addr)
     {
         u16 Value = *((u16 *)((u8 *)Addr));
-        return ((Cpu->CP0.sr & C0_STATUS_RE) ? Value: __builtin_bswap16(Value));
+        return __builtin_bswap16(Value);
     }
     return 0;
 }
@@ -347,7 +357,7 @@ WriteMemWordRaw(MIPS_R3000 *Cpu, u32 Address, u32 Value)
 {
     void *Addr = MapVirtualAddress(Cpu, Address, MEM_REGION_RW);
     if (Addr) {
-        *((u32 *)((u8 *)Addr)) = ((Cpu->CP0.sr & C0_STATUS_RE) ? Value: __builtin_bswap32(Value));
+        *((u32 *)((u8 *)Addr)) = __builtin_bswap32(Value);
     }
 }
 
@@ -356,7 +366,7 @@ WriteMemHalfWordRaw(MIPS_R3000 *Cpu, u32 Address, u16 Value)
 {
     void *Addr = MapVirtualAddress(Cpu, Address, MEM_REGION_RW);
     if (Addr) {
-        *((u16 *)((u8 *)Addr)) = ((Cpu->CP0.sr & C0_STATUS_RE) ? Value: __builtin_bswap16(Value));
+        *((u16 *)((u8 *)Addr)) = __builtin_bswap16(Value);
     }
 }
 

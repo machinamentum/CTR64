@@ -1,0 +1,13 @@
+Occasionally, the PIF thread will erroneously do a DMA when the main CPU thread hasnt even run yet. Maybe unintialized data? (observed, OS X).
+
+Implement a proper GUI for the debugger. The current stuff is outdated tech. IMGUI is the future.
+
+Either the debugger or the entire system doesn't bswap when it's supposed to.
+
+Cleanup massive use of hardcoded values, sigh!
+
+@TODO why are these calling ReadMemWordRaw? You may want to read from memory mapped IO with this mode!
+
+// @TODO detect byte-order swapping for user mode only!
+// @TODO is the CPU supposed to support executing instructions
+// in reverse endian mode?

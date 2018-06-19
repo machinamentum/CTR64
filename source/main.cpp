@@ -27,12 +27,14 @@ ResetCpu(MIPS_R3000 *Cpu)
 
 static u32 InterruptMask;
 
+#define RDRAM_BASE_ADDRESS 0x00000000
+#define RDRAM_SIZE         0x00400000
+
 int main(int argc, char **argv)
 {
     InitPlatform(argc, argv);
 
     MIPS_R3000 Cpu;
-    memset(&Cpu.CP0, 0, sizeof(Coprocessor));
     SignalProcessor *SP = new SignalProcessor();
 
     FILE *f = fopen("n64_ipl.bin", "rb");
@@ -58,7 +60,7 @@ int main(int argc, char **argv)
     Z64Read(&Z64Cart, CartBuffer, Z64GetCartSize(&Z64Cart));
     Z64Close(&Z64Cart);
 
-    MapMemoryRegion(&Cpu, (mmm) {linearAlloc(0x400000), 0x00000000, 0x400000, MEM_REGION_RW});        // RDRAM
+    MapMemoryRegion(&Cpu, (mmm) {linearAlloc(RDRAM_SIZE), RDRAM_BASE_ADDRESS, RDRAM_SIZE, MEM_REGION_RW});        // RDRAM
     MapMemoryRegion(&Cpu, (mmm) {BiosBuffer, 0x1FC00000, 0x07C0, MEM_REGION_READ});   // PIF ROM
     MapMemoryRegion(&Cpu, (mmm) {BiosBuffer + 0x7C0, 0x1FC007C0, 64, MEM_REGION_RW}); // PIF RAM
     MapMemoryRegion(&Cpu, (mmm) {linearAlloc(sizeof(VideoInterface)), 0x04400000, sizeof(VideoInterface), MEM_REGION_RW}); // VI
